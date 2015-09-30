@@ -33,9 +33,9 @@ module.exports = Em.Route.extend({
         applicationController.startKeepAlivePoller();
         // check server/web client versions match
         App.router.get('installerController').checkServerClientVersion().done(function () {
-
+          
           var name = 'Cluster Install Wizard';
-          $('title').text('Ambari - ' + name);
+          $('title').text('Keedio Manager - ' + name);
 
           App.router.get('mainViewsController').loadAmbariViews();
           if (App.get('isAdmin')) {

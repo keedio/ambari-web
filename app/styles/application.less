@@ -775,10 +775,14 @@ h1 {
   cursor: pointer;
 }
 
-.wizard {
+.wizard {  
+  /* ***** MODIFY ***** */
   h2 {
-    margin-top: 0;
+    margin-top: 20;
+    font-family: Dsignes Bold;
+    color: @color-426C;
   }
+  /* ***** MODIFY ***** */
   .btn.btn-success {
   /* float: right; */
   }
@@ -794,10 +798,28 @@ h1 {
     background-color: #fff;
 
   }
+
+  /* ***** MODIFY ***** */
+  li > a {
+    cursor: pointer;
+    font-family: Dsignes Light;
+    font-weight: bold;
+    color: @color-5285C;
+  }
+  li > a:hover {
+    color: #FFFFFF;
+    background-color: @color-424C;
+    background-image: linear-gradient(to bottom, @color-424C, @color-426C);        
+    background-repeat: repeat-x;
+  }
   .nav-header {
     font-size: 13px;
     padding-left: 0;
+    font-family: Dsignes Bold;
+    color: @color-5285C;    
   }
+  /* ***** MODIFY ***** */
+
   #installOptions {
     .sshKey-file-view {
       width: 486px;
