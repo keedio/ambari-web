@@ -20,34 +20,18 @@ var App = require('app');
 var filters = require('views/common/filter_view');
 var sort = require('views/common/sort_view');
 
-App.MainConfigHistoryView = App.TableView.extend({
+App.MainConfigHistoryView = App.TableView.extend(App.TableServerViewMixin, {
   templateName: require('templates/main/dashboard/config_history'),
 
   controllerBinding: 'App.router.mainConfigHistoryController',
+
+  /**
+   * @type {boolean}
+   * @default false
+   */
   filteringComplete: false,
-  timeOut: null,
+  isInitialRendering: true,
 
-  content: function () {
-    return this.get('controller.content');
-  }.property('controller.content'),
-
-  pageContent: function () {
-    var content = this.get('filteredContent');
-    if (content.length > ((this.get('endIndex') - this.get('startIndex')) + 1)) {
-      content = content.slice(0, (this.get('endIndex') - this.get('startIndex')) + 1);
-    }
-    return content.sort(function (a, b) {
-      return a.get('index') - b.get('index');
-    });
-  }.property('filteredContent'),
-
-  filteredCount: function () {
-    return this.get('controller.filteredCount');
-  }.property('controller.filteredCount'),
-
-  totalCount: function () {
-    return this.get('controller.totalCount');
-  }.property('controller.totalCount'),
   /**
    * return filtered number of all content number information displayed on the page footer bar
    * @returns {String}
@@ -56,27 +40,10 @@ App.MainConfigHistoryView = App.TableView.extend({
     return this.t('tableView.filters.filteredConfigVersionInfo').format(this.get('filteredCount'), this.get('totalCount'));
   }.property('filteredCount', 'totalCount'),
 
-  /**
-   * synchronize properties of view with controller to generate query parameters
-   */
-  updatePagination: function (key) {
-    if (!Em.isNone(this.get('displayLength'))) {
-      App.db.setDisplayLength(this.get('controller.name'), this.get('displayLength'));
-      this.get('controller.paginationProps').findProperty('name', 'displayLength').value = this.get('displayLength');
-    }
-    if (!Em.isNone(this.get('startIndex'))) {
-      App.db.setStartIndex(this.get('controller.name'), this.get('startIndex'));
-      this.get('controller.paginationProps').findProperty('name', 'startIndex').value = this.get('startIndex');
-    }
-
-    if (key !== 'SKIP_REFRESH') {
-      this.refresh();
-    }
-  },
-
   didInsertElement: function () {
     this.addObserver('startIndex', this, 'updatePagination');
     this.addObserver('displayLength', this, 'updatePagination');
+    this.set('isInitialRendering', true);
     this.refresh();
     this.set('controller.isPolling', true);
     this.get('controller').doPolling();
@@ -88,6 +55,12 @@ App.MainConfigHistoryView = App.TableView.extend({
   willDestroyElement: function () {
     this.set('controller.isPolling', false);
     clearTimeout(this.get('controller.timeoutRef'));
+  },
+
+  updateFilter: function (iColumn, value, type) {
+    if (!this.get('isInitialRendering')) {
+      this._super(iColumn, value, type);
+    }
   },
 
   sortView: sort.serverWrapperView,
@@ -123,12 +96,21 @@ App.MainConfigHistoryView = App.TableView.extend({
     column: 1,
     fieldType: 'filter-input-width',
     content: function () {
-      return ['All'].concat(App.Service.find().mapProperty('serviceName'));
+      return [
+        {
+          value: '',
+          label: Em.I18n.t('common.all')
+        }
+      ].concat(App.Service.find().map(function (service) {
+        return {
+          value: service.get('serviceName'),
+          label: service.get('displayName')
+        }
+      }));
     }.property('App.router.clusterController.isLoaded'),
     onChangeValue: function () {
-      this.get('parentView').updateFilter(this.get('column'), this.get('actualValue'), 'select');
-    },
-    emptyValue: Em.I18n.t('common.all')
+      this.get('parentView').updateFilter(this.get('column'), this.get('value'), 'select');
+    }
   }),
 
   configGroupFilterView: filters.createSelectView({
@@ -136,28 +118,36 @@ App.MainConfigHistoryView = App.TableView.extend({
     fieldType: 'filter-input-width',
     content: function () {
       var groupName = App.ServiceConfigVersion.find().mapProperty('groupName').uniq();
-      if (groupName.indexOf(null) > -1 ){
+      if (groupName.indexOf(null) > -1) {
         groupName.splice(groupName.indexOf(null), 1);
       }
-      return ['All'].concat(groupName);
-    }.property('App.router.mainConfigHistoryController.content'),
+      return [
+        {
+          value: '',
+          label: Em.I18n.t('common.all')
+        }
+      ].concat(groupName.map(function (item) {
+        return {
+          value: item,
+          label: item
+        }
+      }));
+    }.property('parentView.isInitialRendering'),
     onChangeValue: function () {
-      this.get('parentView').updateFilter(this.get('column'), this.get('actualValue'), 'select');
-    },
-    emptyValue: Em.I18n.t('common.all')
+      this.get('parentView').updateFilter(this.get('column'), this.get('value'), 'select');
+    }
   }),
 
   modifiedFilterView: filters.createSelectView({
     column: 3,
     appliedEmptyValue: ["", ""],
     fieldType: 'filter-input-width,modified-filter',
-    content: ['Any', 'Past 1 hour',  'Past 1 Day', 'Past 2 Days', 'Past 7 Days', 'Past 14 Days', 'Past 30 Days'],
-    valueBinding: "controller.modifiedFilter.optionValue",
-    startTimeBinding: "controller.modifiedFilter.actualValues.startTime",
-    endTimeBinding: "controller.modifiedFilter.actualValues.endTime",
-    onTimeChange: function () {
+    emptyValue: 'Any',
+    contentBinding: "controller.modifiedFilter.content",
+    onChangeValue: function () {
+      this.set("controller.modifiedFilter.optionValue", this.get('selected'));
       this.get('parentView').updateFilter(this.get('column'), [this.get('controller.modifiedFilter.actualValues.startTime'), this.get('controller.modifiedFilter.actualValues.endTime')], 'range');
-    }.observes('controller.modifiedFilter.actualValues.startTime', 'controller.modifiedFilter.actualValues.endTime')
+    }
   }),
 
   authorFilterView: filters.createTextView({
@@ -176,44 +166,38 @@ App.MainConfigHistoryView = App.TableView.extend({
     }
   }),
 
-  updateFilter: function (iColumn, value, type) {
-    var self = this;
-    this.set('controller.resetStartIndex', false);
-    this.saveFilterConditions(iColumn, value, type, false);
-    if (!this.get('filteringComplete')) {
-      clearTimeout(this.get('timeOut'));
-      this.set('timeOut', setTimeout(function () {
-        self.updateFilter(iColumn, value, type);
-      }, this.get('filterWaitingTime')));
-    } else {
-      clearTimeout(this.get('timeOut'));
-      this.set('controller.resetStartIndex', true);
-      this.refresh();
-    }
-  },
-
   ConfigVersionView: Em.View.extend({
     tagName: 'tr',
     showLessNotes: true,
     toggleShowLessStatus: function () {
-      this.set('showLessNotes', !this.get('showLessNotes'));
+      this.toggleProperty('showLessNotes');
     },
     didInsertElement: function () {
-      App.tooltip(this.$("[rel='Tooltip']"));
+      App.tooltip(this.$("[rel='Tooltip']"), {html: false});
     }
   }),
 
   /**
-   * sort content
+   * refresh table content
    */
   refresh: function () {
     var self = this;
     this.set('filteringComplete', false);
     this.get('controller').load().done(function () {
-      self.set('filteringComplete', true);
-      self.propertyDidChange('pageContent');
-      self.set('controller.resetStartIndex', false);
+      self.refreshDone.apply(self);
     });
+  },
+
+  /**
+   * callback executed after refresh call done
+   * @method refreshDone
+   */
+  refreshDone: function () {
+    this.set('isInitialRendering', false);
+    this.set('filteringComplete', true);
+    this.propertyDidChange('pageContent');
+    this.set('controller.resetStartIndex', false);
+    App.loadTimer.finish('Config History Page');
   },
 
   /**
@@ -224,11 +208,5 @@ App.MainConfigHistoryView = App.TableView.extend({
     return this.get('controller.colPropAssoc');
   }.property('controller.colPropAssoc'),
 
-  resetStartIndex: function () {
-    if (this.get('controller.resetStartIndex') && this.get('filteredCount') > 0) {
-      this.set('startIndex', 1);
-      this.updatePagination('SKIP_REFRESH');
-    }
-  }.observes('controller.resetStartIndex')
-
+  filter: Em.K
 });

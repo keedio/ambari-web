@@ -27,7 +27,7 @@ App.HostComponentView = Em.View.extend({
    * @type {App.HostComponent}
    */
   content: null,
-
+  excludedMasterCommands: ['DECOMMISSION', 'RECOMMISSION'],
   /**
    * @type {App.HostComponent}
    */
@@ -103,11 +103,12 @@ App.HostComponentView = Em.View.extend({
   /**
    * CSS-class for disabling drop-down menu with list of host component actions
    * Disabled if host's <code>healthClass</code> is health-status-DEAD-YELLOW (lost heartbeat)
+   * Disabled if component's action list is empty
    * @type {String}
    */
   disabled: function () {
-    return (this.get('parentView.content.healthClass') === "health-status-DEAD-YELLOW") ? 'disabled' : '';
-  }.property('parentView.content.healthClass'),
+    return ( (this.get('parentView.content.healthClass') === "health-status-DEAD-YELLOW") || (this.get('noActionAvailable') === 'hidden' && this.get('isRestartComponentDisabled'))) ? 'disabled' : '';
+  }.property('parentView.content.healthClass', 'noActionAvailable', 'isRestartComponentDisabled'),
 
   /**
    * For Upgrade failed state
@@ -193,19 +194,62 @@ App.HostComponentView = Em.View.extend({
   }.property('content'),
 
   /**
+   * Host component with some <code>workStatus</code> can't be moved (so, disable such action in the dropdown list)
+   * @type {bool}
+   */
+  isMoveComponentDisabled: function () {
+    return App.allHostNames.length === App.HostComponent.find().filterProperty('componentName', this.get('content.componentName')).mapProperty('hostName').length;
+  }.property('content'),
+
+  /**
    * Host component with some <code>workStatus</code> can't be deleted (so, disable such action in the dropdown list)
    * @type {bool}
    */
   isDeleteComponentDisabled: function () {
-    return ![App.HostComponentStatus.stopped, App.HostComponentStatus.unknown, App.HostComponentStatus.install_failed, App.HostComponentStatus.upgrade_failed, App.HostComponentStatus.init].contains(this.get('workStatus'));
-  }.property('workStatus'),
+    var stackComponentCount = App.StackServiceComponent.find(this.get('hostComponent.componentName')).get('minToInstall');
+    var installedCount = this.get('componentCounter');
+    return (installedCount <= stackComponentCount)
+      || ![App.HostComponentStatus.stopped, App.HostComponentStatus.unknown, App.HostComponentStatus.install_failed, App.HostComponentStatus.upgrade_failed, App.HostComponentStatus.init].contains(this.get('workStatus'));
+  }.property('workStatus', 'componentCounter'),
+
+  /**
+   * gets number of current component that are applied to the cluster;
+   * @returns {Number}
+   */
+  componentCounter: function() {
+    var component;
+    var stackServiceComponent =  App.StackServiceComponent.find(this.get('hostComponent.componentName'));
+    if (stackServiceComponent && App.get('router.clusterController.isHostContentLoaded')) {
+      if (stackServiceComponent.get('isMaster')) {
+        component = App.MasterComponent.find().findProperty('componentName', this.get('content.componentName'))
+      } else {
+        component = App.SlaveComponent.find().findProperty('componentName', this.get('content.componentName'));
+      }
+    }
+    return component ? component.get('totalCount') : 0;
+  }.property('App.router.clusterController.isHostContentLoaded'),
+
+  /**
+   * Gets number of current running components that are applied to the cluster
+   * @returns {Number}
+   */
+  runningComponentCounter: function () {
+    var runningComponents;
+    var self = this;
+
+    runningComponents = App.HostComponent.find().filter(function (component) {
+      return (component.get('componentName') === self.get('content.componentName') && [App.HostComponentStatus.started, App.HostComponentStatus.starting].contains(component.get('workStatus')))
+    });
+
+    return runningComponents ? runningComponents.length : 0;
+  },
 
   /**
    * Check if component may be reassinged to another host
    * @type {bool}
    */
   isReassignable: function () {
-    return App.supports.reassignMaster && App.get('components.reassignable').contains(this.get('content.componentName')) && App.router.get('mainHostController.hostsCountMap')['TOTAL'] > 1;
+    return App.get('components.reassignable').contains(this.get('content.componentName')) && App.router.get('mainHostController.hostsCountMap')['TOTAL'] > 1;
   }.property('content.componentName'),
 
   /**
@@ -231,6 +275,11 @@ App.HostComponentView = Em.View.extend({
   isRefreshConfigsAllowed: function() {
     return App.get('components.refreshConfigsAllowed').contains(this.get('content.componentName'));
   }.property('content'),
+
+  willInsertElement: function() {
+    //make link to view instance to get decommission state
+    this.set('content.view', this);
+  },
 
   didInsertElement: function () {
     App.tooltip($('[rel=componentHealthTooltip]'));
@@ -269,25 +318,94 @@ App.HostComponentView = Em.View.extend({
    * Get custom commands for slave components
    */
   customCommands: function() {
+    var customCommands;
     var hostComponent = this.get('content');
     var component = App.StackServiceComponent.find(hostComponent.get('componentName'));
-    var customCommands = [];
-    var commands;
 
-    if (component.get('isSlave')) {
-      commands = component.get('customCommands');
-      commands.forEach(function(command) {
-        customCommands.push({
-          label: Em.I18n.t('services.service.actions.run.executeCustomCommand.menu').format(command),
-          service: component.get('serviceName'),
-          hosts: hostComponent.get('hostName'),
-          component: component.get('componentName'),
-          command: command
-        });
-      });
-    }
+    customCommands = this.getCustomCommands(component, hostComponent, component.get('isSlave'));
 
     return customCommands;
-  }.property('content')
+  }.property('content', 'workStatus'),
+
+  /**
+   * Get a list of custom commands
+   *
+   * @param component
+   * @param hostComponent
+   * @param isSlave
+   * @returns {Array}
+   */
+  getCustomCommands: function (component, hostComponent, isSlave) {
+    isSlave = isSlave || false;
+
+    if (!component || !hostComponent) {
+      return [];
+    }
+
+    var self = this;
+    var commands = component.get('customCommands');
+    var customCommands = [];
+
+    commands.forEach(function(command) {
+      if (!isSlave && !self.meetsCustomCommandReq(component, command)) {
+        return;
+      }
+
+      var isContextPresent =  (!isSlave && (command in App.HostComponentActionMap.getMap(self)) &&  App.HostComponentActionMap.getMap(self)[command].context);
+      customCommands.push({
+        label: self.getCustomCommandLabel(command, isSlave),
+        service: component.get('serviceName'),
+        hosts: hostComponent.get('hostName'),
+        context: isContextPresent ? App.HostComponentActionMap.getMap(self)[command].context : null,
+        component: component.get('componentName'),
+        command: command
+      });
+    });
+
+    return customCommands;
+  },
+
+  /**
+   * Get the Label of the custom command
+   *
+   * @param command
+   * @returns {String}
+   */
+  getCustomCommandLabel: function (command, isSlave) {
+    if (isSlave || !(command in App.HostComponentActionMap.getMap(this)) || !App.HostComponentActionMap.getMap(this)[command].label) {
+      return Em.I18n.t('services.service.actions.run.executeCustomCommand.menu').format(command)
+    }
+    return App.HostComponentActionMap.getMap(this)[command].label;
+  },
+
+  /**
+   * The custom command meets the requirements to be active on master
+   *
+   * @param component
+   * @param command
+   *
+   * @return {Boolean}
+   */
+  meetsCustomCommandReq: function (component, command) {
+    var excludedMasterCommands = this.get('excludedMasterCommands');
+
+    if (excludedMasterCommands.indexOf(command) >= 0) {
+      return false;
+    }
+
+    if (component.get('cardinality') !== '1') {
+      if (!this.get('isStart')) {
+        if (this.get('componentCounter') > 1) {
+          if (this.runningComponentCounter()) {
+            return false;
+          }
+        } else {
+          return false;
+        }
+      }
+    }
+
+    return true;
+  }
 
 });

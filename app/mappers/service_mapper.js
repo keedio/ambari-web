@@ -18,40 +18,53 @@
 var App = require('app');
 
 App.serviceMapper = App.QuickDataMapper.create({
+  model: App.Service,
+  config: {
+    id: 'ServiceInfo.service_name',
+    service_name: 'ServiceInfo.service_name',
+    work_status: 'ServiceInfo.state'
+  },
+  initialAppLoad: false,
+  passiveStateMap: {},
   map: function (json) {
     console.time("App.serviceMapper execution time");
-
+    var self = this;
+    var passiveStateMap = this.get('passiveStateMap');
     json.items.forEach(function (service) {
       var cachedService = App.cache['services'].findProperty('ServiceInfo.service_name', service.ServiceInfo.service_name);
       if (cachedService) {
         // restore service workStatus
         App.Service.find(cachedService.ServiceInfo.service_name).set('workStatus', service.ServiceInfo.state);
         cachedService.ServiceInfo.state = service.ServiceInfo.state;
-        cachedService.ServiceInfo.passive_state = service.ServiceInfo.maintenance_state;
-
-        //check whether Nagios installed and started
-        if (service.alerts) {
-          cachedService.ServiceInfo.critical_alerts_count = service.alerts.summary.CRITICAL + service.alerts.summary.WARNING;
-        }
       } else {
         var serviceData = {
           ServiceInfo: {
             service_name: service.ServiceInfo.service_name,
-            state: service.ServiceInfo.state,
-            passive_state: service.ServiceInfo.maintenance_state
+            state: service.ServiceInfo.state
           },
           host_components: [],
           components: []
         };
-
-        //check whether Nagios installed and started
-        if (service.alerts) {
-          serviceData.ServiceInfo.critical_alerts_count = service.alerts.summary.CRITICAL + service.alerts.summary.WARNING;
-        }
         App.cache['services'].push(serviceData);
       }
+      passiveStateMap[service.ServiceInfo.service_name] = service.ServiceInfo.maintenance_state;
     });
 
+    if (!this.get('initialAppLoad')) {
+      var parsedCacheServices = App.cache['services'].map(function(item){
+        App.serviceMetricsMapper.mapExtendedModel(item);
+        return self.parseIt(item, self.get('config'));
+      });
+      App.store.loadMany(this.get('model'), parsedCacheServices);
+      App.store.commit();
+      this.set('initialAppLoad', true);
+    }
+
+    for (var service in passiveStateMap) {
+      if (passiveStateMap.hasOwnProperty(service)) {
+        App.Service.find(service).set('passiveState', passiveStateMap[service]);
+      }
+    }
     console.timeEnd("App.serviceMapper execution time");
   }
 });

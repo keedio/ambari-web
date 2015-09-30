@@ -15,14 +15,29 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 }}
-
-{{view App.MainServiceInfoMenuView configTabBinding="view.hasConfigTab"}}
+  <style>
+    ul.nav.nav-tabs {
+      margin-bottom: 10px; 
+      font-family: Dsignes Light;
+      font-weight: bold;
+    }        
+    .nav-tabs > li > a {  
+      color: #55A08E;    
+    }  
+    .nav-tabs > li.active > a,
+    .nav-tabs > li.active > a:hover,
+    .nav-tabs > li.active > a:focus{
+      color: #666484;
+    }
+  </style>
+  
+  {{view App.MainServiceInfoMenuView configTabBinding="view.hasConfigTab" heatmapTabBinding="view.hasHeatmapTab"}}
   <div class="span3 quick-links-wrapper">
     {{#if view.service.quickLinks.length}}
       {{#view App.QuickViewLinks contentBinding="view.service"}}
         <ul class="nav nav-pills move">
           <li class="dropdown">
-            <a class="dropdown-toggle" data-toggle="dropdown" href="#">{{t common.quickLinks}}<b class="caret"></b></a>
+            <a class="dropdown-toggle" id="quick-links-dropdown-btn" data-toggle="dropdown" href="#">{{t common.quickLinks}}<b class="caret"></b></a>
             <ul class="dropdown-menu">
               {{#if view.isLoaded}}
                 {{#if view.quickLinksArray}}
@@ -52,11 +67,11 @@
     {{/if}}
   </div>
 
-{{#if App.isAdmin}}
+{{#isAccessible ADMIN}}
 <div class="service-button">
   {{#if view.isMaintenanceActive}}
     <div class="btn-group display-inline-block">
-      <a class="btn dropdown-toggle" data-toggle="dropdown" href="#">
+      <a class="btn dropdown-toggle" id="service-actions-dropdown-btn" data-toggle="dropdown" href="#">
         {{t services.service.actions.serviceActions}}
         <span class="caret"></span>
       </a>
@@ -80,30 +95,33 @@
             </a>
           </li>
         {{/unless}}
-
-        <!-- Other service actions -->
-        {{#each option in view.maintenance}}
-        <li {{bindAttr class="option.disabled option.isHidden:hidden option.hasSubmenu:dropdown-submenu option.hasSubmenu:submenu-left"}}>
-          <a {{action "doAction" option target="controller" href=true}} {{bindAttr data-title="option.tooltip"}} rel="HealthTooltip">
-              <i {{bindAttr class="option.cssClass"}}></i>
-              {{option.label}}
-          </a>
-          {{#if option.hasSubmenu}}
-            <div class="dropdown-menu-wrap">
-              <ul class="dropdown-menu">
-                {{#each item in option.submenuOptions}}
-                  <li>
-                    <a {{action "doAction" item target="controller" href=true}}>{{item.context.label}}</a>
-                  </li>
-                {{/each}}
-              </ul>
-            </div>
-          {{/if}}
-        </li>
-        {{/each}}
+        {{#if view.maintenance.length}}
+          <!-- Other service actions -->
+          {{#each option in view.maintenance}}
+          <li {{bindAttr class="option.disabled option.isHidden:hidden option.hasSubmenu:dropdown-submenu option.hasSubmenu:submenu-left"}}>
+            <a {{action "doAction" option target="controller" href=true}} {{bindAttr data-title="option.tooltip"}} rel="HealthTooltip">
+                <i {{bindAttr class="option.cssClass"}}></i>
+                {{option.label}}
+            </a>
+            {{#if option.hasSubmenu}}
+              <div class="dropdown-menu-wrap">
+                <ul class="dropdown-menu">
+                  {{#each item in option.submenuOptions}}
+                    <li>
+                      <a {{action "doAction" item target="controller" href=true}}>{{item.context.label}}</a>
+                    </li>
+                  {{/each}}
+                </ul>
+              </div>
+            {{/if}}
+          </li>
+          {{/each}}
+        {{else}}
+          <div class="spinner service-button-spinner"></div>
+        {{/if}}
       </ul>
     </div>
   {{/if}}
 </div>
-{{/if}}
+{{/isAccessible}}
 {{outlet}}

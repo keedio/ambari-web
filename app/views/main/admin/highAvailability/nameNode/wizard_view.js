@@ -19,97 +19,15 @@
 
 var App = require('app');
 
-App.HighAvailabilityWizardView = Em.View.extend({
+App.HighAvailabilityWizardView = Em.View.extend(App.WizardMenuMixin, {
 
-  isLoaded: false,
-
-  willInsertElement: function() {
-    this.set('isLoaded', false);
-    this.loadHosts();
-  },
-
-  /**
-   * load hosts from server
-   */
-  loadHosts: function () {
-    App.ajax.send({
-      name: 'hosts.high_availability.wizard',
-      data: {},
-      sender: this,
-      success: 'loadHostsSuccessCallback',
-      error: 'loadHostsErrorCallback'
-    });
-  },
-
-  loadHostsSuccessCallback: function (data, opt, params) {
-    var hosts = {};
-
-    data.items.forEach(function (item) {
-      hosts[item.Hosts.host_name] = {
-        name: item.Hosts.host_name,
-        cpu: item.Hosts.cpu_count,
-        memory: item.Hosts.total_mem,
-        disk_info: item.Hosts.disk_info,
-        bootStatus: "REGISTERED",
-        isInstalled: true
-      };
-    });
-    App.db.setHosts(hosts);
-    this.set('controller.content.hosts', hosts);
-    this.set('isLoaded', true);
-  },
-
-  loadHostsErrorCallback: function(){
-    this.set('isLoaded', true);
-  },
+  templateName: require('templates/main/admin/highAvailability/nameNode/wizard'),
 
   didInsertElement: function() {
     var currentStep = this.get('controller.currentStep');
     if (currentStep > 4) {
       this.get('controller').setLowerStepsDisable(currentStep);
     }
-  },
-
-  templateName: require('templates/main/admin/highAvailability/nameNode/wizard'),
-
-  isStep1Disabled: function () {
-    return this.isStepDisabled(1);
-  }.property('controller.isStepDisabled.@each.value').cacheable(),
-
-  isStep2Disabled: function () {
-    return this.isStepDisabled(2);
-  }.property('controller.isStepDisabled.@each.value').cacheable(),
-
-  isStep3Disabled: function () {
-    return this.isStepDisabled(3);
-  }.property('controller.isStepDisabled.@each.value').cacheable(),
-
-  isStep4Disabled: function () {
-    return this.isStepDisabled(4);
-  }.property('controller.isStepDisabled.@each.value').cacheable(),
-
-  isStep5Disabled: function () {
-    return this.isStepDisabled(5);
-  }.property('controller.isStepDisabled.@each.value').cacheable(),
-
-  isStep6Disabled: function () {
-    return this.isStepDisabled(6);
-  }.property('controller.isStepDisabled.@each.value').cacheable(),
-
-  isStep7Disabled: function () {
-    return this.isStepDisabled(7);
-  }.property('controller.isStepDisabled.@each.value').cacheable(),
-
-  isStep8Disabled: function () {
-    return this.isStepDisabled(8);
-  }.property('controller.isStepDisabled.@each.value').cacheable(),
-
-  isStep9Disabled: function () {
-    return this.isStepDisabled(9);
-  }.property('controller.isStepDisabled.@each.value').cacheable(),
-
-  isStepDisabled: function (index) {
-    return this.get('controller.isStepDisabled').findProperty('step', index).get('value');
   }
 
 });

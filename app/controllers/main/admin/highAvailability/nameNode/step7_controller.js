@@ -22,8 +22,6 @@ App.HighAvailabilityWizardStep7Controller = App.HighAvailabilityProgressPageCont
 
   name:"highAvailabilityWizardStep7Controller",
 
-  isHA: true,
-
   commands: ['startZooKeeperServers', 'startNameNode'],
 
   startZooKeeperServers: function () {
@@ -32,7 +30,7 @@ App.HighAvailabilityWizardStep7Controller = App.HighAvailabilityProgressPageCont
   },
 
   startNameNode: function () {
-    var hostName = this.get('content.masterComponentHosts').findProperty('isCurNameNode').hostName;
+    var hostName = this.get('content.masterComponentHosts').filterProperty('component', 'NAMENODE').findProperty('isInstalled', true).hostName;
     this.updateComponent('NAMENODE', hostName, "HDFS", "Start");
   }
 });

@@ -17,7 +17,7 @@
  */
 var App = require('app');
 require('mixins/common/userPref');
-
+var LZString = require('utils/lz-string');
 App.clusterStatus = Em.Object.create(App.UserPref, {
 
   /**
@@ -125,6 +125,10 @@ App.clusterStatus = Em.Object.create(App.UserPref, {
    */
   getUserPrefSuccessCallback: function (response, opt, params) {
     if (response) {
+      // decompress response
+      if (typeof response != 'object') {
+        response = JSON.parse(LZString.decompressFromBase64(response));
+      }
       if (response.clusterState) {
         this.set('clusterState', response.clusterState);
       }
@@ -134,16 +138,18 @@ App.clusterStatus = Em.Object.create(App.UserPref, {
       if (response.wizardControllerName) {
         this.set('wizardControllerName', response.wizardControllerName);
       }
-      if (response.localdb) {
+      if (response.localdb && !$.isEmptyObject(response.localdb)) {
         this.set('localdb', response.localdb);
         // restore HAWizard data if process was started
-        var isHAWizardStarted = App.get('isAdmin') && !App.isEmptyObject(response.localdb.HighAvailabilityWizard);
+        var isHAWizardStarted = App.isAccessible('ADMIN') && !App.isEmptyObject(response.localdb.HighAvailabilityWizard);
         if (params.data.overrideLocaldb || isHAWizardStarted) {
           var localdbTables = (App.db.data.app && App.db.data.app.tables) ? App.db.data.app.tables : {};
+          var authenticated = Em.get(App, 'db.data.app.authenticated') || false;
           App.db.data = response.localdb;
           App.db.setLocalStorage();
           App.db.setUser(params.data.user);
           App.db.setLoginName(params.data.login);
+          App.db.setAuthenticated(authenticated);
           App.db.data.app.tables = localdbTables;
         }
       }
@@ -182,15 +188,18 @@ App.clusterStatus = Em.Object.create(App.UserPref, {
    * @param {object} newValue
    * @param {object} opt - Can have additional params for ajax callBacks and sender
    *                 opt.successCallback
+   *                 opt.successCallbackData
    *                 opt.errorCallback
+   *                 opt.errorCallbackData
    *                 opt.alwaysCallback
+   *                 opt.alwaysCallbackData
    *                 opt.sender
    * @method setClusterStatus
    * @return {*}
    */
   setClusterStatus: function (newValue, opt) {
     if (App.get('testMode')) return false;
-    if (!App.get('isAdmin')) {
+    if (!App.isAccessible('ADMIN')) {
       Em.assert('Non-Admin user should not execute setClusterStatus function', true);
     }
     var user = App.db.getUser();
@@ -220,26 +229,33 @@ App.clusterStatus = Em.Object.create(App.UserPref, {
           delete newValue.localdb.app.loginName;
         if (newValue.localdb.app && newValue.localdb.app.tables)
           delete newValue.localdb.app.tables;
+        if (newValue.localdb.app && newValue.localdb.app.authenticated)
+          delete newValue.localdb.app.authenticated;
         this.set('localdb', newValue.localdb);
         val.localdb = newValue.localdb;
       } else {
         delete App.db.data.app.user;
         delete App.db.data.app.loginName;
         delete App.db.data.app.tables;
+        delete App.db.data.app.authenticated;
         val.localdb = App.db.data;
         App.db.setUser(user);
         App.db.setLoginName(login);
       }
-      this.postUserPref(this.get('key'), val)
-          .done(function () {
-            !!opt && Em.typeOf(opt.successCallback) === 'function' && opt.successCallback.call(opt.sender || this);
-          })
-          .fail(function () {
-            !!opt && Em.typeOf(opt.errorCallback) === 'function' && opt.errorCallback.call(opt.sender || this);
-          })
-          .always(function () {
-            !!opt && Em.typeOf(opt.alwaysCallback) === 'function' && opt.alwaysCallback.call(opt.sender || this);
-          });
+      if (!$.mocho) {
+        // compress val
+        val = LZString.compressToBase64(JSON.stringify(val));
+        this.postUserPref(this.get('key'), val)
+            .done(function () {
+              !!opt && Em.typeOf(opt.successCallback) === 'function' && opt.successCallback.call(opt.sender || this, opt.successCallbackData);
+            })
+            .fail(function () {
+              !!opt && Em.typeOf(opt.errorCallback) === 'function' && opt.errorCallback.call(opt.sender || this, opt.errorCallbackData);
+            })
+            .always(function () {
+              !!opt && Em.typeOf(opt.alwaysCallback) === 'function' && opt.alwaysCallback.call(opt.sender || this, opt.alwaysCallbackData);
+            });
+      }
       return newValue;
     }
   },

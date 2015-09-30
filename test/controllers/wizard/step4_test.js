@@ -24,8 +24,8 @@ require('controllers/wizard/step4_controller');
 describe('App.WizardStep4Controller', function () {
 
   var services = [
-    'HDFS', 'MAPREDUCE', 'NAGIOS', 'GANGLIA', 'OOZIE', 'HIVE', 'HBASE', 'PIG', 'SCOOP', 'ZOOKEEPER',
-    'YARN', 'MAPREDUCE2', 'FALCON', 'TEZ', 'STORM'
+    'HDFS', 'GANGLIA', 'OOZIE', 'HIVE', 'HBASE', 'PIG', 'SCOOP', 'ZOOKEEPER',
+    'YARN', 'MAPREDUCE2', 'FALCON', 'TEZ', 'STORM', 'AMBARI_METRICS', 'RANGER', 'SPARK'
   ];
 
   var controller = App.WizardStep4Controller.create();
@@ -42,7 +42,7 @@ describe('App.WizardStep4Controller', function () {
         'isInstalled': false,
         isPrimaryDFS: serviceName == 'HDFS',
         isDFS: ['HDFS','GLUSTERFS'].contains(serviceName),
-        isMonitoringService: ['NAGIOS','GANGLIA'].contains(serviceName),
+        isMonitoringService: ['GANGLIA'].contains(serviceName),
         requiredServices: App.StackService.find(serviceName).get('requiredServices'),
         displayNameOnSelectServicePage: App.format.role(serviceName),
         coSelectedServices: function() {
@@ -75,45 +75,16 @@ describe('App.WizardStep4Controller', function () {
     });
   });
 
-  describe('#isAll', function () {
+  describe('#isAllChecked', function () {
     it('should return true if all services are selected', function () {
       controller.setEach('isInstalled', false);
       controller.findProperty('serviceName', 'HDFS').set('isSelected', true);
-      expect(controller.get('isAll')).to.equal(true);
+      expect(controller.get('isAllChecked')).to.equal(true);
     });
 
     it('should return false if at least one service is not selected', function () {
       controller.findProperty('serviceName', 'HDFS').set('isSelected', false);
-      expect(controller.get('isAll')).to.equal(false);
-    });
-  });
-
-  describe('#isMinimum', function () {
-    it('should return true if there are no services selected, except disabled', function () {
-      controller.setEach('isSelected', false);
-      expect(controller.get('isMinimum')).to.equal(true);
-    });
-
-    it('should return false if at least one service is selected, except disabled', function () {
-      controller.findProperty('serviceName', 'MAPREDUCE').set('isSelected', true);
-      expect(controller.get('isMinimum')).to.equal(false);
-    });
-  });
-
-  describe('#selectAll()', function () {
-    it('should select all services', function () {
-      controller.setEach('isSelected', false);
-      controller.selectAll();
-      expect(controller.filterProperty('canBeSelected', true).everyProperty('isSelected', true)).to.equal(true);
-    });
-  });
-
-  describe('#selectMinimum()', function () {
-    it('should set isSelected false for all services', function () {
-      controller.setEach('isSelected', true);
-      controller.selectMinimum();
-      expect(controller.findProperty('serviceName', 'HDFS').get('isSelected')).to.equal(false);
-      expect(controller.filterProperty('isDisabled', false).everyProperty('isSelected', false)).to.equal(true);
+      expect(controller.get('isAllChecked')).to.equal(false);
     });
   });
 
@@ -256,50 +227,138 @@ describe('App.WizardStep4Controller', function () {
 
   describe('#validate()', function() {
     var tests = [
-      {
-        services: ['HDFS','ZOOKEEPER'],
-        errorsExpected: ['monitoringCheck']
+        {
+          services: ['HDFS','ZOOKEEPER'],
+          errorsExpected: ['ambariMetricsCheck']
+        },
+        {
+          services: ['ZOOKEEPER'],
+          errorsExpected: ['ambariMetricsCheck']
+        },
+        {
+          services: ['HDFS'],
+          errorsExpected: ['serviceCheck_ZOOKEEPER', 'ambariMetricsCheck']
+        },
+        {
+          services: ['HDFS', 'TEZ', 'ZOOKEEPER'],
+          errorsExpected: ['serviceCheck_YARN', 'ambariMetricsCheck']
+        },
+        {
+          services: ['HDFS', 'ZOOKEEPER', 'FALCON'],
+          errorsExpected: ['serviceCheck_OOZIE', 'ambariMetricsCheck']
+        },
+        {
+          services: ['HDFS', 'ZOOKEEPER', 'GANGLIA', 'HIVE'],
+          errorsExpected: ['serviceCheck_YARN', 'ambariMetricsCheck']
+        },
+        {
+          services: ['HDFS', 'GLUSTERFS', 'ZOOKEEPER', 'HIVE'],
+          errorsExpected: ['serviceCheck_YARN', 'multipleDFS', 'ambariMetricsCheck']
+        },
+        {
+          services: ['HDFS','ZOOKEEPER', 'GANGLIA'],
+          errorsExpected: ['ambariMetricsCheck']
+        },
+        {
+          services: ['HDFS','ZOOKEEPER', 'AMBARI_METRICS'],
+          errorsExpected: []
+        },
+        {
+          services: ['ZOOKEEPER', 'AMBARI_METRICS'],
+          errorsExpected: []
+        },
+        {
+          services: ['HDFS', 'AMBARI_METRICS'],
+          errorsExpected: ['serviceCheck_ZOOKEEPER']
+        },
+        {
+          services: ['HDFS', 'TEZ', 'ZOOKEEPER', 'AMBARI_METRICS'],
+          errorsExpected: ['serviceCheck_YARN']
+        },
+        {
+          services: ['HDFS', 'ZOOKEEPER', 'FALCON', 'AMBARI_METRICS'],
+          errorsExpected: ['serviceCheck_OOZIE']
+        },
+        {
+          services: ['HDFS', 'ZOOKEEPER', 'GANGLIA', 'HIVE', 'AMBARI_METRICS'],
+          errorsExpected: ['serviceCheck_YARN']
+        },
+        {
+          services: ['HDFS', 'GLUSTERFS', 'ZOOKEEPER', 'HIVE', 'AMBARI_METRICS'],
+          errorsExpected: ['serviceCheck_YARN', 'multipleDFS']
+        },
+        {
+          services: ['HDFS','ZOOKEEPER', 'GANGLIA', 'AMBARI_METRICS'],
+          errorsExpected: []
+        },
+        {
+          services: ['RANGER'],
+          errorsExpected: ['ambariMetricsCheck', 'rangerRequirements']
+        }
+      ],
+      controllerNames = ['installerController', 'addServiceController'],
+      wizardNames = {
+        installerController: 'Install Wizard',
+        addServiceController: 'Add Service Wizard'
       },
-      {
-        services: ['ZOOKEEPER'],
-        errorsExpected: ['monitoringCheck']
-      },
-      {
-        services: ['HDFS'],
-        errorsExpected: ['serviceCheck_ZOOKEEPER', 'monitoringCheck']
-      },
-      {
-        services: ['HDFS', 'TEZ', 'ZOOKEEPER'],
-        errorsExpected: ['serviceCheck_YARN', 'monitoringCheck']
-      },
-      {
-        services: ['HDFS', 'ZOOKEEPER', 'FALCON', 'NAGIOS'],
-        errorsExpected: ['serviceCheck_OOZIE', 'monitoringCheck']
-      },
-      {
-        services: ['HDFS', 'ZOOKEEPER', 'GANGLIA', 'NAGIOS', 'HIVE'],
-        errorsExpected: ['serviceCheck_YARN']
-      },
-      {
-        services: ['HDFS', 'GLUSTERFS', 'ZOOKEEPER', 'HIVE'],
-        errorsExpected: ['serviceCheck_YARN', 'multipleDFS', 'monitoringCheck']
-      },
-      {
-        services: ['HDFS','ZOOKEEPER', 'NAGIOS', 'GANGLIA'],
-        errorsExpected: []
-      }
-    ];
+      sparkCases = [
+        {
+          currentStackName: 'HDP',
+          currentStackVersionNumber: '2.2',
+          sparkWarningExpected: true,
+          title: 'HDP 2.2'
+        },
+        {
+          currentStackName: 'HDP',
+          currentStackVersionNumber: '2.3',
+          sparkWarningExpected: false,
+          title: 'HDP 2.3'
+        },
+        {
+          currentStackName: 'BIGTOP',
+          currentStackVersionNumber: '0.8',
+          sparkWarningExpected: false,
+          title: 'Non-HDP stack'
+        }
+      ];
 
-    tests.forEach(function(test) {
-      var message = '{0} selected validation should be {1}, errors with ids: {2} present'
-        .format(test.services.join(','), !!test.validationPassed ? 'passed' : 'failed', test.errorsExpected.join(','));
-      it(message, function() {
-        controller.clear();
-        controller.set('content', generateSelectedServicesContent(test.services));
+    beforeEach(function () {
+      controller.clear();
+    });
+
+    controllerNames.forEach(function (name) {
+      tests.forEach(function(test) {
+        var errorsExpected = test.errorsExpected;
+        if (name != 'installerController') {
+          errorsExpected = test.errorsExpected.without('ambariMetricsCheck');
+        }
+        var message = '{0}, {1} selected validation should be {2}, errors: {3}'
+          .format(wizardNames[name], test.services.join(','), errorsExpected.length ? 'passed' : 'failed',
+            errorsExpected.length ? errorsExpected.join(',') : 'absent');
+        it(message, function() {
+          controller.setProperties({
+            content: generateSelectedServicesContent(test.services),
+            wizardController: Em.Object.create({
+              name: name
+            })
+          });
+          controller.validate();
+          expect(controller.get('errorStack').mapProperty('id')).to.eql(errorsExpected.toArray());
+        });
+      })
+    });
+
+    sparkCases.forEach(function (item) {
+      it(item.title, function () {
+        sinon.stub(App, 'get').withArgs('currentStackName').returns(item.currentStackName).
+          withArgs('currentStackVersionNumber').returns(item.currentStackVersionNumber);
+        controller.set('content', generateSelectedServicesContent(['SPARK']));
         controller.validate();
-        expect(controller.get('errorStack').mapProperty('id')).to.be.eql(test.errorsExpected);
+        expect(controller.get('errorStack').someProperty('id', 'sparkWarning')).to.equal(item.sparkWarningExpected);
+        App.get.restore();
       });
-    })
+    });
+
   });
 
   describe('#onPrimaryPopupCallback()', function() {
@@ -307,21 +366,21 @@ describe('App.WizardStep4Controller', function () {
     var tests = [
       {
         services: ['HDFS','ZOOKEEPER'],
-        confirmPopupCount: 1,
-        errorsExpected: ['monitoringCheck']
+        confirmPopupCount: 0,
+        errorsExpected: []
       },
       {
         services: ['ZOOKEEPER'],
-        confirmPopupCount: 1,
-        errorsExpected: ['monitoringCheck']
+        confirmPopupCount: 0,
+        errorsExpected: []
       },
       {
         services: ['HDFS', 'GLUSTERFS', 'ZOOKEEPER', 'HIVE'],
-        confirmPopupCount: 3,
-        errorsExpected: ['serviceCheck_YARN', 'serviceCheck_TEZ', 'multipleDFS', 'monitoringCheck']
+        confirmPopupCount: 2,
+        errorsExpected: ['serviceCheck_YARN', 'serviceCheck_TEZ', 'multipleDFS']
       },
       {
-        services: ['HDFS','ZOOKEEPER', 'NAGIOS', 'GANGLIA'],
+        services: ['HDFS','ZOOKEEPER', 'GANGLIA'],
         confirmPopupCount: 0,
         errorsExpected: []
       }
@@ -349,8 +408,7 @@ describe('App.WizardStep4Controller', function () {
         var runValidations = function() {
           c.serviceDependencyValidation();
           c.fileSystemServiceValidation();
-          c.serviceMonitoringValidation();
-        }
+        };
 
         c.set('content', generateSelectedServicesContent(test.services));
         runValidations();
@@ -495,6 +553,258 @@ describe('App.WizardStep4Controller', function () {
         expect(dependentServicesTest).to.be.eql(test.dependencies);
       });
     })
+  });
+
+  describe('#ambariMetricsValidation', function () {
+
+    var cases = [
+      {
+        services: ['HDFS'],
+        isAmbariMetricsWarning: false,
+        title: 'Ambari Metrics not available'
+      },
+      {
+        services: ['AMBARI_METRICS'],
+        isAmbariMetricsSelected: false,
+        isAmbariMetricsWarning: true,
+        title: 'Ambari Metrics not selected'
+      },
+      {
+        services: ['AMBARI_METRICS'],
+        isAmbariMetricsSelected: true,
+        isAmbariMetricsWarning: false,
+        title: 'Ambari Metrics selected'
+      }
+    ];
+
+    cases.forEach(function (item) {
+      it(item.title, function () {
+        controller.clear();
+        controller.set('content', generateSelectedServicesContent(item.services));
+        var ams = controller.findProperty('serviceName', 'AMBARI_METRICS');
+        if (item.services.contains('AMBARI_METRICS')) {
+          ams.set('isSelected', item.isAmbariMetricsSelected);
+        } else {
+          controller.removeObject(ams);
+        }
+        controller.ambariMetricsValidation();
+        expect(controller.get('errorStack').mapProperty('id').contains('ambariMetricsCheck')).to.equal(item.isAmbariMetricsWarning);
+      });
+    });
+
+  });
+
+  describe('#rangerValidation', function () {
+
+    var cases = [
+      {
+        services: ['HDFS'],
+        isRangerWarning: false,
+        title: 'Ranger not available'
+      },
+      {
+        services: ['RANGER'],
+        isRangerSelected: false,
+        isRangerInstalled: false,
+        isRangerWarning: false,
+        title: 'Ranger not selected'
+      },
+      {
+        services: ['RANGER'],
+        isRangerSelected: true,
+        isRangerInstalled: false,
+        isRangerWarning: true,
+        title: 'Ranger selected'
+      },
+      {
+        services: ['RANGER'],
+        isRangerSelected: true,
+        isRangerInstalled: true,
+        isRangerWarning: false,
+        title: 'Ranger installed'
+      }
+    ];
+
+    cases.forEach(function (item) {
+      it(item.title, function () {
+        controller.clear();
+        controller.set('content', generateSelectedServicesContent(item.services));
+        var ranger = controller.findProperty('serviceName', 'RANGER');
+        if (item.services.contains('RANGER')) {
+          ranger.setProperties({
+            isSelected: item.isRangerSelected,
+            isInstalled: item.isRangerInstalled
+          });
+        } else {
+          controller.removeObject(ranger);
+        }
+        controller.rangerValidation();
+        expect(controller.get('errorStack').mapProperty('id').contains('rangerRequirements')).to.equal(item.isRangerWarning);
+      });
+    });
+
+  });
+
+  describe('#sparkValidation', function () {
+
+    var cases = [
+      {
+        services: ['HDFS'],
+        isSparkWarning: false,
+        currentStackName: 'HDP',
+        currentStackVersionNumber: '2.2',
+        title: 'HDP 2.2, Spark not available'
+      },
+      {
+        services: ['HDFS'],
+        isSparkWarning: false,
+        currentStackName: 'HDP',
+        currentStackVersionNumber: '2.3',
+        title: 'HDP 2.3, Spark not available'
+      },
+      {
+        services: ['HDFS'],
+        isSparkWarning: false,
+        currentStackName: 'BIGTOP',
+        currentStackVersionNumber: '0.8',
+        title: 'Non-HDP stack, Spark not available'
+      },
+      {
+        services: ['SPARK'],
+        isSparkSelected: false,
+        isSparkInstalled: false,
+        isSparkWarning: false,
+        currentStackName: 'HDP',
+        currentStackVersionNumber: '2.2',
+        title: 'HDP 2.2, Spark not selected'
+      },
+      {
+        services: ['SPARK'],
+        isSparkSelected: true,
+        isSparkInstalled: false,
+        isSparkWarning: true,
+        currentStackName: 'HDP',
+        currentStackVersionNumber: '2.2',
+        title: 'HDP 2.2, Spark selected'
+      },
+      {
+        services: ['SPARK'],
+        isSparkSelected: true,
+        isSparkInstalled: true,
+        isSparkWarning: false,
+        currentStackName: 'HDP',
+        currentStackVersionNumber: '2.2',
+        title: 'HDP 2.2, Spark installed'
+      },
+      {
+        services: ['SPARK'],
+        isSparkSelected: false,
+        isSparkInstalled: false,
+        isSparkWarning: false,
+        currentStackName: 'HDP',
+        currentStackVersionNumber: '2.3',
+        title: 'HDP 2.3, Spark not selected'
+      },
+      {
+        services: ['SPARK'],
+        isSparkSelected: true,
+        isSparkInstalled: false,
+        isSparkWarning: false,
+        currentStackName: 'HDP',
+        currentStackVersionNumber: '2.3',
+        title: 'HDP 2.3, Spark selected'
+      },
+      {
+        services: ['SPARK'],
+        isSparkSelected: true,
+        isSparkInstalled: true,
+        isSparkWarning: false,
+        currentStackName: 'HDP',
+        currentStackVersionNumber: '2.3',
+        title: 'HDP 2.3, Spark installed'
+      },
+      {
+        services: ['SPARK'],
+        isSparkSelected: false,
+        isSparkInstalled: false,
+        isSparkWarning: false,
+        currentStackName: 'BIGTOP',
+        currentStackVersionNumber: '0.8',
+        title: 'Non-HDP stack, Spark not selected'
+      },
+      {
+        services: ['SPARK'],
+        isSparkSelected: true,
+        isSparkInstalled: false,
+        isSparkWarning: false,
+        currentStackName: 'BIGTOP',
+        currentStackVersionNumber: '0.8',
+        title: 'Non-HDP stack, Spark selected'
+      },
+      {
+        services: ['SPARK'],
+        isSparkSelected: true,
+        isSparkInstalled: true,
+        isSparkWarning: false,
+        currentStackName: 'BIGTOP',
+        currentStackVersionNumber: '0.8',
+        title: 'Non-HDP stack, Spark installed'
+      }
+    ];
+
+    afterEach(function () {
+      App.get.restore();
+    });
+
+    cases.forEach(function (item) {
+      it(item.title, function () {
+        sinon.stub(App, 'get').withArgs('currentStackName').returns(item.currentStackName).
+          withArgs('currentStackVersionNumber').returns(item.currentStackVersionNumber);
+        controller.clear();
+        controller.set('content', generateSelectedServicesContent(item.services));
+        var spark = controller.findProperty('serviceName', 'SPARK');
+        if (item.services.contains('SPARK')) {
+          spark.setProperties({
+            isSelected: item.isSparkSelected,
+            isInstalled: item.isSparkInstalled
+          });
+        } else {
+          controller.removeObject(spark);
+        }
+        controller.sparkValidation();
+        expect(controller.get('errorStack').mapProperty('id').contains('sparkWarning')).to.equal(item.isSparkWarning);
+      });
+    });
+
+  });
+
+  describe('#clearErrors', function () {
+
+    var cases = [
+      {
+        isValidating: true,
+        errorStack: [{}],
+        title: 'error stack shouldn\'t be cleared during validation'
+      },
+      {
+        isValidating: false,
+        errorStack: [],
+        title: 'error stack should be cleared'
+      }
+    ];
+
+    beforeEach(function () {
+      controller.set('errorStack', [{}]);
+    });
+
+    cases.forEach(function (item) {
+      it(item.title, function () {
+        controller.set('isValidating', item.isValidating);
+        controller.propertyDidChange('@each.isSelected');
+        expect(controller.get('errorStack')).to.eql(item.errorStack);
+      });
+    });
+
   });
 
 });

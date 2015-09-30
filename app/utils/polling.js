@@ -17,7 +17,7 @@
  */
 
 var App = require('app');
-App.Poll = Em.Object.extend({
+App.Poll = Em.Object.extend(App.ReloadPopupMixin, {
   name: '',
   stage: '',
   label: '',
@@ -73,7 +73,6 @@ App.Poll = Em.Object.extend({
     $.ajax({
       type: method,
       url: url,
-      async: false,
       data: data,
       dataType: 'text',
       timeout: App.timeout,
@@ -158,22 +157,20 @@ App.Poll = Em.Object.extend({
       name: 'background_operations.get_by_request',
       sender: this,
       data: {
-        requestId: this.get('requestId')
+        requestId: this.get('requestId'),
+        callback: this.startPolling,
+        errorLogMessage: 'Install services all retries failed'
       },
-      success: 'startPollingSuccessCallback',
-      error: 'startPollingErrorCallback'
-    })
-      .retry({times: App.maxRetries, timeout: App.timeout})
-      .then(null, function () {
-        App.showReloadPopup();
-        console.log('Install services all retries failed');
-      });
+      success: 'reloadSuccessCallback',
+      error: 'reloadErrorCallback'
+    });
     return true;
   },
 
-  startPollingSuccessCallback: function (data) {
+  reloadSuccessCallback: function (data) {
     var self = this;
     var result = this.parseInfo(data);
+    this._super();
     if (!result) {
       window.setTimeout(function () {
         self.startPolling();
@@ -181,12 +178,15 @@ App.Poll = Em.Object.extend({
     }
   },
 
-  startPollingErrorCallback: function (request, ajaxOptions, error) {
-    console.log("TRACE: In error function for the GET data");
-    console.log("TRACE: value of the url is: " + url);
-    console.log("TRACE: error code status is: " + request.status);
-    if (!this.get('isSuccess')) {
-      this.set('isError', true);
+  reloadErrorCallback: function (request, ajaxOptions, error, opt, params) {
+    this._super(request, ajaxOptions, error, opt, params);
+    if (request.status) {
+      console.log("TRACE: In error function for the GET data");
+      console.log("TRACE: value of the url is: " + url);
+      console.log("TRACE: error code status is: " + request.status);
+      if (!this.get('isSuccess')) {
+        this.set('isError', true);
+      }
     }
   },
 
@@ -239,8 +239,6 @@ App.Poll = Em.Object.extend({
 
   parseInfo: function (polledData) {
     console.log('TRACE: Entering task info function');
-    var self = this;
-    var totalProgress = 0;
     var tasksData = polledData.tasks;
     console.log("The value of tasksData is: ", tasksData);
     if (!tasksData) {

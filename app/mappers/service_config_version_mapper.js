@@ -31,17 +31,27 @@ App.serviceConfigVersionsMapper = App.QuickDataMapper.create({
     author: 'user',
     notes: 'service_config_version_note',
     is_current: 'is_current',
-    index: 'index'
+    index: 'index',
+    stack_version: 'stack_id',
+    is_compatible: 'is_cluster_compatible'
   },
   map: function (json) {
+    console.time('App.serviceConfigVersionsMapper');
     var result = [];
     var itemIds = {};
     var serviceToHostMap = {};
+    var currentVersionsMap = {};
 
     if (json && json.items) {
+      App.ServiceConfigVersion.find().forEach(function (v) {
+        if (v.get('isCurrent')) {
+          currentVersionsMap[v.get('serviceName') + "_" + v.get('groupName')] = v;
+        }
+      });
+
       json.items.forEach(function (item, index) {
         var parsedItem = this.parseIt(item, this.get('config'));
-        parsedItem.id = parsedItem.service_name + '_' + parsedItem.version;
+        parsedItem.id = this.makeId(parsedItem.service_name, parsedItem.version);
         parsedItem.is_requested = true;
         itemIds[parsedItem.id] = true;
         parsedItem.index = index;
@@ -50,20 +60,21 @@ App.serviceConfigVersionsMapper = App.QuickDataMapper.create({
         } else {
           serviceToHostMap[item.service_name] = item.hosts;
         }
+
+        // if loaded only latest versions(later than current), then current version should be reset
+        if (parsedItem.is_current && currentVersionsMap[parsedItem.service_name + "_" + parsedItem.group_name]) {
+          currentVersionsMap[parsedItem.service_name + "_" + parsedItem.group_name].set('isCurrent', false);
+        }
         result.push(parsedItem);
       }, this);
 
-      this.get('model').find().forEach(function (item) {
-        if (!itemIds[item.get('id')]) {
-          item.set('isRequested', false);
-        }
-      });
       var itemTotal = parseInt(json.itemTotal);
       if (!isNaN(itemTotal)) {
         App.router.set('mainConfigHistoryController.filteredCount', itemTotal);
       }
+
       /**
-       * this code sets hostNames for default confg group
+       * this code sets hostNames for default config group
        * by excluding hostNames that belongs to not default groups
        * from list of all hosts
        */
@@ -79,8 +90,26 @@ App.serviceConfigVersionsMapper = App.QuickDataMapper.create({
           defVer.hosts = defaultHostNames;
         }
       });
+
+      // If on config history page, need to clear the model
+      if (App.router.get('currentState.name') === 'configHistory') {
+        this.get('model').find().clear();
+      }
       App.store.commit();
       App.store.loadMany(this.get('model'), result);
+      console.timeEnd('App.serviceConfigVersionsMapper');
     }
+  },
+
+  /**
+   * Conventional method to generate id for instances of <code>App.ServiceConfigVersion</code> model.
+   *
+   * @param {String} serviceName
+   * @param {Number|String} version
+   * @returns {String}
+   */
+  makeId: function(serviceName, version) {
+    return serviceName + '_' + version;
   }
+
 });

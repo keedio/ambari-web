@@ -21,7 +21,7 @@ var App = require('app');
 App.NodeManagersLiveView = App.TextDashboardWidgetView.extend({
 
   title: Em.I18n.t('dashboard.widgets.NodeManagersLive'),
-  id: '26',
+  id: '19',
 
   model_type: 'yarn',
 
@@ -46,22 +46,26 @@ App.NodeManagersLiveView = App.TextDashboardWidgetView.extend({
   thresh2: 70,
   maxValue: 100,
 
+  isDataAvailable: function() {
+    return !this.get('model.metricsNotAvailable') &&  App.get('router.clusterController.isComponentsStateLoaded');
+  }.property('App.router.clusterController.isComponentsStateLoaded'),
+
   nodeManagersLive: function () {
-    return this.get('model.nodeManagersStarted');
-  }.property('model.nodeManagersStarted'),
+    return this.get('model.nodeManagersCountActive');
+  }.property('model.nodeManagersCountActive'),
 
   data: function () {
     var nodeManagers = this.get('model.nodeManagersTotal');
     var nodeManagersLive = this.get('nodeManagersLive');
-    if (!nodeManagers) {
-      return -1;
+    if (nodeManagersLive == null || !nodeManagers) {
+      return null;
     } else {
       return (nodeManagersLive / nodeManagers).toFixed(2) * 100;
     }
   }.property('model.nodeManagersTotal', 'nodeManagersLive'),
 
   content: function () {
-    return this.get('nodeManagersLive') + '/' + this.get('model.nodeManagersTotal');
+    return this.get('nodeManagersLive') == null || !this.get('model.nodeManagersTotal') ? Em.I18n.t('services.service.summary.notAvailable') : this.get('nodeManagersLive') + '/' + this.get('model.nodeManagersTotal');
   }.property('model.nodeManagersTotal', 'nodeManagersLive'),
 
   editWidget: function (event) {
@@ -145,7 +149,7 @@ App.NodeManagersLiveView = App.TextDashboardWidgetView.extend({
       didInsertElement: function () {
         var self = this;
         var handlers = [configObj.get('thresh1'), configObj.get('thresh2')];
-        var colors = ['#B80000', '#FF8E00', '#95A800']; //color red, orange, green
+        var colors = [App.healthStatusRed, App.healthStatusOrange, App.healthStatusGreen]; //color red, orange, green
 
         if (browserVerion == -1 || browserVerion > 9) {
           configObj.set('isIE9', false);

@@ -44,7 +44,7 @@ App.MainHostSummaryView = Em.View.extend({
   /**
    * @type {bool}
    */
-  isStopCommand:true,
+  isStopCommand: true,
 
   /**
    * @type {App.Host}
@@ -58,6 +58,13 @@ App.MainHostSummaryView = Em.View.extend({
     var gangliaMobileUrl = App.router.get('clusterController.gangliaUrl') + "/mobile_helper.php?show_host_metrics=1&h=" + name + "&c=HDPSlaves&r=hour&cs=&ce=";
     window.open(gangliaMobileUrl);
   },
+
+  /**
+   * Host metrics panel not displayed when Metrics service (ex:Ganglia) is not in stack definition.
+   */
+  isNoHostMetricsService: function() {
+    return !App.get('services.hostMetrics').length;
+  }.property('App.services.hostMetrics'),
 
   /**
    * Message for "restart" block
@@ -89,6 +96,7 @@ App.MainHostSummaryView = Em.View.extend({
   willInsertElement: function() {
     this.set('sortedComponents', []);
     this.sortedComponentsFormatter();
+    this.addObserver('content.hostComponents.length', this, 'sortedComponentsFormatter');
   },
 
   didInsertElement: function () {
@@ -110,7 +118,7 @@ App.MainHostSummaryView = Em.View.extend({
    */
   installedServices: function () {
     return App.Service.find().mapProperty('serviceName');
-  }.property('App.router.clusterController.dataLoadList.serviceMetrics'),
+  }.property('App.router.clusterController.dataLoadList.services'),
 
   /**
    * List of installed masters and slaves
@@ -145,7 +153,7 @@ App.MainHostSummaryView = Em.View.extend({
         }
         else {
           // Add new component
-          component.set('view', hostComponentViewMap[component.get('componentName')] ? hostComponentViewMap[component.get('componentName')] : App.HostComponentView);
+          component.set('viewClass', hostComponentViewMap[component.get('componentName')] ? hostComponentViewMap[component.get('componentName')] : App.HostComponentView);
           if (component.get('isMaster')) {
             // Masters should be before slaves
             var lastMasterIndex = 0, atLeastOneMasterExists = false;
@@ -164,7 +172,7 @@ App.MainHostSummaryView = Em.View.extend({
         }
       }
     }, this);
-  }.observes('content.hostComponents.length'),
+  },
 
   /**
    * List of installed clients
@@ -195,9 +203,9 @@ App.MainHostSummaryView = Em.View.extend({
    *
    * @type {bool}
    **/
-  areClientsInstallFailed: function() {
-    return this.get('clients').someProperty('isInstallFailed', true);
-  }.property('clients.@each.workStatus'),
+  areClientsNotInstalled: function() {
+    return this.get('clients').someProperty('isInstallFailed', true) || !!this.get('installableClientComponents.length');
+  }.property('clients.@each.workStatus', 'installableClientComponents.length'),
 
   /**
    * Check if some clients have stale configs
@@ -245,18 +253,21 @@ App.MainHostSummaryView = Em.View.extend({
    * @type {String[]}
    */
   installableClientComponents: function() {
-    if (!App.supports.deleteHost) {
-      return [];
-    }
     var clientComponents = App.StackServiceComponent.find().filterProperty('isClient');
     var installedServices = this.get('installedServices');
     var installedClients = this.get('clients').mapProperty('componentName');
-    var installableClients = clientComponents.filter(function(componentName) {
+    var installableClients = clientComponents.filter(function(component) {
       // service for current client is installed but client isn't installed on current host
-      return installedServices.contains(clientComponents.get('serviceName')) && !installedClients.contains(clientComponents.get('componentName'));
+      return installedServices.contains(component.get('serviceName')) && !installedClients.contains(component.get('componentName'));
     });
-    return installableClients.mapProperty('componentName');
-  }.property('content.hostComponents.length', 'installedServices.length', 'App.supports.deleteHost'),
+    return installableClients;
+  }.property('content.hostComponents.length', 'installedServices.length'),
+
+  notInstalledClientComponents: function () {
+    return this.get('clients').filter(function(component) {
+      return ['INIT', 'INSTALL_FAILED'].contains(component.get('workStatus'));
+    }).concat(this.get('installableClientComponents'));
+  }.property('installableClientComponents.length', 'clients.length'),
 
   /**
    * List of components that may be added to the current host
@@ -265,20 +276,23 @@ App.MainHostSummaryView = Em.View.extend({
   addableComponents: function () {
     var components = [];
     var self = this;
-    var installableClients = this.get('installableClientComponents');
-    var installedComponents = this.get('content.hostComponents').mapProperty('componentName');
-    var addableToHostComponents = App.StackServiceComponent.find().filterProperty('isAddableToHost');
-    var installedServices = this.get('installedServices');
+    if (this.get('content.hostComponents')) {
+      var installedComponents = this.get('content.hostComponents').mapProperty('componentName');
+      var addableToHostComponents = App.StackServiceComponent.find().filterProperty('isAddableToHost');
+      var installedServices = this.get('installedServices');
 
-    addableToHostComponents.forEach(function(addableComponent) {
-      if(installedServices.contains(addableComponent.get('serviceName')) && !installedComponents.contains(addableComponent.get('componentName'))) {
-        components.pushObject(self.addableComponentObject.create({'componentName': addableComponent.get('componentName'), 'serviceName': addableComponent.get('serviceName')}));
-      }
-    });
-    if (installableClients.length > 0) {
-      components.pushObject(this.addableComponentObject.create({ 'componentName': 'CLIENTS', subComponentNames: installableClients }));
+      addableToHostComponents.forEach(function (addableComponent) {
+        if (installedServices.contains(addableComponent.get('serviceName')) && !installedComponents.contains(addableComponent.get('componentName'))) {
+          if ((addableComponent.get('componentName') === 'OOZIE_SERVER') && !App.router.get('mainHostDetailsController.isOozieServerAddable')) {
+            return;
+          }
+          components.pushObject(self.addableComponentObject.create({
+            'componentName': addableComponent.get('componentName'),
+            'serviceName': addableComponent.get('serviceName')
+          }));
+        }
+      });
     }
-
     return components;
   }.property('content.hostComponents.length', 'installableClientComponents', 'App.components.addableToHost.@each'),
 
@@ -298,7 +312,7 @@ App.MainHostSummaryView = Em.View.extend({
    * Get clients with custom commands
    */
   clientsWithCustomCommands: function() {
-    var clients = this.get('clients');
+    var clients = this.get('clients').rejectProperty('componentName', 'KERBEROS_CLIENT');
     var options = [];
     var clientWithCommands;
     clients.forEach(function(client) {

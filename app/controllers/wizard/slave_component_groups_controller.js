@@ -16,6 +16,7 @@
  * limitations under the License.
  */
 var App = require('app');
+var configPropertyHelper = require('utils/configs/config_property_helper');
 /**
  * Used to manage slave component config. User could create different settings for separate group
  * @type {*}
@@ -92,9 +93,6 @@ App.SlaveComponentGroupsController = Em.ArrayController.extend({
       case 'HDFS':
         componentName = 'DataNode';
         break;
-      case 'MAPREDUCE':
-        componentName = 'TaskTracker';
-        break;
       case 'HBASE':
         componentName = 'RegionServer';
     }
@@ -104,10 +102,10 @@ App.SlaveComponentGroupsController = Em.ArrayController.extend({
 
       switch(serviceConfigProperty.name){
         case 'dfs_data_dir' :
-          serviceConfigProperty.initialValue();
+          configPropertyHelper.initialValue(serviceConfigProperty);
           break;
         case 'mapred_local_dir' :
-          serviceConfigProperty.initialValue();
+          configPropertyHelper.initialValue(serviceConfigProperty);
           break;
       }
       configs.pushObject(serviceConfigProperty);
@@ -121,10 +119,6 @@ App.SlaveComponentGroupsController = Em.ArrayController.extend({
       case 'HDFS':
         return { name: 'DATANODE',
           displayName: 'DataNode'};
-      case 'MAPREDUCE':
-        return { name: 'TASKTRACKER',
-          displayName: 'TaskTracker'};
-
       case 'HBASE':
         return { name: 'HBASE_REGIONSERVER',
           displayName: 'RegionServer'};

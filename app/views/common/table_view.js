@@ -21,6 +21,11 @@ var filters = require('views/common/filter_view');
 
 App.TableView = Em.View.extend(App.UserPref, {
 
+  init: function() {
+    this.set('filterConditions', []);
+    this._super();
+  },
+
   /**
    * Defines to show pagination or show all records
    * @type {Boolean}
@@ -55,29 +60,39 @@ App.TableView = Em.View.extend(App.UserPref, {
   defaultDisplayLength: "10",
 
   /**
-   * number of hosts in table after applying filters
+   * number of items in table after applying filters
    */
   filteredCount: function () {
     return this.get('filteredContent.length');
   }.property('filteredContent.length'),
 
   /**
+   * total number of items in table before applying filters
+   */
+  totalCount: function () {
+    return this.get('content.length');
+  }.property('content.length'),
+
+  /**
    * Do filtering, using saved in the local storage filter conditions
    */
-  willInsertElement:function () {
+  willInsertElement: function () {
     var self = this;
     var name = this.get('controller.name');
-    if (!this.get('displayLength')) {
+    if (!this.get('displayLength') && this.get('state') !== "inBuffer") {
       if (App.db.getDisplayLength(name)) {
-        this.set('displayLength', App.db.getDisplayLength(name));
-      } else {
-        this.getUserPref(this.displayLengthKey()).complete(function(){
+        self.set('displayLength', App.db.getDisplayLength(name));
+        Em.run.next(function () {
           self.initFilters();
         });
-        return;
+      } else {
+        if (!$.mocho) {
+          this.getUserPref(this.displayLengthKey()).complete(function () {
+            self.initFilters();
+          });
+        }
       }
     }
-    this.initFilters();
   },
 
   /**
@@ -89,7 +104,7 @@ App.TableView = Em.View.extend(App.UserPref, {
     var name = this.get('controller.name');
     var self = this;
     var filterConditions = App.db.getFilterConditions(name);
-    if (filterConditions) {
+    if (!Em.isEmpty(filterConditions)) {
       this.set('filterConditions', filterConditions);
 
       var childViews = this.get('childViews');
@@ -98,10 +113,10 @@ App.TableView = Em.View.extend(App.UserPref, {
         var view = !Em.isNone(condition.iColumn) && childViews.findProperty('column', condition.iColumn);
         if (view) {
           if (view.get('emptyValue')) {
-            view.set('value', view.get('emptyValue'));
+            view.clearFilter();
             self.saveFilterConditions(condition.iColumn, view.get('appliedEmptyValue'), condition.type, false);
           } else {
-            view.set('value', condition.value);
+            view.setValue(condition.value);
           }
           Em.run.next(function () {
             view.showClearFilter();
@@ -152,7 +167,7 @@ App.TableView = Em.View.extend(App.UserPref, {
     console.log('Persist did NOT find the key');
     var displayLengthDefault = this.get('defaultDisplayLength');
     this.set('displayLength', displayLengthDefault);
-    if (App.get('isAdmin')) {
+    if (App.isAccessible('upgrade_ADMIN')) {
       this.saveDisplayLength();
     }
     this.filter();
@@ -352,6 +367,8 @@ App.TableView = Em.View.extend(App.UserPref, {
       };
       this.get('filterConditions').push(filterCondition);
     }
+    // remove empty entries
+    this.set('filterConditions', this.get('filterConditions').filter(function(item){ return !Em.isEmpty(item.value); }));
     App.db.setFilterConditions(this.get('controller.name'), this.get('filterConditions'));
   },
 
@@ -360,15 +377,21 @@ App.TableView = Em.View.extend(App.UserPref, {
     Em.run.next(function() {
       App.db.setDisplayLength(self.get('controller.name'), self.get('displayLength'));
       if (!App.get('testMode')) {
-        if (App.get('isAdmin')) {
+        if (App.isAccessible('upgrade_ADMIN')) {
           self.postUserPref(self.displayLengthKey(), self.get('displayLength'));
         }
       }
     });
   },
 
-  clearFilterCondition: function() {
-    App.db.setFilterConditions(this.get('controller.name'), null);
+  clearFilterConditionsFromLocalStorage: function() {
+    var result = false;
+    var currentFCs = App.db.getFilterConditions(this.get('controller.name'));
+    if (currentFCs != null) {
+      App.db.setFilterConditions(this.get('controller.name'), null);
+      result = true;
+    }
+    return result;
   },
 
   /**
@@ -400,6 +423,26 @@ App.TableView = Em.View.extend(App.UserPref, {
   }.property('filteredCount', 'startIndex', 'endIndex'),
 
   /**
+   * flag to toggle displaying filtered hosts counter
+   */
+  showFilteredContent: function () {
+    var result = false;
+    if (this.get('filterConditions.length') > 0) {
+      this.get('filterConditions').forEach(function(f) {
+        if (f.value) {
+          if (Em.typeOf(f.value) == "array") {
+            if (f.value[0] || f.value[1]) {
+              result = true;
+            }
+          } else {
+            result = true;
+          }
+        }
+      });
+    }
+    return result;
+  }.property('filteredContent.length'),
+  /**
    * Filter table by filterConditions
    */
   filter: function () {
@@ -420,7 +463,7 @@ App.TableView = Em.View.extend(App.UserPref, {
       });
       this.set('filteredContent', result);
     } else {
-      this.set('filteredContent', content.toArray());
+      this.set('filteredContent', content ? content.toArray() : []);
     }
   }.observes('content.length'),
 

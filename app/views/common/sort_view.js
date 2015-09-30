@@ -17,6 +17,7 @@
  */
 
 var misc = require('utils/misc');
+var stringUtils = require('utils/string_utils');
 var App = require('app');
 
 /**
@@ -140,39 +141,46 @@ var wrapperView = Em.View.extend({
           var a = misc.ipToInt(a.get(property.get('name')));
           var b = misc.ipToInt(b.get(property.get('name')));
           if (order) {
-            return b - a;
-          } else {
             return a - b;
+          } else {
+            return b - a;
           }
         };
         break;
       case 'number':
         func = function (a, b) {
-          var a = parseFloat(a.get(property.get('name')));
-          var b = parseFloat(b.get(property.get('name')));
+          var a_p = a.get(property.get('name'));
+          var b_p = b.get(property.get('name'));
+          a_p = Em.isNone(a_p) ? -Infinity : parseFloat(a_p);
+          b_p = Em.isNone(b_p) ? -Infinity : parseFloat(b_p);
           if (order) {
-            return b - a;
+            return a_p - b_p;
           } else {
-            return a - b;
+            return b_p - a_p
           }
         };
         break;
+      case 'version':
+        func = function (a, b) {
+          var res = stringUtils.compareVersions(a.get(property.get('name')), b.get(property.get('name')));
+          if (order) {
+            return -res;
+          } else {
+            return res;
+          }
+        };
+        break;
+      case 'alert_status':
+        func = App.AlertDefinition.getSortDefinitionsByStatus(order);
+        break;
       default:
         func = function (a, b) {
-          if (order) {
-            if (a.get(property.get('name')) > b.get(property.get('name')))
-              return -1;
-            if (a.get(property.get('name')) < b.get(property.get('name')))
-              return 1;
-            return 0;
-          } else {
-            if (a.get(property.get('name')) < b.get(property.get('name')))
-              return -1;
-            if (a.get(property.get('name')) > b.get(property.get('name')))
-              return 1;
-            return 0;
-          }
-        }
+          var a_p = a.get(property.get('name'));
+          var b_p = b.get(property.get('name'));
+          a_p = Em.isNone(a_p) ? '' : '' + a_p;
+          b_p = Em.isNone(b_p) ? '' : '' + b_p;
+          return order ? b_p.localeCompare(a_p) : a_p.localeCompare(b_p);
+        };
     }
     return func;
   }
@@ -192,13 +200,13 @@ var serverWrapperView = Em.View.extend({
   },
 
   /**
-   * Initialize and save sorting statuses: publicHostName sorting_asc
+   * Initialize and save sorting statuses: hostName sorting_asc
    */
   loadSortStatuses: function () {
     var statuses = [];
     var childViews = this.get('childViews');
     childViews.forEach(function (childView) {
-      var sortStatus = (childView.get('name') == 'publicHostName' && childView.get('status') == 'sorting') ? 'sorting_asc' : childView.get('status');
+      var sortStatus = (childView.get('name') == 'hostName' && childView.get('status') == 'sorting') ? 'sorting_asc' : childView.get('status');
       statuses.push({
         name: childView.get('name'),
         status: sortStatus
@@ -206,7 +214,7 @@ var serverWrapperView = Em.View.extend({
       childView.set('status', sortStatus);
     });
     App.db.setSortingStatuses(this.get('controller.name'), statuses);
-    this.get('controller').set('sortingColumn', childViews.findProperty('name', 'publicHostName'));
+    this.get('controller').set('sortingColumn', childViews.findProperty('name', 'hostName'));
   },
 
   /**
@@ -231,11 +239,20 @@ var serverWrapperView = Em.View.extend({
    */
   sort: function (property, order) {
     var status = order ? 'sorting_desc' : 'sorting_asc';
+    var self = this;
 
     this.resetSort();
     this.get('childViews').findProperty('name', property.get('name')).set('status', status);
     this.saveSortStatuses();
-    this.get('parentView').refresh();
+    if (!this.get('parentView.filteringComplete')) {
+      clearTimeout(this.get('parentView.timeOut'));
+      this.set('parentView.timeOut', setTimeout(function () {
+        self.sort(property, order);
+      }, this.get('parentView.filterWaitingTime')));
+    } else {
+      clearTimeout(this.get('parentView.timeOut'));
+      this.get('parentView').refresh();
+    }
   },
 
   /**

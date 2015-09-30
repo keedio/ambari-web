@@ -107,6 +107,7 @@ App.WizardStep3View = App.TableView.extend({
 
   didInsertElement: function () {
     this.get('controller').loadStep();
+    App.get('router').set('transitionInProgress', false);
   },
 
   /**
@@ -321,14 +322,6 @@ App.WizardHostView = Em.View.extend({
    * @type {Object}
    */
   hostInfo: null,
-
-  /**
-   * @type {bool}
-   */
-  isRetryable: function() {
-    // return ['FAILED'].contains(this.get('hostInfo.bootStatus'));
-    return false;
-  }.property('hostInfo.bootStatus'),
 
   /**
    * Remove selected host

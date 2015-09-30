@@ -17,15 +17,11 @@
  */
 
 var App = require('app');
-var customDatePopup = require('/views/common/custom_date_popup');
 
 App.MainConfigHistoryController = Em.ArrayController.extend(App.TableServerMixin, {
   name: 'mainConfigHistoryController',
 
-  dataSource: App.ServiceConfigVersion.find(),
-  content: function () {
-    return this.get('dataSource').filterProperty('isRequested');
-  }.property('dataSource.@each.isRequested'),
+  content: App.ServiceConfigVersion.find(),
   isPolling: false,
   totalCount: 0,
   filteredCount: 0,
@@ -33,7 +29,7 @@ App.MainConfigHistoryController = Em.ArrayController.extend(App.TableServerMixin
   resetStartIndex: true,
   mockUrl: '/data/configurations/service_versions.json',
   realUrl: function () {
-    return App.apiPrefix + '/clusters/' + App.get('clusterName') + '/configurations/service_config_versions?<parameters>fields=service_config_version,user,group_id,group_name,is_current,createtime,service_name,hosts,service_config_version_note&minimal_response=true';
+    return App.apiPrefix + '/clusters/' + App.get('clusterName') + '/configurations/service_config_versions?<parameters>fields=service_config_version,user,group_id,group_name,is_current,createtime,service_name,hosts,service_config_version_note,is_cluster_compatible,stack_id&minimal_response=true';
   }.property('App.clusterName'),
 
   /**
@@ -102,12 +98,42 @@ App.MainConfigHistoryController = Em.ArrayController.extend(App.TableServerMixin
   ],
 
   modifiedFilter: Em.Object.create({
+    content: [
+      {
+        value: 'Any',
+        label: Em.I18n.t('any')
+      },
+      {
+        value: 'Past 1 hour',
+        label: 'Past 1 hour'
+      },
+      {
+        value: 'Past 1 Day',
+        label: 'Past 1 Day'
+      },
+      {
+        value: 'Past 2 Days',
+        label: 'Past 2 Days'
+      },
+      {
+        value: 'Past 7 Days',
+        label: 'Past 7 Days'
+      },
+      {
+        value: 'Past 14 Days',
+        label: 'Past 14 Days'
+      },
+      {
+        value: 'Past 30 Days',
+        label: 'Past 30 Days'
+      }
+    ],
     optionValue: 'Any',
     filterModified: function () {
       var time = "";
       var curTime = new Date().getTime();
 
-      switch (this.get('optionValue')) {
+      switch (this.get('optionValue.value')) {
         case 'Past 1 hour':
           time = curTime - 3600000;
           break;
@@ -126,21 +152,17 @@ App.MainConfigHistoryController = Em.ArrayController.extend(App.TableServerMixin
         case 'Past 30 Days':
           time = curTime - 2592000000;
           break;
-        case 'Custom':
-        case 'Custom2':
-          customDatePopup.showCustomDatePopup(this, this.get('actualValues'));
-          break;
         case 'Any':
           time = "";
           break;
       }
-      if (this.get('modified') !== "Custom") {
-        this.set("actualValues.startTime", time);
-        this.set("actualValues.endTime", '');
-      }
+      this.set("actualValues", {
+        endTime: '',
+        startTime: time
+      });
     }.observes('optionValue'),
     cancel: function () {
-      this.set('optionValue', 'Any');
+      this.set('optionValue', this.get('content').findProperty('value', 'Any'));
     },
     actualValues: Em.Object.create({
       startTime: "",
@@ -201,6 +223,7 @@ App.MainConfigHistoryController = Em.ArrayController.extend(App.TableServerMixin
       if (queryParams) {
         params = App.router.get('updateController').computeParameters(queryParams);
       }
+      params = (params.length > 0) ? params + "&" : params;
       return this.get('realUrl').replace('<parameters>', params);
     }
   },

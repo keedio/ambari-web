@@ -35,10 +35,61 @@ module.exports = Em.Route.extend({
     route: '/:viewName/:version/:instanceName',
     connectOutlets: function (router, params) {
       // find and set content for `mainViewsDetails` and associated controller
+
+      var href = ['/views', params.viewName, params.version, params.instanceName + "/"].join('/');
+      var viewPath = this.parseViewPath(window.location.href.slice(window.location.href.indexOf('?')));
+      if (viewPath) {
+        var slicedInstanceName = this._getSlicedInstanceName(params.instanceName);
+        if (slicedInstanceName === params.instanceName) {
+          viewPath = '';
+        }
+        href = ['/views', params.viewName, params.version, slicedInstanceName + "/"].join('/');
+        //remove slash from viewPath since href already contains it at the end
+        if (viewPath.charAt(0) === '/') viewPath = viewPath.slice(1);
+      }
+
       router.get('mainViewsController').dataLoading().done(function() {
-        router.get('mainController').connectOutlet('mainViewsDetails', App.router.get('mainViewsController.ambariViews')
-          .findProperty('href', ['/views', params.viewName, params.version, params.instanceName].join('/')));
+        var content = App.router.get('mainViewsController.ambariViews').findProperty('href', href);
+        if (content) content.set('viewPath', viewPath);
+        router.get('mainController').connectOutlet('mainViewsDetails', content);
       });
+    },
+
+    /**
+     * parse the instance name and slice if needed
+     *
+     * @param {string}
+     * @returns {string}
+     * @private
+     */
+    _getSlicedInstanceName: function (instanceName) {
+      if (instanceName.lastIndexOf('?') > -1) {
+        return instanceName.slice(0, instanceName.lastIndexOf('?'));
+      }
+
+      return instanceName;
+    },
+
+    /**
+     * parse internal view path
+     * "viewPath" - used as a key of additional path
+     * Example:
+     *   origin URL: viewName?viewPath=%2Fuser%2Fadmin%2Faddress&foo=bar&count=1
+     * should be translated to
+     *   view path: /user/admin/address?foo=bar&count=1
+     *
+     * @param {string} instanceName
+     * @returns {string}
+     */
+    parseViewPath: function (instanceName) {
+      var path = '';
+      if (instanceName.contains('?')) {
+        path = instanceName.slice(instanceName.indexOf('?'));
+        if (path.contains('viewPath')) {
+          path = decodeURIComponent(path.slice((path.lastIndexOf('?viewPath=') + 10))).replace('&', '?');
+        }
+      }
+      return path;
     }
   })
 });

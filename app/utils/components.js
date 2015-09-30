@@ -18,33 +18,35 @@
 var App = require('app');
 
 module.exports = {
-  installHostComponent: function(hostName, component) {
-    var self = this;
-    var componentName = component.get('componentName');
-    var displayName = component.get('displayName');
-    App.ajax.send({
-      name: 'host.host_component.add_new_component',
-      sender: self,
-      data: {
-        hostName: hostName,
-        component: component,
-        data: JSON.stringify({
-          RequestInfo: {
-            "context": Em.I18n.t('requestInfo.installHostComponent') + " " + displayName
-          },
-          Body: {
-            host_components: [
-              {
-                HostRoles: {
-                  component_name: componentName
+  installHostComponent: function (hostName, component) {
+    var self = this,
+      componentName = component.get('componentName'),
+      displayName = component.get('displayName');
+    this.updateAndCreateServiceComponent(componentName).done(function () {
+      App.ajax.send({
+        name: 'host.host_component.add_new_component',
+        sender: self,
+        data: {
+          hostName: hostName,
+          component: component,
+          data: JSON.stringify({
+            RequestInfo: {
+              "context": Em.I18n.t('requestInfo.installHostComponent') + " " + displayName
+            },
+            Body: {
+              host_components: [
+                {
+                  HostRoles: {
+                    component_name: componentName
+                  }
                 }
-              }
-            ]
-          }
-        })
-      },
-      success: 'addNewComponentSuccessCallback',
-      error: 'ajaxErrorCallback'
+              ]
+            }
+          })
+        },
+        success: 'addNewComponentSuccessCallback',
+        error: 'ajaxErrorCallback'
+      });
     });
   },
 
@@ -149,7 +151,7 @@ module.exports = {
    * @param {Object} opt - options. Allowed options are `hostName`, `installedComponents`, `scope`.
    * @return {Array} - names of missed components
    */
-  checkComponentDependencies: function(componentName, opt) {
+  checkComponentDependencies: function (componentName, opt) {
     opt = opt || {};
     opt.scope = opt.scope || '*';
     var installedComponents;
@@ -166,9 +168,54 @@ module.exports = {
         installedComponents = opt.installedComponents || App.HostComponent.find().mapProperty('componentName').uniq();
         break;
     }
-    return dependencies.filter(function(dependency) {
+    return dependencies.filter(function (dependency) {
       return !installedComponents.contains(dependency.componentName);
     }).mapProperty('componentName');
-  }
+  },
 
+  /**
+   *
+   * @param componentName
+   * @returns {*}
+   */
+  updateAndCreateServiceComponent: function (componentName) {
+    var self = this;
+    var dfd = $.Deferred();
+    var updater =  App.router.get('updateController');
+    updater.updateComponentsState(function () {
+      updater.updateServiceMetric(function () {
+        self.createServiceComponent(componentName, dfd);
+      });
+    });
+    return dfd.promise();
+  },
+
+  /**
+   *
+   * @param componentName
+   * @param dfd
+   * @returns {*}
+   */
+  createServiceComponent: function (componentName, dfd) {
+    var allServiceComponents = [];
+    var services = App.Service.find().mapProperty('serviceName');
+    services.forEach(function (_service) {
+      var _serviceComponents = App.Service.find(_service).get('serviceComponents');
+      allServiceComponents = allServiceComponents.concat(_serviceComponents);
+    }, this);
+    if (allServiceComponents.contains(componentName)) {
+      dfd.resolve();
+    } else {
+      App.ajax.send({
+        name: 'common.create_component',
+        sender: this,
+        data: {
+          componentName: componentName,
+          serviceName: App.StackServiceComponent.find().findProperty('componentName', componentName).get('serviceName')
+        }
+      }).complete(function () {
+        dfd.resolve();
+      });
+    }
+  }
 };

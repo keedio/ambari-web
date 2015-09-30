@@ -17,14 +17,14 @@
 }}
 
 {{#if view.supportsHostOverrides}}
-  <div class="alert alert-info">
+  <div class="alert alert-info config-manage-nav">
     {{t common.group}}&nbsp;
-	  <span class="btn-group">
-		  <button {{bindAttr disabled="controller.isHostsConfigsPage"}} class="btn">{{selectedConfigGroup.displayNameHosts}}</button>
+	  <span class="btn-group config-groups-dropdown">
+		  <button {{bindAttr disabled="controller.isHostsConfigsPage"}} class="btn dropdown-toggle first" data-toggle="dropdown">{{selectedConfigGroup.displayNameHosts}}</button>
 		  <button {{bindAttr disabled="controller.isHostsConfigsPage"}} class="btn dropdown-toggle" data-toggle="dropdown">
         <span class="caret"></span>
       </button>
-		  <ul class="dropdown-menu">
+		  <ul class="dropdown-menu config-groups-dropdown-menu">
         <!-- available config group menu links -->
         {{#each configGroup in configGroups}}
           <li>
@@ -35,21 +35,64 @@
         {{/each}}
       </ul>
 		</span>
-    {{#if App.isAdmin}}
+    {{#isAccessible ADMIN}}
       {{#if controller.isHostsConfigsPage}}
         &nbsp;<a href="#" {{action "switchHostGroup" target="controller"}}>{{t common.change}}</a>
       {{else}}
         <a href="#"  class="link-left-pad" {{action "manageConfigurationGroup" target="controller"}}>{{t services.service.actions.manage_configuration_groups.short}}</a>
       {{/if}}
-    {{/if}}
+    {{/isAccessible}}
     <div class="pull-right">
       {{view App.FilterComboCleanableView filterBinding="view.filter" columnsBinding="view.columns" popoverDescriptionBinding="view.propertyFilterPopover"}}
     </div>
+    <div class="clearfix"></div>
   </div>
 {{/if}}
 
-<div class="accordion">
-  {{#each catView in view.serviceConfigsByCategoryView.childViews}}
-    {{view catView}}
-  {{/each}}
-</div>
+{{#if view.supportsConfigLayout}}
+  <ul class="nav nav-tabs mbm config-tabs">
+    {{#each tab in view.tabs}}
+      <li rel='tooltip' {{bindAttr class="tab.isActive:active tab.isHiddenByFilter:disabled" data-original-title="tab.tooltipMsg"}}>
+        <a href="#" {{action "setActiveTab" tab target="view"}} {{bindAttr data-target="tab.headingClass"}} data-toggle="tab">
+          {{tab.displayName}}
+          {{#if tab.isAdvanced}}
+            {{#if controller.errorsCount}}
+              <span class="badge badge-important">{{controller.errorsCount}}</span>
+            {{/if}}
+          {{else}}
+            {{#if tab.errorsCount}}
+              <span class="badge badge-important">{{tab.errorsCount}}</span>
+            {{/if}}
+          {{/if}}
+        </a>
+      </li>
+    {{/each}}
+  </ul>
+  <div class="tab-content service-config-tab-content">
+    {{#each tab in view.tabs}}
+      <div {{bindAttr class=":tab-pane tab.isActive:active tab.id"}}>
+        {{#if tab.isAdvanced}}
+          <div class="accordion">
+            {{#each catView in view.serviceConfigsByCategoryView.childViews}}
+              {{view catView}}
+            {{/each}}
+          </div>
+        {{else}}
+          {{! Render Enhanced Config Section }}
+          {{view App.ServiceConfigLayoutTabView contentBinding="tab"}}
+        {{/if}}
+      </div>
+    {{/each}}
+  </div>
+{{else}}
+  <div class="accordion">
+    {{#each catView in view.serviceConfigsByCategoryView.childViews}}
+      {{view catView}}
+    {{/each}}
+  </div>
+{{/if}}
+{{#if view.isAllConfigsHidden}}
+  <div class="alert alert-info col-sm-12">
+    {{t services.service.config.nothing.to.display}}
+  </div>
+{{/if}}

@@ -63,6 +63,9 @@ describe('string_utils', function () {
       {m: '1.2.1 higher than 1.2', v1:'1.2.1', v2:'1.2', e: 1},
       {m: '11.2 higher than 2.2', v1:'11.2', v2:'2.2', e: 1},
       {m: '0.9 higher than 0.8', v1:'0.9', v2:'0.8', e: 1},
+      {m: '1.1-2  equal to 1.1-2 ', v1:'1.1-2', v2:'1.1-2', e: 0},
+      {m: '1.1-2 higher than 1.1-1', v1:'1.1-2', v2:'1.1-1', e: 1},
+      {m: '1.1-4 lower than 1.1-46', v1:'1.1-4', v2:'1.1-46', e: -1},
       {m: 'return false if no string passed', v1: '0.9', e: -1}
     ];
     tests.forEach(function(test) {
@@ -235,6 +238,20 @@ describe('string_utils', function () {
     tests.forEach(function(test) {
       it(test.key + ' @ ' + test.index + ' = ' + test.e, function () {
         expect(test.key.findIn(test.obj, test.index)).to.equal(test.e);
+      });
+    });
+  });
+
+  describe("#htmlEntities()", function() {
+    var tests = [
+      {t: undefined, e: ''},
+      {t: '', e: ''},
+      {t: 'abc', e: 'abc'},
+      {t: 'abc<script>abc', e: 'abc&lt;script&gt;abc'}
+    ];
+    tests.forEach(function(test) {
+      it('Check ' + typeof test.t, function () {
+        expect(string_utils.htmlEntities(test.t)).to.equal(test.e);
       });
     });
   });

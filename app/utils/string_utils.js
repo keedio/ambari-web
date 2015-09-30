@@ -82,35 +82,35 @@ module.exports = {
    * @param second {string}
    * @return {number}
    */
-  compareVersions: function(first, second){
+  compareVersions: function (first, second) {
     if (!(typeof first === 'string' && typeof second === 'string')) {
       return -1;
     }
     if (first === '' || second === '') {
       return -1;
     }
-    var firstNumbers = first.split('.');
-    var secondNumbers = second.split('.');
+    var firstNumbers = first.split(/[\.-]/);
+    var secondNumbers = second.split(/[\.-]/);
     var length = 0;
     var i = 0;
     var result = false;
-    if(firstNumbers.length === secondNumbers.length) {
+    if (firstNumbers.length === secondNumbers.length) {
       length = firstNumbers.length;
-    } else if(firstNumbers.length < secondNumbers.length){
+    } else if (firstNumbers.length < secondNumbers.length) {
       length = secondNumbers.length;
     } else {
       length = firstNumbers.length;
     }
 
-    while(i < length && !result){
+    while (i < length && !result) {
       firstNumbers[i] = (firstNumbers[i] === undefined) ? 0 : window.parseInt(firstNumbers[i]);
       secondNumbers[i] = (secondNumbers[i] === undefined) ? 0 : window.parseInt(secondNumbers[i]);
-      if(firstNumbers[i] > secondNumbers[i]){
+      if (firstNumbers[i] > secondNumbers[i]) {
         result = 1;
         break;
-      } else if(firstNumbers[i] === secondNumbers[i]){
+      } else if (firstNumbers[i] === secondNumbers[i]) {
         result = 0;
-      } else if(firstNumbers[i] < secondNumbers[i]){
+      } else if (firstNumbers[i] < secondNumbers[i]) {
         result = -1;
         break;
       }
@@ -167,10 +167,12 @@ module.exports = {
    * var arr = [ambari, bigdata, hadoop]
    * getFormattedStringFromArray(arr);  // ambari, bigdata and hadoop
    * @param array {Array}  Array of elements
+   * @param [endSeparator=Em.I18n.t('and')] {String}
    * @returns {String}
    */
-  getFormattedStringFromArray: function (array) {
+  getFormattedStringFromArray: function (array, endSeparator) {
     var label = '';
+    endSeparator = endSeparator || Em.I18n.t('and');
     array.forEach(function (_arrElement) {
       if (array.length === 1) {
         label = _arrElement;
@@ -183,7 +185,7 @@ module.exports = {
           }
         }
         else {
-          label = label + ' ' + Em.I18n.t('and') + ' ' + _arrElement;
+          label = label + ' ' + endSeparator + ' ' + _arrElement;
         }
       }
     }, this);
@@ -204,5 +206,25 @@ module.exports = {
       return plural;
     }
     return singular;
+  },
+
+  /**
+   * decode html entities
+   * @param {string} string
+   * @returns {string}
+   */
+  htmlEntities: function (string) {
+    if (typeof string !== 'string') return "";
+    return $("<div/>").text(string).html();
+  },
+
+  /**
+   * Escaping user input to be treated as a literal string within a regular expression
+   * get from https://developer.mozilla.org/en/docs/Web/JavaScript/Guide/Regular_Expressions
+   * @param {string} str
+   * @returns {*}
+   */
+  escapeRegExp: function (str) {
+    return str.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
   }
 };

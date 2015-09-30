@@ -20,10 +20,11 @@
 var App = require('app');
 require('models/host');
 
-App.WizardController = Em.Controller.extend(App.LocalStorage, {
+App.WizardController = Em.Controller.extend(App.LocalStorage, App.ThemesMappingMixin, {
 
   isStepDisabled: null,
 
+  previousStep: 0,
   /**
    * map of actions which load data required by which step
    * used by <code>loadAllPriorSteps</code>
@@ -42,22 +43,62 @@ App.WizardController = Em.Controller.extend(App.LocalStorage, {
     'allHostNames',
     'installOptions',
     'allHostNamesPattern',
-    'serviceComponents'
+    'serviceComponents',
+    'fileNamesToUpdate'
+  ],
+
+  sensibleConfigs: [
+    { name: 'admin_principal', filename: 'krb5-conf.xml'},
+    { name: 'admin_password',  filename: 'krb5-conf.xml' }
   ],
 
   init: function () {
-    this.set('isStepDisabled', []);
     this.clusters = App.Cluster.find();
-    this.get('isStepDisabled').pushObject(Ember.Object.create({
-      step: 1,
-      value: false
-    }));
-    for (var i = 2; i <= this.get('totalSteps'); i++) {
-      this.get('isStepDisabled').pushObject(Ember.Object.create({
-        step: i,
-        value: true
+    this.setIsStepDisabled();
+  },
+
+  connectOutlet:function(name, context) {
+    if (name !== 'loading') this.set('isStepDisabled.isLocked', false);
+    return this._super.apply(this,arguments);
+  },
+
+  /**
+   * Set <code>isStepDisabled</code> with list of available steps (basing on <code>totalSteps</code>)
+   * @method setIsStepDisabled
+   */
+  setIsStepDisabled: function () {
+      this.set('isStepDisabled', Ember.ArrayProxy.create({
+        content:[],
+        isLocked:true,
+        objectAtContent: function(idx) {
+            var obj = this.get('content').objectAt(idx);
+            if (obj && !obj.hasOwnProperty('isLocked')) {
+              obj.reopen({
+                isLocked:true,
+                get:function (key) {
+                  return (key === 'value' && this.get('isLocked')) || this._super.apply(this,arguments);
+                },
+                notifyValues:function () {
+                  this.notifyPropertyChange('value');
+                }.observes('isLocked')
+              });
+            }
+            return obj;
+        },
+        toggleLock:function () {
+          this.setEach('isLocked',this.get('isLocked'));
+        }.observes('isLocked')
       }));
-    }
+      this.get('isStepDisabled').pushObject(Em.Object.create({
+        step: 1,
+        value: false
+      }));
+      for (var i = 2; i <= this.get('totalSteps'); i++) {
+        this.get('isStepDisabled').pushObject(Em.Object.create({
+          step: i,
+          value: true
+        }));
+      }
   },
 
   slaveComponents: function () {
@@ -114,6 +155,14 @@ App.WizardController = Em.Controller.extend(App.LocalStorage, {
     }
   }.observes('currentStep'),
 
+  /**
+   * Enable step link in left nav menu
+   * @param step - step number
+   */
+  enableStep: function (step) {
+    this.get('isStepDisabled').findProperty('step', step).set('value', false);
+  },
+
   setLowerStepsDisable: function (stepNo) {
     for (var i = 1; i < stepNo; i++) {
       var step = this.get('isStepDisabled').findProperty('step', i);
@@ -138,6 +187,7 @@ App.WizardController = Em.Controller.extend(App.LocalStorage, {
    * @param completed
    */
   setCurrentStep: function (currentStep, completed) {
+    this.set('previousStep', this.get('currentStep'));
     App.db.setWizardCurrentStep(this.get('name').substr(0, this.get('name').length - 10), currentStep, completed);
     this.set('currentStep', currentStep);
   },
@@ -199,7 +249,7 @@ App.WizardController = Em.Controller.extend(App.LocalStorage, {
         clusterName: this.get('clusterName'),
         clusterState: 'CLUSTER_NOT_CREATED_1',
         wizardControllerName: 'installerController',
-        localdb: App.db.data
+        localdb: {}
       });
     }
     if ((this.get('currentStep') - step) > 1 && !disableNaviWarning) {
@@ -281,11 +331,13 @@ App.WizardController = Em.Controller.extend(App.LocalStorage, {
    * Remove all data for installOptions step
    */
   clearInstallOptions: function () {
-    var installOptions = jQuery.extend({}, this.get('installOptionsTemplate'));
+    var installOptions = this.getInstallOptions();
     this.set('content.installOptions', installOptions);
-    this.setDBProperty('installOptions', installOptions);
     this.set('content.hosts', {});
-    this.setDBProperty('hosts', {});
+    this.setDBProperties({
+      installOptions: installOptions,
+      hosts: {}
+    });
   },
 
   toObject: function (object) {
@@ -296,6 +348,30 @@ App.WizardController = Em.Controller.extend(App.LocalStorage, {
       }
     }
     return result;
+  },
+
+  /**
+   * Convert any object or array to pure JS instance without inherit properties
+   * It is used to convert Ember.Object to pure JS Object and Ember.Array to pure JS Array
+   * @param originalInstance
+   * @returns {*}
+   */
+  toJSInstance: function (originalInstance) {
+    var convertedInstance = originalInstance;
+    if (Em.isArray(originalInstance)) {
+      convertedInstance = [];
+      originalInstance.forEach(function (element) {
+        convertedInstance.push(this.toJSInstance(element));
+      }, this)
+    } else if (originalInstance && typeof originalInstance === 'object') {
+      convertedInstance = {};
+      for (var property in originalInstance) {
+        if (originalInstance.hasOwnProperty(property)) {
+          convertedInstance[property] = this.toJSInstance(originalInstance[property]);
+        }
+      }
+    }
+    return convertedInstance
   },
 
   /**
@@ -327,15 +403,20 @@ App.WizardController = Em.Controller.extend(App.LocalStorage, {
       data = {
         context: Em.I18n.t('requestInfo.installComponents'),
         HostRoles: {"state": "INSTALLED"},
-        urlParams: "HostRoles/state=INSTALLED"
-      }
+        urlParams: "HostRoles/desired_state=INSTALLED"
+      };
     } else {
       data = {
         context: Em.I18n.t('requestInfo.installServices'),
         ServiceInfo: {"state": "INSTALLED"},
         urlParams: "ServiceInfo/state=INIT"
-      }
+      };
     }
+
+    var clusterStatus = {
+      status: 'PENDING'
+    };
+    this.saveClusterStatus(clusterStatus);
 
     App.ajax.send({
       name: isRetry ? 'common.host_components.update' : 'common.services.update',
@@ -472,9 +553,9 @@ App.WizardController = Em.Controller.extend(App.LocalStorage, {
   },
 
   save: function (name) {
-    var value = this.toObject(this.get('content.' + name));
-    this.setDBProperty(name, value);
-    console.log(this.get('name') + ": saved " + name, value);
+    var convertedValue = this.toJSInstance(this.get('content.' + name));
+    this.setDBProperty(name, convertedValue);
+    console.log(this.get('name') + ": saved " + name, convertedValue);
   },
 
   clear: function () {
@@ -498,9 +579,15 @@ App.WizardController = Em.Controller.extend(App.LocalStorage, {
   },
 
   clearStorageData: function () {
+    var hash = {};
     this.get('dbPropertiesToClean').forEach(function (key) {
-      this.setDBProperty(key, undefined);
+      hash[key] = undefined;
     }, this);
+    this.setDBProperties(hash);
+  },
+
+  getInstallOptions: function() {
+    return jQuery.extend({}, App.get('isHadoopWindowsStack') ? this.get('installWindowsOptionsTemplate') : this.get('installOptionsTemplate'));
   },
 
   installOptionsTemplate: {
@@ -511,7 +598,20 @@ App.WizardController = Em.Controller.extend(App.LocalStorage, {
     localRepo: false, //true, false
     sshKey: "", //string
     bootRequestId: null, //string
-    sshUser: "root" //string
+    sshUser: "root", //string
+    agentUser: "root" //string
+  },
+
+  installWindowsOptionsTemplate: {
+    hostNames: "", //string
+    manualInstall: false, //true, false
+    useSsh: true, //bool
+    javaHome: App.defaultJavaHome, //string
+    localRepo: false, //true, false
+    sshKey: "", //string
+    bootRequestId: null, //string
+    sshUser: "", //string
+    agentUser: "" //string
   },
 
   loadedServiceComponents: null,
@@ -526,8 +626,7 @@ App.WizardController = Em.Controller.extend(App.LocalStorage, {
       sender: this,
       data: {
         stackUrl: App.get('stackVersionURL'),
-        stackVersion: App.get('currentStackVersionNumber'),
-        async: false
+        stackVersion: App.get('currentStackVersionNumber')
       },
       success: 'loadServiceComponentsSuccessCallback',
       error: 'loadServiceComponentsErrorCallback'
@@ -535,8 +634,9 @@ App.WizardController = Em.Controller.extend(App.LocalStorage, {
   },
 
   loadServiceComponentsSuccessCallback: function (jsonData) {
-    var savedSelectedServices = this.getDBProperty('selectedServiceNames');
-    var savedInstalledServices = this.getDBProperty('installedServiceNames');
+    var props = this.getDBProperties(['selectedServiceNames', 'installedServiceNames']);
+    var savedSelectedServices = props.selectedServiceNames;
+    var savedInstalledServices = props.installedServiceNames;
     this.set('content.selectedServiceNames', savedSelectedServices);
     this.set('content.installedServiceNames', savedInstalledServices);
     if (!savedSelectedServices) {
@@ -578,8 +678,9 @@ App.WizardController = Em.Controller.extend(App.LocalStorage, {
    * Load config groups from local DB
    */
   loadServiceConfigGroups: function () {
-    var serviceConfigGroups = this.getDBProperty('serviceConfigGroups'),
-      hosts = this.getDBProperty('hosts'),
+    var props = this.getDBProperties(['serviceConfigGroups', 'hosts']);
+    var serviceConfigGroups = props.serviceConfigGroups,
+      hosts = props.hosts || {},
       host_names = Em.keys(hosts);
     if (Em.isNone(serviceConfigGroups)) {
       serviceConfigGroups = [];
@@ -686,13 +787,13 @@ App.WizardController = Em.Controller.extend(App.LocalStorage, {
 
     hosts.forEach(function (host) {
 
-      var checkboxes = host.get('checkboxes');
+      var checkboxes = host.checkboxes;
       headers.forEach(function (header) {
         var cb = checkboxes.findProperty('title', header.get('label'));
-        if (cb.get('checked')) {
+        if (cb.checked) {
           formattedHosts.get(header.get('name')).push({
             group: 'Default',
-            isInstalled: cb.get('isInstalled'),
+            isInstalled: cb.isInstalled,
             host_id: dbHosts[host.hostName].id
           });
         }
@@ -770,49 +871,6 @@ App.WizardController = Em.Controller.extend(App.LocalStorage, {
   },
 
   /**
-   * load advanced configs from server
-   */
-  loadAdvancedConfigs: function (dependentController) {
-    var self = this;
-    var loadServiceConfigsFn = function(clusterProperties) {
-      var stackServices = self.get('content.services').filter(function (service) {
-        return service.get('isInstalled') || service.get('isSelected');
-      });
-      var counter = stackServices.length;
-      var loadAdvancedConfigResult = [];
-      dependentController.set('isAdvancedConfigLoaded', false);
-      stackServices.forEach(function (service) {
-        var serviceName = service.get('serviceName');
-        App.config.loadAdvancedConfig(serviceName, function (properties) {
-          var supportsFinal = App.config.getConfigTypesInfoFromService(service).supportsFinal;
-
-          function shouldSupportFinal(filename) {
-            var matchingConfigType = supportsFinal.find(function (configType) {
-              return filename.startsWith(configType);
-            });
-            return !!matchingConfigType;
-          }
-
-          properties.forEach(function (property) {
-            property.supportsFinal = shouldSupportFinal(property.filename);
-          });
-          loadAdvancedConfigResult.pushObjects(properties);
-          counter--;
-          //pass configs to controller after last call is completed
-          if (counter === 0) {
-            loadAdvancedConfigResult.pushObjects(clusterProperties);
-            self.set('content.advancedServiceConfig', loadAdvancedConfigResult);
-            self.setDBProperty('advancedServiceConfig', loadAdvancedConfigResult);
-            dependentController.set('isAdvancedConfigLoaded', true);
-          }
-        });
-      }, this);
-    };
-    App.config.loadClusterConfig(loadServiceConfigsFn);
-  },
-
-
-  /**
    * Load serviceConfigProperties to model
    */
   loadServiceConfigProperties: function () {
@@ -826,43 +884,39 @@ App.WizardController = Em.Controller.extend(App.LocalStorage, {
    */
   saveServiceConfigProperties: function (stepController) {
     var serviceConfigProperties = [];
-    var fileNamesToUpdate = [];
+    var fileNamesToUpdate = this.getDBProperty('fileNamesToUpdate') || [];
+    var installedServiceNames = stepController.get('installedServiceNames') || [];
+    var installedServiceNamesMap = {};
+    var notAllowed = ['masterHost', 'masterHosts', 'slaveHosts', 'slaveHost'];
+    installedServiceNames.forEach(function(name) {
+      installedServiceNamesMap[name] = true;
+    });
     stepController.get('stepConfigs').forEach(function (_content) {
 
-      if (_content.serviceName === 'YARN' && !App.supports.capacitySchedulerUi) {
+      if (_content.serviceName === 'YARN') {
         _content.set('configs', App.config.textareaIntoFileConfigs(_content.get('configs'), 'capacity-scheduler.xml'));
       }
-
       _content.get('configs').forEach(function (_configProperties) {
-        var configProperty = {
-          id: _configProperties.get('id'),
-          name: _configProperties.get('name'),
-          value: _configProperties.get('value'),
-          defaultValue: _configProperties.get('defaultValue'),
-          description: _configProperties.get('description'),
-          serviceName: _configProperties.get('serviceName'),
-          domain: _configProperties.get('domain'),
-          isVisible: _configProperties.get('isVisible'),
-          isFinal: _configProperties.get('isFinal'),
-          defaultIsFinal: _configProperties.get('isFinal'),
-          supportsFinal: _configProperties.get('supportsFinal'),
-          filename: _configProperties.get('filename'),
-          displayType: _configProperties.get('displayType'),
-          isRequiredByAgent: _configProperties.get('isRequiredByAgent'),
-          hasInitialValue: !!_configProperties.get('hasInitialValue'),
-          isRequired: _configProperties.get('isRequired'), // flag that allow saving property with empty value
-          group: !!_configProperties.get('group') ? _configProperties.get('group.name') : null,
-          showLabel: _configProperties.get('showLabel')
-        };
+        var configProperty = App.config.createDefaultConfig(
+          _configProperties.get('name'),
+          _configProperties.get('serviceName'),
+          _configProperties.get('filename'),
+          _configProperties.get('isUserProperty'),
+          {value: _configProperties.get('value')}
+        );
+        configProperty = App.config.mergeStaticProperties(configProperty, _configProperties, ['name', 'filename']);
+
+        if (this.isExcludedConfig(configProperty)) {
+          configProperty.value = '';
+        }
         serviceConfigProperties.push(configProperty);
       }, this);
       // check for configs that need to update for installed services
-      if (stepController.get('installedServiceNames') && stepController.get('installedServiceNames').contains(_content.get('serviceName'))) {
+      if (installedServiceNamesMap[_content.get('serviceName')]) {
         // get only modified configs
         var configs = _content.get('configs').filter(function (config) {
-          if (config.get('isNotDefaultValue') || (config.get('defaultValue') === null)) {
-            var notAllowed = ['masterHost', 'masterHosts', 'slaveHosts', 'slaveHost'];
-            return !notAllowed.contains(config.get('displayType')) && !!config.filename;
+          if (config.get('isNotDefaultValue') || (config.get('savedValue') === null)) {
+            return !notAllowed.contains(config.get('displayType')) && !!config.filename && config.isRequiredByAgent!== false;
           }
           return false;
         });
@@ -870,18 +924,20 @@ App.WizardController = Em.Controller.extend(App.LocalStorage, {
         if (configs.length) {
           fileNamesToUpdate = fileNamesToUpdate.concat(configs.mapProperty('filename').uniq());
         }
-        // watch for properties that are not modified but have to be updated
-        if (_content.get('configs').someProperty('forceUpdate')) {
-          // check for already added modified properties
-          var forceUpdatedFileNames = _content.get('configs').filterProperty('forceUpdate', true).mapProperty('filename').uniq();
-          fileNamesToUpdate = fileNamesToUpdate.concat(forceUpdatedFileNames).uniq();
-        }
       }
     }, this);
-    this.setDBProperty('serviceConfigProperties', serviceConfigProperties);
+    this.setDBProperties({
+      fileNamesToUpdate: fileNamesToUpdate,
+      serviceConfigProperties: serviceConfigProperties
+    });
     this.set('content.serviceConfigProperties', serviceConfigProperties);
-    this.setDBProperty('fileNamesToUpdate', fileNamesToUpdate);
   },
+
+  isExcludedConfig: function (configProperty) {
+    return this.get('sensibleConfigs').mapProperty('name').indexOf(configProperty.name) > -1
+      && this.get('sensibleConfigs').mapProperty('filename').indexOf(configProperty.filename) > -1;
+  },
+
   /**
    * save Config groups
    * @param stepController
@@ -911,13 +967,17 @@ App.WizardController = Em.Controller.extend(App.LocalStorage, {
           id: configGroup.get('id'),
           name: configGroup.get('name'),
           description: configGroup.get('description'),
-          hosts: hostNames,
-          publicHosts: configGroup.get('hosts').map(function(hostName) {return App.router.get('manageConfigGroupsController').hostsToPublic(hostName); }),
-          properties: properties,
-          isDefault: configGroup.get('isDefault'),
-          isForInstalledService: isForInstalledService,
-          isForUpdate: configGroup.isForUpdate || configGroup.get('hash') != this.getConfigGroupHash(configGroup, hostNames),
-          service: {id: configGroup.get('service.id')}
+          hosts: hostNames.slice(),
+          properties: properties.slice(),
+          is_default: configGroup.get('isDefault'),
+          is_for_installed_service: isForInstalledService,
+          is_for_update: configGroup.isForUpdate || configGroup.get('hash') != this.getConfigGroupHash(configGroup, hostNames),
+          service_name: configGroup.get('serviceName'),
+          service_id: configGroup.get('serviceName'),
+          desired_configs: configGroup.get('desiredConfigs'),
+          config_group_id: configGroup.get('configGroupId'),
+          child_config_groups: configGroup.get('childConfigGroups') ? configGroup.get('childConfigGroups').mapProperty('id') : [],
+          parent_config_group_id: configGroup.get('parentConfigGroup.id')
         });
       }, this)
     }, this);
@@ -1025,6 +1085,32 @@ App.WizardController = Em.Controller.extend(App.LocalStorage, {
     }
     this.set("content.masterComponentHosts", masterComponentHosts);
   },
+
+  /**
+   * Save Master Component Hosts data to Main Controller
+   * @param stepController App.WizardStep5Controller
+   */
+  saveMasterComponentHosts: function (stepController) {
+    var obj = stepController.get('selectedServicesMasters');
+    var masterComponentHosts = [];
+    obj.forEach(function (_component) {
+      masterComponentHosts.push({
+        display_name: _component.get('display_name'),
+        component: _component.get('component_name'),
+        hostName: _component.get('selectedHost'),
+        serviceId: _component.get('serviceId'),
+        isInstalled:  _component.get('isInstalled')
+      });
+    });
+    this.setDBProperty('masterComponentHosts', masterComponentHosts);
+    this.set('content.masterComponentHosts', masterComponentHosts);
+  },
+
+  clearMasterComponentHosts: function() {
+    this.set('content.masterComponentHosts', null);
+    this.setDBProperty('masterComponentHosts', null);
+  },
+
   /**
    * Load information about hosts with clients components
    */
@@ -1108,5 +1194,170 @@ App.WizardController = Em.Controller.extend(App.LocalStorage, {
     if (hosts) {
       this.set('content.hosts', hosts);
     }
+  },
+
+  loadHosts: function () {
+    var dfd;
+    var hostsInDb = this.getDBProperty('hosts');
+    if (hostsInDb) {
+      this.set('content.hosts', hostsInDb);
+      dfd = $.Deferred();
+      dfd.resolve();
+    } else {
+      dfd = App.ajax.send({
+        name: 'hosts.confirmed',
+        sender: this,
+        data: {},
+        success: 'loadHostsSuccessCallback',
+        error: 'loadHostsErrorCallback'
+      });
+    }
+    return dfd.promise();
+  },
+
+  loadHostsSuccessCallback: function (response) {
+    var installedHosts = {};
+
+    response.items.forEach(function (item, indx) {
+      installedHosts[item.Hosts.host_name] = {
+        name: item.Hosts.host_name,
+        cpu: item.Hosts.cpu_count,
+        memory: item.Hosts.total_mem,
+        disk_info: item.Hosts.disk_info,
+        osType: item.Hosts.os_type,
+        osArch: item.Hosts.os_arch,
+        ip: item.Hosts.ip,
+        bootStatus: "REGISTERED",
+        isInstalled: true,
+        hostComponents: item.host_components,
+        id: indx++
+      };
+    });
+    this.setDBProperty('hosts', installedHosts);
+    this.set('content.hosts', installedHosts);
+  },
+
+  loadHostsErrorCallback: function (jqXHR, ajaxOptions, error, opt) {
+    App.ajax.defaultErrorHandler(jqXHR, opt.url, opt.method, jqXHR.status);
+    console.log('Loading hosts failed');
+  },
+
+  /**
+   * Determine if <code>Assign Slaves and Clients</code> step should be skipped
+   * @method setSkipSlavesStep
+   * @param services
+   * @param step
+   */
+  setSkipSlavesStep: function (services, step) {
+    var hasServicesWithSlave = services.someProperty('hasSlave');
+    var hasServicesWithClient = services.someProperty('hasClient');
+    var hasServicesWithCustomAssignedNonMasters = services.someProperty('hasNonMastersWithCustomAssignment');
+    this.set('content.skipSlavesStep', !hasServicesWithSlave && !hasServicesWithClient || !hasServicesWithCustomAssignedNonMasters);
+    if (this.get('content.skipSlavesStep')) {
+      this.get('isStepDisabled').findProperty('step', step).set('value', this.get('content.skipSlavesStep'));
+    }
+  },
+
+  /**
+   * Load config themes for enhanced config layout.
+   *
+   * @method loadConfigThemes
+   * @return {$.Deferred}
+   */
+  loadConfigThemes: function () {
+    var self = this;
+    var dfd = $.Deferred();
+    if (!this.get('stackConfigsLoaded')) {
+      var serviceNames = App.StackService.find().filter(function (s) {
+        return s.get('isSelected') || s.get('isInstalled');
+      }).mapProperty('serviceName');
+      // Load stack configs before loading themes
+      App.config.loadClusterConfigsFromStack().always(function() {
+        App.config.loadConfigsFromStack(serviceNames).done(function () {
+          if (App.get('isClusterSupportsEnhancedConfigs')) {
+            self.loadConfigThemeForServices(serviceNames).always(function () {
+              self.set('stackConfigsLoaded', true);
+              App.themesMapper.generateAdvancedTabs(serviceNames);
+              dfd.resolve();
+            });
+          } else {
+            self.set('stackConfigsLoaded', true);
+            dfd.resolve();
+          }
+        });
+      });
+    }
+    else {
+      dfd.resolve();
+      this.set('stackConfigsLoaded', true);
+    }
+    return dfd.promise();
+  },
+
+  /**
+   * Cache "stepConfigs" to local storage in name value pairs
+   * @param stepController
+   */
+  cacheStepConfigValues: function(stepController) {
+    var self = this;
+    var stepConfigs = [];
+    stepController.get("stepConfigs").forEach(function (category) {
+      var configs = category.configs.map(function(config) {
+        if (self.isExcludedConfig(config)) {
+          config.set('value', '');
+        }
+        return {
+          name: config.name,
+          filename: config.filename,
+          value: config.value
+        };
+      });
+      stepConfigs = stepConfigs.concat(configs);
+    });
+    if (stepConfigs.length > 0 ) {
+      this.setDBProperty(stepController.name + "-sc", stepConfigs);
+    }
+  },
+
+  loadCachedStepConfigValues: function(stepController) {
+    return this.getDBProperty(stepController.name + "-sc");
+  },
+
+  clearCachedStepConfigValues: function(stepController) {
+    this.setDBProperty(stepController.name + "-sc", null);
+  },
+
+  saveTasksStatuses: function (tasksStatuses) {
+    this.set('content.tasksStatuses', tasksStatuses);
+    this.setDBProperty('tasksStatuses', tasksStatuses);
+  },
+
+  loadTasksStatuses: function() {
+    var tasksStatuses = this.getDBProperty('tasksStatuses');
+    this.set('content.tasksStatuses', tasksStatuses);
+  },
+
+  saveTasksRequestIds: function (tasksRequestIds) {
+    this.set('content.tasksRequestIds', tasksRequestIds);
+    this.setDBProperty('tasksRequestIds', tasksRequestIds);
+  },
+
+  loadTasksRequestIds: function() {
+    var tasksRequestIds = this.getDBProperty('tasksRequestIds');
+    this.set('content.tasksRequestIds', tasksRequestIds);
+  },
+
+  saveRequestIds: function (requestIds) {
+    this.set('content.requestIds', requestIds);
+    this.setDBProperty('requestIds', requestIds);
+  },
+
+  loadRequestIds: function() {
+    var requestIds = this.getDBProperty('requestIds');
+    this.set('content.requestIds', requestIds);
+  },
+
+  loadRecommendations: function () {
+    this.set("content.recommendations", this.getDBProperty('recommendations'));
   }
 });

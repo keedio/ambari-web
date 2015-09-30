@@ -43,31 +43,34 @@ App.MainDashboardServiceHdfsView = App.MainDashboardServiceView.extend({
     },
     templateName: require('templates/main/service/info/summary/master_components'),
     mastersComp: function() {
-      if (App.get('isHaEnabled')) {
-        // return all Namenodes followed by its ZKFC
-        var namenodes = this.get('parentView.service.hostComponents').filter(function(comp){
-          return comp.get('isMaster') && comp.get('componentName') !== 'JOURNALNODE';
-        });
-        var zkfcs = this.get('parentView.service.hostComponents').filter(function(comp){
-          return comp.get('componentName') == 'ZKFC';
-        });
-        var nnZkfc = [];
-        namenodes.forEach( function(namenode) {
-          nnZkfc.push(namenode);
-          nnZkfc.push(zkfcs.findProperty('host.publicHostName', namenode.get('host.publicHostName')).set('isZkfc', true));
-        });
-        return nnZkfc;
-      } else {
-        return this.get('parentView.service.hostComponents').filter(function(comp){
-          return comp.get('isMaster') && comp.get('componentName') !== 'JOURNALNODE';
-        });
-      }
-    }.property('parentView.service.hostComponents')
+      var masterComponents = [];
+      var zkfcs = this.get('parentView.service.hostComponents').filterProperty('componentName', 'ZKFC');
+
+      this.get('parentView.service.hostComponents').forEach(function (comp) {
+        if (comp.get('isMaster') && comp.get('componentName') !== 'JOURNALNODE') {
+          masterComponents.push(comp);
+          var zkfc = zkfcs.findProperty('hostName', comp.get('hostName'));
+          if (zkfc) {
+            zkfc.set('isSubComponent', true);
+            masterComponents.push(zkfc);
+          }
+        }
+      });
+      return masterComponents;
+    }.property('parentView.service.hostComponents.length'),
+    willDestroyElement: function() {
+      $('[rel=healthTooltip]').tooltip('destroy')
+    }
   }),
 
-  dataNodesLive: function () {
-    return this.get('service.dataNodesStarted');
-  }.property('service.dataNodesStarted'),
+  didInsertElement: function() {
+    App.tooltip($("[rel='tooltip']"));
+  },
+
+  willDestroyElement: function() {
+    $("[rel='tooltip']").tooltip('destroy');
+  },
+
   dataNodesDead: function () {
     return this.get('service.dataNodesInstalled');
   }.property('service.dataNodesInstalled'),
@@ -131,21 +134,6 @@ App.MainDashboardServiceHdfsView = App.MainDashboardServiceView.extend({
       percent.toFixed(1));
   }.property('service.jvmMemoryHeapUsed', 'service.jvmMemoryHeapMax'),
 
-  summaryHeader: function () {
-    var text = this.t("dashboard.services.hdfs.summary");
-    var service = this.get('service');
-    var liveCount = service.get('dataNodesStarted');
-    var totalCount = service.get('dataNodesTotal');
-    var total = service.get('capacityTotal') + 0;
-    var remaining = service.get('capacityRemaining') + 0;
-    var used = total - remaining;
-    var percent = total > 0 ? ((used * 100) / total).toFixed(1) : 0;
-    if (percent == "NaN" || percent < 0) {
-      percent = Em.I18n.t('services.service.summary.notAvailable') + " ";
-    }
-    return text.format(liveCount, totalCount, percent);
-  }.property('service.dataNodesStarted', 'service.dataNodesTotal', 'service.capacityUsed', 'service.capacityTotal'),
-
   dfsUsedDisk: function () {
     var text = this.t("dashboard.services.hdfs.capacityUsed");
     var total = this.get('service.capacityTotal');
@@ -186,6 +174,21 @@ App.MainDashboardServiceHdfsView = App.MainDashboardServiceView.extend({
     //return this.get('service.dataNodes').objectAt(0);
   }.property(),
 
+  nfsGatewayComponent: function () {
+    return Em.Object.create({
+      componentName: 'NFS_GATEWAY'
+    });
+    //return this.get('service.dataNodes').objectAt(0);
+  }.property(),
+
+  /**
+   * Define if NFS_GATEWAY is present in the installed stack
+   * @type {Boolean}
+   */
+  isNfsInStack: function () {
+    return App.StackServiceComponent.find().someProperty('componentName', 'NFS_GATEWAY');
+  }.property(),
+  
   journalNodeComponent: function () {
     return this.get('service.journalNodes').objectAt(0);
   }.property(),
@@ -203,18 +206,19 @@ App.MainDashboardServiceHdfsView = App.MainDashboardServiceView.extend({
   upgradeStatus: function () {
     var upgradeStatus = this.get('service.upgradeStatus');
     var healthStatus = this.get('service.healthStatus');
-    if (upgradeStatus) {
+    if (upgradeStatus == 'true') {
       return Em.I18n.t('services.service.summary.pendingUpgradeStatus.notPending');
-    } else if (healthStatus == 'green') {
+    } else if (upgradeStatus == 'false' && healthStatus == 'green') {
       return Em.I18n.t('services.service.summary.pendingUpgradeStatus.notFinalized');
     } else {
+      // upgrade status == null
       return Em.I18n.t("services.service.summary.notAvailable");
     }
   }.property('service.upgradeStatus', 'service.healthStatus'),
   isUpgradeStatusWarning: function () {
     var upgradeStatus = this.get('service.upgradeStatus');
     var healthStatus = this.get('service.healthStatus');
-    return !upgradeStatus && healthStatus == 'green';
+    return upgradeStatus == 'false' && healthStatus == 'green';
   }.property('service.upgradeStatus', 'service.healthStatus')
 
 });

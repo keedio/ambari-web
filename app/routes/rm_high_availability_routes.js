@@ -21,13 +21,11 @@ var App = require('app');
 module.exports = App.WizardRoute.extend({
   route: '/highAvailability/ResourceManager/enable',
 
-  enter: function (router,transition) {
+  enter: function (router, transition) {
     var rMHighAvailabilityWizardController = router.get('rMHighAvailabilityWizardController');
     rMHighAvailabilityWizardController.dataLoading().done(function () {
       //Set YARN as current service
       App.router.set('mainServiceItemController.content', App.Service.find().findProperty('serviceName', 'YARN'));
-    });
-    Em.run.next(function () {
       App.router.get('updateController').set('isWorking', false);
       var popup = App.ModalPopup.show({
         classNames: ['full-width-modal'],
@@ -40,11 +38,11 @@ module.exports = App.WizardRoute.extend({
         secondary: null,
 
         onClose: function () {
-          var rMHighAvailabilityWizardController = router.get('rMHighAvailabilityWizardController');
-          var currStep = rMHighAvailabilityWizardController.get('currentStep');
+          var rMHighAvailabilityWizardController = router.get('rMHighAvailabilityWizardController'),
+              currStep = rMHighAvailabilityWizardController.get('currentStep'),
+              self = this;
 
           if (parseInt(currStep) === 4) {
-            var self = this;
             App.showConfirmationPopup(function () {
               router.get('updateController').set('isWorking', true);
               rMHighAvailabilityWizardController.finish();
@@ -52,17 +50,29 @@ module.exports = App.WizardRoute.extend({
                 clusterName: App.router.getClusterName(),
                 clusterState: 'DEFAULT',
                 localdb: App.db.data
-              }, {alwaysCallback: function () {
+              }, {
+                alwaysCallback: function () {
+                  self.hide();
+                  router.transitionTo('main.services.index');
+                  location.reload();
+                }
+              });
+            }, Em.I18n.t('admin.rm_highAvailability.closePopup'));
+          } else {
+            router.get('updateController').set('isWorking', true);
+            rMHighAvailabilityWizardController.finish();
+            App.router.get('wizardWatcherController').resetUser();
+            App.clusterStatus.setClusterStatus({
+              clusterName: App.router.getClusterName(),
+              clusterState: 'DEFAULT',
+              localdb: App.db.data
+            }, {
+              alwaysCallback: function () {
                 self.hide();
                 router.transitionTo('main.services.index');
                 location.reload();
-              }});
-            }, Em.I18n.t('admin.rm_highAvailability.closePopup'));
-          } else {
-            this.hide();
-            rMHighAvailabilityWizardController.setCurrentStep('1');
-            router.get('updateController').set('isWorking', true);
-            router.transitionTo('main.services.index');
+              }
+            });
           }
         },
         didInsertElement: function () {
@@ -82,7 +92,10 @@ module.exports = App.WizardRoute.extend({
             break;
         }
       }
-      router.transitionTo('step' + rMHighAvailabilityWizardController.get('currentStep'));
+      Em.run.next(function () {
+        App.router.get('wizardWatcherController').setUser(rMHighAvailabilityWizardController.get('name'));
+        router.transitionTo('step' + rMHighAvailabilityWizardController.get('currentStep'));
+      });
     });
   },
 
@@ -90,8 +103,8 @@ module.exports = App.WizardRoute.extend({
     route: '/step1',
     connectOutlets: function (router) {
       var controller = router.get('rMHighAvailabilityWizardController');
-      controller.setCurrentStep('1');
       controller.dataLoading().done(function () {
+        controller.setCurrentStep('1');
         controller.connectOutlet('rMHighAvailabilityWizardStep1', controller.get('content'));
       })
     },
@@ -99,7 +112,9 @@ module.exports = App.WizardRoute.extend({
       return false;
     },
     next: function (router) {
-      router.get('rMHighAvailabilityWizardController').setDBProperty('rmHosts', undefined);
+      var controller = router.get('rMHighAvailabilityWizardController');
+      controller.setDBProperty('rmHosts', undefined);
+      controller.clearMasterComponentHosts();
       router.transitionTo('step2');
     }
   }),
@@ -108,8 +123,8 @@ module.exports = App.WizardRoute.extend({
     route: '/step2',
     connectOutlets: function (router) {
       var controller = router.get('rMHighAvailabilityWizardController');
-      controller.setCurrentStep('2');
       controller.dataLoading().done(function () {
+        controller.setCurrentStep('2');
         controller.loadAllPriorSteps();
         controller.connectOutlet('rMHighAvailabilityWizardStep2', controller.get('content'));
       })
@@ -120,13 +135,14 @@ module.exports = App.WizardRoute.extend({
     next: function (router) {
       var wizardController = router.get('rMHighAvailabilityWizardController');
       var stepController = router.get('rMHighAvailabilityWizardStep2Controller');
-      var currentRM = stepController.get('servicesMasters').findProperty('isAdditional', false);
-      var additionalRM = stepController.get('servicesMasters').findProperty('isAdditional', true);
+      var currentRM = stepController.get('servicesMasters').filterProperty('component_name', 'RESOURCEMANAGER').findProperty('isInstalled', true);
+      var additionalRM = stepController.get('servicesMasters').filterProperty('component_name', 'RESOURCEMANAGER').findProperty('isInstalled', false);
       var rmHost = {
         currentRM: currentRM.get('selectedHost'),
         additionalRM: additionalRM.get('selectedHost')
       };
       wizardController.saveRmHosts(rmHost);
+      wizardController.saveMasterComponentHosts(stepController);
       router.transitionTo('step3');
     },
     back: function (router) {
@@ -138,8 +154,8 @@ module.exports = App.WizardRoute.extend({
     route: '/step3',
     connectOutlets: function (router) {
       var controller = router.get('rMHighAvailabilityWizardController');
-      controller.setCurrentStep('3');
       controller.dataLoading().done(function () {
+        controller.setCurrentStep('3');
         controller.loadAllPriorSteps();
         controller.connectOutlet('rMHighAvailabilityWizardStep3', controller.get('content'));
       })
@@ -161,9 +177,9 @@ module.exports = App.WizardRoute.extend({
     route: '/step4',
     connectOutlets: function (router) {
       var controller = router.get('rMHighAvailabilityWizardController');
-      controller.setCurrentStep('4');
-      controller.setLowerStepsDisable(4);
       controller.dataLoading().done(function () {
+        controller.setCurrentStep('4');
+        controller.setLowerStepsDisable(4);
         controller.loadAllPriorSteps();
         controller.connectOutlet('rMHighAvailabilityWizardStep4', controller.get('content'));
       })
@@ -189,13 +205,6 @@ module.exports = App.WizardRoute.extend({
         location.reload();
       }});
     }
-  }),
+  })
 
-  gotoStep1: Em.Router.transitionTo('step1'),
-
-  gotoStep2: Em.Router.transitionTo('step2'),
-
-  gotoStep3: Em.Router.transitionTo('step3'),
-
-  gotoStep4: Em.Router.transitionTo('step4')
 });

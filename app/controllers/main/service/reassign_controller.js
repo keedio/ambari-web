@@ -23,7 +23,12 @@ App.ReassignMasterController = App.WizardController.extend({
 
   name: 'reassignMasterController',
 
-  totalSteps: 6,
+  totalSteps: 7,
+
+  /**
+   * @type {string}
+   */
+  displayName: Em.I18n.t('services.reassign.header'),
 
   /**
    * Used for hiding back button in wizard
@@ -55,9 +60,11 @@ App.ReassignMasterController = App.WizardController.extend({
     hdfsUser: "hdfs",
     group: "hadoop",
     reassign: null,
-    componentsWithManualCommands: ['NAMENODE', 'SECONDARY_NAMENODE'],
+    componentsWithManualCommands: ['NAMENODE', 'SECONDARY_NAMENODE', 'OOZIE_SERVER', 'MYSQL_SERVER', 'APP_TIMELINE_SERVER'],
     hasManualSteps: false,
-    securityEnabled: false
+    hasCheckDBStep: false,
+    componentsWithCheckDBStep: ['HIVE_METASTORE', 'HIVE_SERVER', 'OOZIE_SERVER'],
+    componentsWithoutSecurityConfigs: ['MYSQL_SERVER']
   }),
 
   /**
@@ -70,7 +77,6 @@ App.ReassignMasterController = App.WizardController.extend({
     'masterComponentHosts',
     'serviceComponents',
     'masterComponent',
-    'securityEnabled',
     'currentStep',
     'reassignHosts',
     'tasksStatuses',
@@ -79,57 +85,12 @@ App.ReassignMasterController = App.WizardController.extend({
   ],
 
   addManualSteps: function () {
-    this.set('content.hasManualSteps', this.get('content.componentsWithManualCommands').contains(this.get('content.reassign.component_name')) || this.get('content.securityEnabled'));
-  }.observes('content.reassign.component_name', 'content.securityEnabled'),
+    this.set('content.hasManualSteps', this.get('content.componentsWithManualCommands').contains(this.get('content.reassign.component_name')));
+  }.observes('content.reassign.component_name'),
 
-  getSecurityStatus: function () {
-    if (App.get('testMode')) {
-      this.set('securityEnabled', !App.get('testEnableSecurity'));
-    } else {
-      //get Security Status From Server
-      App.ajax.send({
-        name: 'config.tags',
-        sender: this,
-        success: 'getSecurityStatusSuccessCallback',
-        error: 'errorCallback'
-      });
-    }
-  },
-
-  errorCallback: function () {
-    console.error('Cannot get security status from server');
-  },
-
-  getSecurityStatusSuccessCallback: function (data) {
-    var configs = data.Clusters.desired_configs;
-    if ('cluster-env' in configs) {
-      this.getServiceConfigsFromServer(configs['cluster-env'].tag);
-    }
-    else {
-      console.error('Cannot get security status from server');
-    }
-  },
-
-  getServiceConfigsFromServer: function (tag) {
-    var self = this;
-    var tags = [
-      {
-        siteName: "cluster-env",
-        tagName: tag
-      }
-    ];
-    App.router.get('configurationController').getConfigsByTags(tags).done(function (data) {
-      var configs = data.findProperty('tag', tag).properties;
-      var result = configs && (configs['security_enabled'] === 'true' || configs['security_enabled'] === true);
-      self.saveSecurityEnabled(result);
-      App.clusterStatus.setClusterStatus({
-        clusterName: self.get('content.cluster.name'),
-        clusterState: 'DEFAULT',
-        wizardControllerName: 'reassignMasterController',
-        localdb: App.db.data
-      });
-    });
-  },
+  addCheckDBStep: function () {
+    this.set('content.hasCheckDBStep', this.get('content.componentsWithCheckDBStep').contains(this.get('content.reassign.component_name')));
+  }.observes('content.reassign.component_name'),
 
   /**
    * Load tasks statuses for step5 of Reassign Master Wizard to restore installation
@@ -177,6 +138,7 @@ App.ReassignMasterController = App.WizardController.extend({
     });
     App.db.setMasterComponentHosts(masterComponentHosts);
     this.set('content.masterComponentHosts', masterComponentHosts);
+    this.setDBProperty('masterComponentHosts', masterComponentHosts);
   },
 
   loadComponentToReassign: function () {
@@ -242,17 +204,6 @@ App.ReassignMasterController = App.WizardController.extend({
     this.set('content.reassignHosts', reassignHosts);
   },
 
-
-  saveSecurityEnabled: function (securityEnabled) {
-    this.setDBProperty('securityEnabled', securityEnabled);
-    this.set('content.securityEnabled', securityEnabled);
-  },
-
-  loadSecurityEnabled: function () {
-    var securityEnabled = this.getDBProperty('securityEnabled');
-    this.set('content.securityEnabled', securityEnabled);
-  },
-
   saveSecureConfigs: function (secureConfigs) {
     this.setDBProperty('secureConfigs', secureConfigs);
     this.set('content.secureConfigs', secureConfigs);
@@ -263,12 +214,43 @@ App.ReassignMasterController = App.WizardController.extend({
     this.set('content.secureConfigs', secureConfigs);
   },
 
+  saveServiceProperties: function (properties) {
+    this.setDBProperty('serviceProperties', properties);
+    this.set('content.serviceProperties', properties);
+  },
+
+  loadServiceProperties: function () {
+    var serviceProperties = this.getDBProperty('serviceProperties');
+    this.set('content.serviceProperties', serviceProperties);
+  },
+
+  saveDatabaseType: function (type) {
+    this.setDBProperty('databaseType', type);
+    this.set('content.databaseType', type);
+  },
+
+  loadDatabaseType: function () {
+    var databaseType = this.getDBProperty('databaseType');
+    this.set('content.databaseType', databaseType);
+    var component = this.get('content.reassign.component_name');
+
+    if (component === 'OOZIE_SERVER') {
+      if (this.get('content.hasCheckDBStep') && databaseType && databaseType !== 'derby') {
+        // components with manual commands
+        var manual = App.router.reassignMasterController.get('content.componentsWithManualCommands').without('OOZIE_SERVER');
+        App.router.reassignMasterController.set('content.hasManualSteps', false);
+        App.router.reassignMasterController.set('content.componentsWithManualCommands', manual);
+      }
+    }
+  },
+
   /**
    * Load data for all steps until <code>current step</code>
    */
   loadAllPriorSteps: function () {
     var step = this.get('currentStep');
     switch (step) {
+      case '7':
       case '6':
       case '5':
         this.loadSecureConfigs();
@@ -285,6 +267,8 @@ App.ReassignMasterController = App.WizardController.extend({
         this.loadConfirmedHosts();
       case '1':
         this.loadComponentToReassign();
+        this.loadDatabaseType();
+        this.loadServiceProperties();
         this.load('cluster');
     }
   },
@@ -299,11 +283,19 @@ App.ReassignMasterController = App.WizardController.extend({
     this.set('content.cluster', this.getCluster());
   },
 
+  setCurrentStep: function (currentStep, completed) {
+    this._super(currentStep, completed);
+    App.clusterStatus.setClusterStatus({
+      clusterName: this.get('content.cluster.name'),
+      wizardControllerName: 'reassignMasterController',
+      localdb: App.db.data
+    });
+  },
+
   /**
    * Clear all temporary data
    */
   finish: function () {
-    this.setCurrentStep('1');
     this.clearAllSteps();
     this.clearStorageData();
     this.resetDbNamespace();

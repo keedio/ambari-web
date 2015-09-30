@@ -179,6 +179,7 @@ describe('utils/helper', function() {
         var ignored = "DECOMMISSION, NAMENODE";
         var removeString = "SERVICE/HDFS STOP";
         var nagiosState = "nagios_update_ignore ACTIONEXECUTE";
+        var installRepo = "install_packages ACTIONEXECUTE";
         it('should convert command to readable info', function() {
           expect(App.format.commandDetail(command)).to.eql(' Ganglia Monitor Stop');
         });
@@ -190,6 +191,9 @@ describe('utils/helper', function() {
         });
         it('should return maintenance message', function() {
           expect(App.format.commandDetail(nagiosState)).to.eql(' Toggle Maintenance Mode');
+        });
+        it('should return install repo message', function() {
+          expect(App.format.commandDetail(installRepo)).to.eql(Em.I18n.t('common.installRepo.task'));
         });
       });
       describe('#taskStatus()', function(){
@@ -247,10 +251,7 @@ describe('utils/helper', function() {
           'KERBEROS_SERVER': 'Kerberos Server',
           'MAPREDUCE2_CLIENT': 'MapReduce2 Client',
           'MAPREDUCE2_SERVICE_CHECK': 'MapReduce2 Service Check',
-          'MAPREDUCE_CLIENT': 'MapReduce Client',
-          'MAPREDUCE_SERVICE_CHECK': 'MapReduce Service Check',
           'MYSQL_SERVER': 'MySQL Server',
-          'NAGIOS_SERVER': 'Nagios Server',
           'NAMENODE': 'NameNode',
           'NAMENODE_SERVICE_CHECK': 'NameNode Service Check',
           'NIMBUS': 'Nimbus',
@@ -288,6 +289,62 @@ describe('utils/helper', function() {
           })(inputName)
         }
       });
+      describe('#kdcErrorMsg()', function() {
+        var tests = [
+          {
+            r: "1 Missing KDC administrator credentials. and some text",
+            f: "Missing KDC administrator credentials."
+          },
+          {
+            r: "2 Invalid KDC administrator credentials. and some text",
+            f: "Invalid KDC administrator credentials."
+          },
+          {
+            r: "3 Failed to find a KDC for the specified realm - kadmin and some text",
+            f: "Failed to find a KDC for the specified realm - kadmin"
+          },
+          {
+            r: "4 some text",
+            f: null,
+            s: true
+          },
+          {
+            r: "4 some text",
+            f: "4 some text",
+            s: false
+          }
+        ];
+
+        tests.forEach(function(t) {
+          it("kdcErrorMsg for " + t.f + " with strict " + t.s, function() {
+            expect(App.format.kdcErrorMsg(t.r, t.s)).to.be.equal(t.f);
+          })
+        });
+
+      });
+
+      describe("#role()", function() {
+        beforeEach(function () {
+          sinon.stub(App.StackService, 'find').returns([Em.Object.create({
+            id: 'S1',
+            displayName: 's1'
+          })]);
+          sinon.stub(App.StackServiceComponent, 'find').returns([Em.Object.create({
+            id: 'C1',
+            displayName: 'c1'
+          })])
+        });
+        afterEach(function () {
+          App.StackService.find.restore();
+          App.StackServiceComponent.find.restore();
+        });
+        it("", function() {
+          App.format.stackRolesMap = {};
+          expect(App.format.role('S1')).to.equal('s1');
+          expect(App.format.role('C1')).to.equal('c1');
+          expect(App.format.stackRolesMap).to.not.be.empty;
+        });
+      });
     });
   });
   describe('#App.permit()', function() {
@@ -295,7 +352,7 @@ describe('utils/helper', function() {
       a1: 'v1',
       a2: 'v2',
       a3: 'v3'
-    }
+    };
 
     var tests = [
       {

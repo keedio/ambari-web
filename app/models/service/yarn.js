@@ -19,17 +19,17 @@ var App = require('app');
 var objectUtils = require('utils/object_utils');
 
 App.YARNService = App.Service.extend({
-  version: DS.attr('string'),
-  resourceManager: function() {
-    return this.get('hostComponents').findProperty('componentName', 'RESOURCEMANAGER');
+  resourceManager: DS.belongsTo('App.HostComponent'),
+  isRMHaEnabled: function() {
+    return this.get('hostComponents').filterProperty('componentName', 'RESOURCEMANAGER').length > 1;
   }.property('hostComponents'),
-  appTimelineServer: function() {
-    return this.get('hostComponents').findProperty('componentName', 'APP_TIMELINE_SERVER');
-  }.property('hostComponents'),
+  activeResourceManager: DS.belongsTo('App.HostComponent'),
+  appTimelineServer: DS.belongsTo('App.HostComponent'),
   nodeManagersStarted: DS.attr('number'),
   nodeManagersInstalled: DS.attr('number'),
   nodeManagersTotal: DS.attr('number'),
   nodeManagersCountActive: DS.attr('number'),
+  nodeManagersCountLost: DS.attr('number'),
   nodeManagersCountUnhealthy: DS.attr('number'),
   nodeManagersCountRebooted: DS.attr('number'),
   nodeManagersCountDecommissioned: DS.attr('number'),
@@ -43,9 +43,9 @@ App.YARNService = App.Service.extend({
   appsKilled: DS.attr('number'),
   appsFailed: DS.attr('number'),
   ahsWebPort: function() {
-    var yarnConf = App.db.getConfigs().findProperty('type', 'yarn-site')
+    var yarnConf = App.db.getConfigs().findProperty('type', 'yarn-site');
     if(yarnConf){
-      return yarnConf.properties['yarn.timeline-service.webapp.address'].match(/:(\d+)/)[1];;
+      return yarnConf.properties['yarn.timeline-service.webapp.address'].match(/:(\d+)/)[1];
     }
     return "8188";
   }.property(),
@@ -100,12 +100,12 @@ App.YARNService = App.Service.extend({
     }
     this.set('allQueueNames', allQueueNames);
     this.set('childQueueNames', childQueueNames);
-  }.observes('queue'),
+  }.observes('queue')
   /**
    * ResourceManager's lost count is not accurate once RM is rebooted. Since
    * Ambari knows the total number of nodes and the counts of nodes in other
    * states, we calculate the lost count.
-   */
+   *
   nodeManagersCountLost: function () {
     var totalCount = this.get('nodeManagersTotal');
     var activeCount = this.get('nodeManagersCountActive');
@@ -114,7 +114,7 @@ App.YARNService = App.Service.extend({
     var decomCount = this.get('nodeManagersCountDecommissioned');
     var nonLostHostsCount = activeCount + rebootedCount + decomCount + unhealthyCount;
     return totalCount >= nonLostHostsCount ? totalCount - nonLostHostsCount : 0;
-  }.property('nodeManagersTotal', 'nodeManagersCountActive', 'nodeManagersCountRebooted', 'nodeManagersCountUnhealthy', 'nodeManagersCountDecommissioned')
+  }.property('nodeManagersTotal', 'nodeManagersCountActive', 'nodeManagersCountRebooted', 'nodeManagersCountUnhealthy', 'nodeManagersCountDecommissioned')*/
 });
 
 App.YARNService.FIXTURES = [];

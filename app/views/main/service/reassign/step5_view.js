@@ -27,7 +27,7 @@ App.ReassignMasterWizardStep5View = Em.View.extend({
     if (!this.get('controller.content.componentsWithManualCommands').contains(this.get('controller.content.reassign.component_name'))) {
       return '';
     }
-    var componentDir = this.get('controller.content.componentDir');
+    var componentDir = this.get('controller.content.componentDir') || '';
     var componentDirCmd = componentDir.replace(/,/g, ' ');
     var sourceHost = this.get('controller.content.reassignHosts.source');
     var targetHost = this.get('controller.content.reassignHosts.target');
@@ -36,13 +36,27 @@ App.ReassignMasterWizardStep5View = Em.View.extend({
       ha = '_ha';
       var nnStartedHost = this.get('controller.content.masterComponentHosts').filterProperty('component', 'NAMENODE').mapProperty('hostName').without(sourceHost);
     }
-    return Em.I18n.t('services.reassign.step5.body.' + this.get('controller.content.reassign.component_name').toLowerCase() + ha).format(componentDir, sourceHost, targetHost, this.get('controller.content.hdfsUser'), nnStartedHost,this.get('controller.content.group'), componentDirCmd);
+
+    var user = this.get('controller.content.hdfsUser');
+
+    if(this.get('controller.content.reassign.component_name') === 'APP_TIMELINE_SERVER') {
+      user = this.get('controller.content.serviceProperties.yarn-env.yarn_user');
+    }
+
+    return Em.I18n.t('services.reassign.step5.body.' + this.get('controller.content.reassign.component_name').toLowerCase() + ha).format(componentDir, sourceHost, targetHost, user, nnStartedHost,this.get('controller.content.group'), componentDirCmd);
   }.property('controller.content.reassign.component_name', 'controller.content.componentDir', 'controller.content.masterComponentHosts', 'controller.content.reassign.host_id', 'controller.content.hdfsUser'),
 
+  /**
+   * security notice to generate keytab manually is not used any more
+   */
   securityNotice: function () {
     var secureConfigs = this.get('controller.content.secureConfigs');
     var proceedMsg = Em.I18n.t('services.reassign.step5.body.proceedMsg');
-    if (!this.get('controller.content.securityEnabled') || !secureConfigs.length) {
+    var hasSecureConfigs = !this.get('controller.content.componentsWithoutSecurityConfigs').contains(this.get('controller.content.reassign.component_name'));
+    if(!hasSecureConfigs) {
+      secureConfigs = [];
+    }
+    if (!App.get('isKerberosEnabled') || !secureConfigs.length) {
       return proceedMsg;
     }
     var formattedText = '<ul>';
@@ -52,5 +66,5 @@ App.ReassignMasterWizardStep5View = Em.View.extend({
     }, this);
     formattedText += '</ul>';
     return Em.I18n.t('services.reassign.step5.body.securityNotice').format(formattedText) + proceedMsg;
-  }.property('controller.content.securityEnabled', 'controller.content.secureConfigs', 'controller.content.reassignHosts.target')
+  }.property('App.isKerberosEnabled','controller.content.secureConfigs', 'controller.content.reassignHosts.target')
 });

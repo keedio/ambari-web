@@ -87,109 +87,6 @@ App.QuickLinks.FIXTURES = [
     default_https_port: 50470
   },
   {
-    id:5,
-    label:'JobTracker UI',
-    url:'%@://%@:%@/jobtracker.jsp',
-    service_id: 'MAPREDUCE',
-    template:'%@://%@:%@/jobtracker.jsp',
-    http_config: 'mapred.job.tracker.http.address',
-    https_config: 'mapred.job.tracker.https.address',
-    site: 'mapred-site',
-    regex: portRegex,
-    default_http_port: 50030,
-    default_https_port: 50035
-  },
-  {
-    id:6,
-    label:'Scheduling Info',
-    url:'%@://%@:%@/scheduler',
-    service_id: 'MAPREDUCE',
-    template:'%@://%@:%@/scheduler',
-    http_config: 'mapred.job.tracker.http.address',
-    https_config: 'mapred.job.tracker.https.address',
-    site: 'mapred-site',
-    regex: portRegex,
-    default_http_port: 50030,
-    default_https_port: 50035
-  },
-  {
-    id:7,
-    label:'Running Jobs',
-    url:'%@://%@:%@/jobtracker.jsp#running_jobs',
-    service_id: 'MAPREDUCE',
-    template:'%@://%@:%@/jobtracker.jsp#running_jobs',
-    http_config: 'mapred.job.tracker.http.address',
-    https_config: 'mapred.job.tracker.https.address',
-    site: 'mapred-site',
-    regex: portRegex,
-    default_http_port: 50030,
-    default_https_port: 50035
-  },
-  {
-    id:8,
-    label:'Retired Jobs',
-    url:'%@://%@:%@/jobtracker.jsp#retired_jobs',
-    service_id: 'MAPREDUCE',
-    template:'%@://%@:%@/jobtracker.jsp#retired_jobs',
-    http_config: 'mapred.job.tracker.http.address',
-    https_config: 'mapred.job.tracker.https.address',
-    site: 'mapred-site',
-    regex: portRegex,
-    default_http_port: 50030,
-    default_https_port: 50035
-  },
-  {
-    id:9,
-    label:'JobHistory Server',
-    url:'%@://%@:%@/jobhistoryhome.jsp',
-    service_id: 'MAPREDUCE',
-    template:'%@://%@:%@/jobhistoryhome.jsp',
-    http_config: 'mapreduce.history.server.http.address',
-    site: 'mapred-site',
-    regex: portRegex,
-    default_http_port: 51111
-  },
-
-  {
-    id:10,
-    label:'JobTracker Logs',
-    url:'%@://%@:%@/logs',
-    service_id: 'MAPREDUCE',
-    template:'%@://%@:%@/logs',
-    http_config: 'mapred.job.tracker.http.address',
-    https_config: 'mapred.job.tracker.https.address',
-    site: 'mapred-site',
-    regex: portRegex,
-    default_http_port: 50030,
-    default_https_port: 50035
-  },
-  {
-    id:11,
-    label:'JobTracker JMX',
-    url:'%@://%@:%@/jmx',
-    service_id: 'MAPREDUCE',
-    template:'%@://%@:%@/jmx',
-    http_config: 'mapred.job.tracker.http.address',
-    https_config: 'mapred.job.tracker.https.address',
-    site: 'mapred-site',
-    regex: portRegex,
-    default_http_port: 50030,
-    default_https_port: 50035
-  },
-  {
-    id:12,
-    label:'Thread Stacks',
-    url:'%@://%@:%@/stacks',
-    service_id: 'MAPREDUCE',
-    template:'%@://%@:%@/stacks',
-    http_config: 'mapred.job.tracker.http.address',
-    https_config: 'mapred.job.tracker.https.address',
-    site: 'mapred-site',
-    regex: portRegex,
-    default_http_port: 50030,
-    default_https_port: 50035
-  },
-  {
     id:13,
     label:'HBase Master UI',
     url:'%@://%@:%@/master-status',
@@ -258,9 +155,9 @@ App.QuickLinks.FIXTURES = [
   {
     id:19,
     label:'Oozie Web UI',
-    url:'%@://%@:%@/oozie',
+    url:'%@://%@:%@/oozie?user.name=%@',
     service_id: 'OOZIE',
-    template:'%@://%@:%@/oozie',
+    template:'%@://%@:%@/oozie?user.name=%@',
     http_config: 'oozie.base.url',
     site: 'oozie-site',
     regex: portRegex,
@@ -273,20 +170,6 @@ App.QuickLinks.FIXTURES = [
     service_id: 'GANGLIA',
     template:'%@://%@/ganglia'
 
-  },
-  {
-    id:21,
-    label:'Nagios Web UI',
-    url:'%@://%@/nagios',
-    service_id: 'NAGIOS',
-    template:'%@://%@/nagios'
-  },
-  {
-    id:22,
-    label:'Hue Web UI',
-    url:'%@://%@/hue',
-    service_id: 'HUE',
-    template:'%@://%@/hue'
   },
   {
     id:23,
@@ -395,21 +278,71 @@ App.QuickLinks.FIXTURES = [
     url:'%@://%@:%@/',
     service_id: 'STORM',
     template:'%@://%@:%@/',
-    http_config: 'stormuiserver_host',
-    https_config: 'stormuiserver_host',
+    http_config: 'ui.port',
     site: 'storm-site',
-    regex: portRegex,
+    regex: '^(\\d+)$',
     default_http_port: 8744
   },
   {
     id:32,
     label:'Falcon Web UI',
-    url:'%@://%@:%@/',
+    url:'%@://%@:%@/index.html?user.name=%@',
     service_id: 'FALCON',
-    template:'%@://%@:%@/',
+    template:'%@://%@:%@/index.html?user.name=%@',
     http_config: 'falcon_port',
     site: 'falcon-env',
     regex: '^(\\d+)$',
     default_http_port: 15000
+  },
+  {
+    id: 33,
+    label:'Ranger Admin UI',
+    url:'%@://%@:%@/',
+    service_id: 'RANGER',
+    template:'%@://%@:%@/',
+    http_config: 'http.service.port',
+    https_config: 'https.service.port',
+    regex: '(\\d*)+',
+    site: 'ranger-site',
+    default_http_port: 6080,
+    default_https_port: 6182
+  },
+  {
+    id: 34,
+    label:'Spark History Server UI',
+    url:'%@://%@:%@/',
+    service_id: 'SPARK',
+    template:'%@://%@:%@/',
+    http_config: 'spark.history.ui.port',
+    site: 'spark-defaults',
+    regex: '^(\\d+)$',
+    default_http_port: 18080
+  },
+  {
+    id:35,
+    label:'Accumulo Monitor UI',
+    url:'%@://%@:%@/',
+    service_id: 'ACCUMULO',
+    template:'%@://%@:%@/',
+    http_config: 'monitor.port.client',
+    https_config: 'monitor.port.client',
+    site: 'accumulo-site',
+    regex: '^(\\d+)$',
+    default_http_port: 50095,
+    default_https_port: 50095
+  },
+  {
+    id:36,
+    label:'Atlas Dashboard',
+    url:'%@://%@:%@/#!/search?user.name=%@',
+    service_id: 'ATLAS',
+    template:'%@://%@:%@/#!/search?user.name=%@',
+    http_config: 'atlas.server.http.port',
+    https_config: 'atlas.server.https.port',
+    site: 'application-properties',
+    regex: '^(\\d+)$',
+    default_http_port: 21000,
+    default_https_port: 21443
   }
+
 ];

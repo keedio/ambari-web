@@ -25,6 +25,14 @@ App.RMHighAvailabilityWizardStep3Controller = Em.Controller.extend({
 
   versionLoaded: true,
 
+  hideDependenciesInfoBar: true,
+
+  isLoaded: false,
+
+  isSubmitDisabled: function () {
+    return !this.get('isLoaded');
+  }.property('isLoaded'),
+
   loadStep: function () {
     this.renderConfigs();
   },
@@ -51,23 +59,89 @@ App.RMHighAvailabilityWizardStep3Controller = Em.Controller.extend({
     }, this);
 
     this.renderConfigProperties(configs, serviceConfig);
-    this.setDynamicConfigValues(serviceConfig);
+    App.ajax.send({
+      name: 'config.tags',
+      sender: this,
+      success: 'loadConfigTagsSuccessCallback',
+      error: 'loadConfigsErrorCallback',
+      data: {
+        serviceConfig: serviceConfig
+      }
+    });
 
-    this.set('selectedService', serviceConfig);
+  },
+
+  loadConfigTagsSuccessCallback: function (data, opt, params) {
+    var urlParams = '(type=zoo.cfg&tag=' + data.Clusters.desired_configs['zoo.cfg'].tag + ')|' +
+      '(type=yarn-site&tag=' + data.Clusters.desired_configs['yarn-site'].tag + ')';
+    App.ajax.send({
+      name: 'reassign.load_configs',
+      sender: this,
+      data: {
+        urlParams: urlParams,
+        serviceConfig: params.serviceConfig
+      },
+      success: 'loadConfigsSuccessCallback',
+      error: 'loadConfigsSuccessCallback'
+    });
+  },
+
+  loadConfigsSuccessCallback: function (data, opt, params) {
+    var
+      zooCfg = data && data.items ? data.items.findProperty('type', 'zoo.cfg') : null,
+      yarnSite = data && data.items ? data.items.findProperty('type', 'yarn-site') : null,
+      portValue = zooCfg && Em.get(zooCfg, 'properties.clientPort'),
+      zkPort = portValue ? portValue : '2181',
+      webAddressPort = yarnSite && yarnSite.properties ? yarnSite.properties['yarn.resourcemanager.webapp.address'] : null,
+      httpsWebAddressPort = yarnSite && yarnSite.properties ? yarnSite. properties['yarn.resourcemanager.webapp.https.address'] : null;
+
+    webAddressPort = webAddressPort && webAddressPort.match(/:[0-9]*/g) ? webAddressPort.match(/:[0-9]*/g)[0] : ":8088";
+    httpsWebAddressPort = httpsWebAddressPort && httpsWebAddressPort.match(/:[0-9]*/g) ? httpsWebAddressPort.match(/:[0-9]*/g)[0] : ":8090";
+
+    params = params.serviceConfig ? params.serviceConfig : arguments[4].serviceConfig;
+
+    this.setDynamicConfigValues(params, zkPort, webAddressPort, httpsWebAddressPort);
+    this.setProperties({
+      selectedService: params,
+      isLoaded: true
+    });
   },
 
   /**
    * Set values dependent on host selection
    * @param configs
+   * @param zkPort
+   * @param webAddressPort
+   * @param httpsWebAddressPort
    */
-  setDynamicConfigValues: function (configs) {
-    var configProperties = configs.configs;
-    var currentRMHost = this.get('content.rmHosts.currentRM');
-    var additionalRMHost = this.get('content.rmHosts.additionalRM');
-    var zooKeeperHosts = App.HostComponent.find().filterProperty('componentName', 'ZOOKEEPER_SERVER').mapProperty('host.hostName').join(',');
-    configProperties.findProperty('name', 'yarn.resourcemanager.hostname.rm1').set('value', currentRMHost).set('defaultValue', currentRMHost);
-    configProperties.findProperty('name', 'yarn.resourcemanager.hostname.rm2').set('value', additionalRMHost).set('defaultValue', additionalRMHost);
-    configProperties.findProperty('name', 'yarn.resourcemanager.zk-address').set('value', zooKeeperHosts).set('defaultValue', zooKeeperHosts);
+  setDynamicConfigValues: function (configs, zkPort, webAddressPort, httpsWebAddressPort) {
+    var
+      configProperties = configs.configs,
+      currentRMHost = this.get('content.rmHosts.currentRM'),
+      additionalRMHost = this.get('content.rmHosts.additionalRM'),
+      zooKeeperHostsWithPort = App.HostComponent.find().filterProperty('componentName', 'ZOOKEEPER_SERVER').map(function (item) {
+        return item.get('hostName') + ':' + zkPort;
+      }).join(',');
+
+    configProperties.findProperty('name', 'yarn.resourcemanager.hostname.rm1').set('value', currentRMHost).set('recommendedValue', currentRMHost);
+    configProperties.findProperty('name', 'yarn.resourcemanager.hostname.rm2').set('value', additionalRMHost).set('recommendedValue', additionalRMHost);
+    configProperties.findProperty('name', 'yarn.resourcemanager.zk-address').set('value', zooKeeperHostsWithPort).set('recommendedValue', zooKeeperHostsWithPort);
+
+    configProperties.findProperty('name', 'yarn.resourcemanager.webapp.address.rm1')
+      .set('value', currentRMHost + webAddressPort)
+      .set('recommendedValue', currentRMHost + webAddressPort);
+
+    configProperties.findProperty('name', 'yarn.resourcemanager.webapp.address.rm2')
+      .set('value', additionalRMHost + webAddressPort)
+      .set('recommendedValue', additionalRMHost + webAddressPort);
+
+    configProperties.findProperty('name', 'yarn.resourcemanager.webapp.https.address.rm1')
+      .set('value', currentRMHost + httpsWebAddressPort)
+      .set('recommendedValue', currentRMHost + httpsWebAddressPort);
+
+    configProperties.findProperty('name', 'yarn.resourcemanager.webapp.https.address.rm2')
+      .set('value', additionalRMHost + httpsWebAddressPort)
+      .set('recommendedValue', additionalRMHost + httpsWebAddressPort);
   },
 
   /**
@@ -82,6 +156,14 @@ App.RMHighAvailabilityWizardStep3Controller = Em.Controller.extend({
       serviceConfigProperty.set('isEditable', serviceConfigProperty.get('isReconfigurable'));
       serviceConfigProperty.validate();
     }, this);
+  },
+
+  submit: function () {
+    if (!this.get('isSubmitDisabled')) {
+      App.get('router.mainAdminKerberosController').getKDCSessionState(function() {
+        App.router.send("next");
+      });
+    }
   }
 });
 

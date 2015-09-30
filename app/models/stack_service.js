@@ -18,26 +18,16 @@
 
 var App = require('app');
 require('utils/helper');
-require('models/service_config');
-//TODO after moving validation/recommendation to BE belove requirements must be deleted
-require('utils/configs/defaults_providers/yarn_defaults_provider');
-require('utils/configs/defaults_providers/tez_defaults_provider');
-require('utils/configs/defaults_providers/hive_defaults_provider');
-require('utils/configs/defaults_providers/storm_defaults_provider');
-require('utils/configs/defaults_providers/oozie_defaults_provider');
-require('utils/configs/validators/yarn_configs_validator');
-require('utils/configs/validators/hive_configs_validator');
-require('utils/configs/validators/tez_configs_validator');
-require('utils/configs/validators/mapreduce2_configs_validator');
-require('utils/configs/validators/storm_configs_validator');
+require('models/configs/objects/service_config_category');
 
 /**
  * This model loads all services supported by the stack
- * The model maps to the  http://hostname:8080/api/v1/stacks2/HDP/versions/${versionNumber}/stackServices?fields=StackServices/*,serviceComponents/*
+ * The model maps to the  http://hostname:8080/api/v1/stacks/HDP/versions/${versionNumber}/services?fields=StackServices/*,serviceComponents/*
  * @type {*}
  */
 App.StackService = DS.Model.extend({
   serviceName: DS.attr('string'),
+  serviceType: DS.attr('string'),
   displayName: DS.attr('string'),
   comments: DS.attr('string'),
   configTypes: DS.attr('object'),
@@ -47,15 +37,27 @@ App.StackService = DS.Model.extend({
   stackVersion: DS.attr('string'),
   isSelected: DS.attr('boolean', {defaultValue: true}),
   isInstalled: DS.attr('boolean', {defaultValue: false}),
+  isInstallable: DS.attr('boolean', {defaultValue: true}),
+  isServiceWithWidgets: DS.attr('boolean', {defaultValue: false}),
   stack: DS.belongsTo('App.Stack'),
   serviceComponents: DS.hasMany('App.StackServiceComponent'),
   configs: DS.attr('array'),
   requiredServices: DS.attr('array'),
 
+  /**
+   * contains array of serviceNames that have configs that
+   * depends on configs from current service
+   * @type {String[]}
+   */
+  dependentServiceNames: DS.attr('array', {defaultValue: []}),
+
   // Is the service a distributed filesystem
   isDFS: function () {
     var dfsServices = ['HDFS', 'GLUSTERFS'];
-    return dfsServices.contains(this.get('serviceName'));
+    if( this.get('serviceType') == 'HCFS' || dfsServices.contains(this.get('serviceName')) )
+    	return true;
+    else
+    	return false;
   }.property('serviceName'),
 
   // Primary DFS. used if there is more than one DFS in a stack.
@@ -89,13 +91,36 @@ App.StackService = DS.Model.extend({
 
   isHiddenOnSelectServicePage: function () {
     var hiddenServices = ['MAPREDUCE2'];
-    return hiddenServices.contains(this.get('serviceName'));
+    return hiddenServices.contains(this.get('serviceName')) || !this.get('isInstallable') || this.get('doNotShowAndInstall');
+  }.property('serviceName', 'isInstallable'),
+
+  doNotShowAndInstall: function () {
+    var skipServices = [];
+    if(!App.supports.installGanglia) {
+      skipServices.push('GANGLIA');
+    }
+    if(App.router.get('clusterInstallCompleted') != true){
+      skipServices.push('RANGER', 'RANGER_KMS');
+    }
+    return skipServices.contains(this.get('serviceName'));
   }.property('serviceName'),
 
   // Is the service required for monitoring of other hadoop ecosystem services
   isMonitoringService: function () {
-    var services = ['NAGIOS', 'GANGLIA'];
+    var services = ['GANGLIA'];
     return services.contains(this.get('serviceName'));
+  }.property('serviceName'),
+
+  // Is the service required for reporting host metrics
+  isHostMetricsService: function () {
+      var services = ['GANGLIA', 'AMBARI_METRICS'];
+      return services.contains(this.get('serviceName'));
+  }.property('serviceName'),
+
+  // Is the service required for reporting hadoop service metrics
+  isServiceMetricsService: function () {
+      var services = ['GANGLIA'];
+      return services.contains(this.get('serviceName'));
   }.property('serviceName'),
 
   coSelectedServices: function () {
@@ -122,6 +147,11 @@ App.StackService = DS.Model.extend({
     return serviceComponents.someProperty('isSlave');
   }.property('serviceName'),
 
+  hasNonMastersWithCustomAssignment: function () {
+    var serviceComponents = this.get('serviceComponents');
+    return serviceComponents.rejectProperty('isMaster').rejectProperty('cardinality', 'ALL').length > 0;
+  }.property('serviceName'),
+
   isClientOnlyService: function () {
     var serviceComponents = this.get('serviceComponents');
     return serviceComponents.everyProperty('isClient');
@@ -135,15 +165,9 @@ App.StackService = DS.Model.extend({
   customReviewHandler: function () {
     return App.StackService.reviewPageHandlers[this.get('serviceName')];
   }.property('serviceName'),
-  //TODO after moving validation/recommendation to BE defaultsProviders must be deleted
-  defaultsProviders: function () {
-    var defaultConfigsHandler = App.StackService.defaultConfigsHandler[this.get('serviceName')];
-    return defaultConfigsHandler && defaultConfigsHandler.defaultsProviders;
-  }.property('serviceName'),
-  //TODO after moving validation/recommendation to BE configsValidator must be deleted
-  configsValidator: function () {
-    var defaultConfigsHandler = App.StackService.defaultConfigsHandler[this.get('serviceName')];
-    return defaultConfigsHandler && defaultConfigsHandler.configsValidator;
+
+  hasHeatmapSection: function() {
+    return ['HDFS', 'YARN', 'HBASE'].contains(this.get('serviceName'));
   }.property('serviceName'),
 
   /**
@@ -155,7 +179,7 @@ App.StackService = DS.Model.extend({
     var configTypes = this.get('configTypes');
     var serviceComponents = this.get('serviceComponents');
     if (configTypes && Object.keys(configTypes).length) {
-      var pattern = ["General", "CapacityScheduler", "FaultTolerance", "Isolation", "Performance", "^Advanced", "Env$", "^Custom", "Falcon - Oozie integration", "FalconStartupSite", "FalconRuntimeSite"];
+      var pattern = ["General", "CapacityScheduler", "FaultTolerance", "Isolation", "Performance", "HIVE_SERVER2", "KDC", "Kadmin","^Advanced", "Env$", "^Custom", "Falcon - Oozie integration", "FalconStartupSite", "FalconRuntimeSite", "MetricCollector", "Settings$"];
       configCategories = App.StackService.configCategories.call(this).filter(function (_configCategory) {
         var serviceComponentName = _configCategory.get('name');
         var isServiceComponent = serviceComponents.someProperty('componentName', serviceComponentName);
@@ -177,11 +201,9 @@ App.StackService.FIXTURES = [];
 App.StackService.displayOrder = [
   'HDFS',
   'GLUSTERFS',
-  'MAPREDUCE',
-  'MAPREDUCE2',
   'YARN',
+  'MAPREDUCE2',
   'TEZ',
-  'NAGIOS',
   'GANGLIA',
   'HIVE',
   'HBASE',
@@ -189,7 +211,6 @@ App.StackService.displayOrder = [
   'SQOOP',
   'OOZIE',
   'ZOOKEEPER',
-  'HUE',
   'FALCON',
   'STORM',
   'FLUME'
@@ -205,21 +226,9 @@ App.StackService.reviewPageHandlers = {
   'HIVE': {
     'Database': 'loadHiveDbValue'
   },
-  'NAGIOS': {
-    'Administrator': 'loadNagiosAdminValue'
-  },
   'OOZIE': {
     'Database': 'loadOozieDbValue'
   }
-};
-
-//TODO after moving validation/recommendation to BE defaultConfigsHandler must be deleted
-App.StackService.defaultConfigsHandler = {
-  YARN: {defaultsProviders: [App.YARNDefaultsProvider.create()], configsValidator: App.YARNConfigsValidator},
-  MAPREDUCE2: {defaultsProviders: [App.YARNDefaultsProvider.create()], configsValidator: App.MapReduce2ConfigsValidator},
-  HIVE: {defaultsProviders: [App.HiveDefaultsProvider.create()], configsValidator: App.HiveConfigsValidator},
-  STORM: {defaultsProviders: [App.STORMDefaultsProvider.create()], configsValidator: App.STORMConfigsValidator},
-  TEZ: {defaultsProviders: [App.TezDefaultsProvider.create()], configsValidator: App.TezConfigsValidator}
 };
 
 App.StackService.configCategories = function () {
@@ -230,19 +239,12 @@ App.StackService.configCategories = function () {
         App.ServiceConfigCategory.create({ name: 'NAMENODE', displayName: 'NameNode'}),
         App.ServiceConfigCategory.create({ name: 'SECONDARY_NAMENODE', displayName: 'Secondary NameNode'}),
         App.ServiceConfigCategory.create({ name: 'DATANODE', displayName: 'DataNode'}),
-        App.ServiceConfigCategory.create({ name: 'General', displayName: 'General'})
+        App.ServiceConfigCategory.create({ name: 'General', displayName: 'General'}),
+        App.ServiceConfigCategory.create({ name: 'NFS_GATEWAY', displayName: 'NFS Gateway'})
       ]);
       break;
     case 'GLUSTERFS':
       serviceConfigCategories.pushObjects([
-        App.ServiceConfigCategory.create({ name: 'General', displayName: 'General'})
-      ]);
-      break;
-    case 'MAPREDUCE':
-      serviceConfigCategories.pushObjects([
-        App.ServiceConfigCategory.create({ name: 'HISTORYSERVER', displayName: 'History Server'}),
-        App.ServiceConfigCategory.create({ name: 'JOBTRACKER', displayName: 'JobTracker'}),
-        App.ServiceConfigCategory.create({ name: 'TASKTRACKER', displayName: 'TaskTracker'}),
         App.ServiceConfigCategory.create({ name: 'General', displayName: 'General'})
       ]);
       break;
@@ -254,7 +256,7 @@ App.StackService.configCategories = function () {
         App.ServiceConfigCategory.create({ name: 'General', displayName: 'General'}),
         App.ServiceConfigCategory.create({ name: 'FaultTolerance', displayName: 'Fault Tolerance'}),
         App.ServiceConfigCategory.create({ name: 'Isolation', displayName: 'Isolation'}),
-        App.ServiceConfigCategory.create({ name: 'CapacityScheduler', displayName: 'Scheduler', isCustomView: true, siteFileName: 'capacity-scheduler.xml'})
+        App.ServiceConfigCategory.create({ name: 'CapacityScheduler', displayName: 'Scheduler', siteFileName: 'capacity-scheduler.xml'})
       ]);
       break;
     case 'MAPREDUCE2':
@@ -268,7 +270,9 @@ App.StackService.configCategories = function () {
         App.ServiceConfigCategory.create({ name: 'HIVE_METASTORE', displayName: 'Hive Metastore'}),
         App.ServiceConfigCategory.create({ name: 'WEBHCAT_SERVER', displayName: 'WebHCat Server'}),
         App.ServiceConfigCategory.create({ name: 'General', displayName: 'General'}),
-        App.ServiceConfigCategory.create({ name: 'Performance', displayName: 'Performance'})
+        App.ServiceConfigCategory.create({ name: 'Performance', displayName: 'Performance'}),
+        App.ServiceConfigCategory.create({ name: 'HIVE_SERVER2', displayName: 'Hive Server2'}),
+        App.ServiceConfigCategory.create({ name: 'HIVE_CLIENT', displayName: 'Hive Client'})
       ]);
       break;
     case 'HBASE':
@@ -285,7 +289,8 @@ App.StackService.configCategories = function () {
       break;
     case 'OOZIE':
       serviceConfigCategories.pushObjects([
-        App.ServiceConfigCategory.create({ name: 'OOZIE_SERVER', displayName: 'Oozie Server'})
+        App.ServiceConfigCategory.create({ name: 'OOZIE_SERVER', displayName: 'Oozie Server'}),
+        App.ServiceConfigCategory.create({ name: 'Falcon - Oozie integration', displayName: 'Falcon - Oozie integration'})
       ]);
       break;
     case 'FALCON':
@@ -325,6 +330,34 @@ App.StackService.configCategories = function () {
     case 'KAFKA':
       serviceConfigCategories.pushObjects([
         App.ServiceConfigCategory.create({ name: 'KAFKA_BROKER', displayName: 'Kafka Broker'})
+      ]);
+      break;
+    case 'KERBEROS':
+      serviceConfigCategories.pushObjects([
+        App.ServiceConfigCategory.create({ name: 'KDC', displayName: 'KDC'}),
+        App.ServiceConfigCategory.create({ name: 'Kadmin', displayName: 'Kadmin'}),
+        App.ServiceConfigCategory.create({ name: 'General', displayName: 'General'})
+      ]);
+      break;
+    case 'AMBARI_METRICS':
+      serviceConfigCategories.pushObjects([
+        App.ServiceConfigCategory.create({ name: 'General', displayName: 'General'}),
+        App.ServiceConfigCategory.create({ name: 'MetricCollector', displayName: 'Metric Collector'})
+      ]);
+      break;
+    case 'RANGER':
+      serviceConfigCategories.pushObjects([
+        App.ServiceConfigCategory.create({ name: 'AdminSettings', displayName: 'Admin Settings'}),
+        App.ServiceConfigCategory.create({ name: 'DBSettings', displayName: 'DB Settings'}),
+        App.ServiceConfigCategory.create({ name: 'RangerSettings', displayName: 'Ranger Settings'}),
+        App.ServiceConfigCategory.create({ name: 'UnixAuthenticationSettings', displayName: 'Unix Authentication Settings'}),
+        App.ServiceConfigCategory.create({ name: 'ADSettings', displayName: 'AD Settings'}),
+        App.ServiceConfigCategory.create({ name: 'LDAPSettings', displayName: 'LDAP Settings'})
+      ]);
+      break;
+    case 'ACCUMULO':
+      serviceConfigCategories.pushObjects([
+        App.ServiceConfigCategory.create({ name: 'General', displayName: 'General'})
       ]);
       break;
     case 'PIG':

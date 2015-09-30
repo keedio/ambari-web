@@ -184,7 +184,7 @@ describe('App.WizardStep1View', function () {
     });
   });
 
-  describe('#emptyRepoExist', function () {
+  describe('#invalidFormatUrlExist', function () {
 
     controller = App.WizardStep1Controller.create({
       content: {
@@ -199,8 +199,8 @@ describe('App.WizardStep1View', function () {
       return Em.Object.create({hide: Em.K, toggle: Em.K});
     });
 
-    it(view.get('allRepositories').mapProperty('emptyError').join(', '), function () {
-      expect(view.get('emptyRepoExist')).to.equal(false);
+    it(view.get('allRepositories').mapProperty('invalidFormatError').join(', '), function () {
+      expect(view.get('invalidFormatUrlExist')).to.equal(false);
     });
   });
 
@@ -280,65 +280,113 @@ describe('App.WizardStep1View', function () {
 
     var tests = Em.A([
       {
-        emptyRepoExist: false,
+        invalidFormatUrlExist: false,
         isNoOsChecked: false,
         invalidUrlExist: false,
+        checkInProgress: false,
         e: false
       },
       {
-        emptyRepoExist: true,
+        invalidFormatUrlExist: true,
         isNoOsChecked: false,
         invalidUrlExist: false,
+        checkInProgress: false,
         e: true
       },
       {
-        emptyRepoExist: false,
+        invalidFormatUrlExist: false,
         isNoOsChecked: true,
         invalidUrlExist: false,
+        checkInProgress: false,
         e: true
       },
       {
-        emptyRepoExist: false,
+        invalidFormatUrlExist: false,
         isNoOsChecked: false,
         invalidUrlExist: true,
+        checkInProgress: false,
         e: true
       },
       {
-        emptyRepoExist: true,
+        invalidFormatUrlExist: true,
         isNoOsChecked: false,
         invalidUrlExist: true,
+        checkInProgress: false,
         e: true
       },
       {
-        emptyRepoExist: true,
+        invalidFormatUrlExist: true,
         isNoOsChecked: true,
         invalidUrlExist: false,
+        checkInProgress: false,
         e: true
       },
       {
-        emptyRepoExist: false,
+        invalidFormatUrlExist: false,
         isNoOsChecked: true,
         invalidUrlExist: true,
+        checkInProgress: false,
         e: true
       },
       {
-        emptyRepoExist: true,
+        invalidFormatUrlExist: true,
         isNoOsChecked: true,
         invalidUrlExist: true,
+        checkInProgress: false,
+        e: true
+      },
+      {
+        invalidFormatUrlExist: true,
+        isNoOsChecked: false,
+        invalidUrlExist: false,
+        checkInProgress: true,
         e: true
       }
     ]);
 
     tests.forEach(function (test) {
-      it(test.emptyRepoExist.toString() + ' ' + test.isNoOsChecked.toString() + ' ' + test.invalidUrlExist.toString(), function () {
+      it(test.invalidFormatUrlExist.toString() + ' ' + test.isNoOsChecked.toString() + ' ' + test.invalidUrlExist.toString()+ ' ' + test.checkInProgress.toString(), function () {
         view = App.WizardStep1View.create();
         view.reopen({
-          emptyRepoExist: test.emptyRepoExist,
+          invalidFormatUrlExist: test.invalidFormatUrlExist,
           isNoOsChecked: test.isNoOsChecked,
           invalidUrlExist: test.invalidUrlExist
         });
+        view.set('controller', {});
+        view.set('controller.content', {});
+        view.set('controller.content.isCheckInProgress', test.checkInProgress);
         expect(view.get('isSubmitDisabled')).to.equal(test.e);
       });
+    });
+  });
+
+  describe('#showErrorsWarningCount', function() {
+    var tests = [
+      {
+        isSubmitDisabled: true,
+        totalErrorCnt: 0,
+        e: false
+      },
+      {
+        isSubmitDisabled: true,
+        totalErrorCnt: 1,
+        e: true
+      },
+      {
+        isSubmitDisabled: false,
+        totalErrorCnt: 0,
+        e: false
+      }
+    ];
+    tests.forEach(function(test) {
+      it(test.isSubmitDisabled.toString() + ' ' + test.totalErrorCnt.toString(), function () {
+        var view = App.WizardStep1View.create();
+        view.reopen({
+          isSubmitDisabled: test.isSubmitDisabled,
+          totalErrorCnt: test.totalErrorCnt
+        });
+        expect(view.get('showErrorsWarningCount')).to.equal(test.e);
+      })
     });
   });
 
@@ -383,8 +431,8 @@ describe('App.WizardStep1View', function () {
       },
       {
         allRepositories: [
-          {'emptyError': true},
-          {'emptyError': true}
+          {'invalidFormatError': true},
+          {'invalidFormatError': true}
         ],
         isNoOsChecked: false,
         m: 'two with empty-error',
@@ -401,8 +449,8 @@ describe('App.WizardStep1View', function () {
       },
       {
         allRepositories: [
-          {'emptyError': true, 'validation': 'icon-exclamation-sign'},
-          {'emptyError': true, 'validation': 'icon-exclamation-sign'}
+          {'invalidFormatError': true, 'validation': 'icon-exclamation-sign'},
+          {'invalidFormatError': true, 'validation': 'icon-exclamation-sign'}
         ],
         isNoOsChecked: false,
         m: 'two with empty-error, two with validation="icon-exclamation-sign"',
@@ -590,12 +638,18 @@ describe('App.WizardStep1View', function () {
   });
 
   describe('#clearGroupLocalRepository', function () {
+    var context = {'group-number': 0, id: 'HDP-redhat5', repoId: 'HDP-redhat5', baseUrl: 'baseUrl', validation: 'validation'};
     it('should empty base url and validation', function () {
-      var event = {context: Em.Object.create({'group-number': 0, id: 'HDP-redhat5', repoId: 'HDP-redhat5', baseUrl: 'baseUrl', validation: 'validation'})};
+      var event = {context: Em.Object.create(context, {isSelected: true})};
       view.clearGroupLocalRepository(event);
       expect(event.context.get('baseUrl')).to.be.empty;
       expect(event.context.get('validation')).to.be.empty;
-
+    });
+    it('should do nothing if corresponding OS is not selected', function () {
+      var event = {context: Em.Object.create(context, {isSelected: false})};
+      view.clearGroupLocalRepository(event);
+      expect(event.context.get('baseUrl')).to.equal('baseUrl');
+      expect(event.context.get('validation')).to.equal('validation');
     });
   });
 

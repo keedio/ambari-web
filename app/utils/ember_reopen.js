@@ -114,6 +114,66 @@ Ember.isBlank = function(obj) {
   return Ember.isEmpty(obj) || (typeof obj === 'string' && obj.match(/\S/) === null);
 };
 
+/**
+ * Calculates sum of two numbers
+ * Use this function as a callback on <code>invoke</code> etc
+ *
+ * @method sum
+ * @param {Number} a
+ * @param {Number} b
+ * @returns {Number}
+ */
+Ember.sum = function (a, b) {
+  return a + b;
+};
+
+/**
+ *
+ */
+Ember.RadioButton = Ember.Checkbox.extend({
+  tagName: "input",
+  type: "radio",
+  attributeBindings: [ "type", "name", "value", "checked", "style", "disabled" ],
+  style: "vertical-align: middle; margin: 0px;",
+  click: function () {
+    this.set("selection", this.$().val())
+  },
+  checked: function () {
+    return this.get("value") == this.get("selection");
+  }.property('value', 'selection')
+});
+
+/**
+ * Set value to obj by path
+ * Create nested objects if needed
+ * Example:
+ * <code>
+ *   var a = {b: {}};
+ *   var path = 'b.c.d';
+ *   var value = 1;
+ *   Em.setFullPath(a, path, value); // a = {b: {c: {d: 1}}
+ * </code>
+ *
+ * @param {object} obj
+ * @param {string} path
+ * @param {*} value
+ */
+Ember.setFullPath = function (obj, path, value) {
+  var parts = path.split('.'),
+    sub_path = '';
+  parts.forEach(function(_path, _index) {
+    Em.assert('path parts can\'t be empty', _path.length);
+    sub_path += '.' + _path;
+    if (_index === parts.length - 1) {
+      Em.set(obj, sub_path, value);
+      return;
+    }
+    if (Em.isNone(Em.get(obj, sub_path))) {
+      Em.set(obj, sub_path, {});
+    }
+  });
+};
+
 Em.View.reopen({
   /**
    * overwritten set method of Ember.View to avoid uncaught errors
@@ -126,4 +186,8 @@ Em.View.reopen({
       console.debug('Calling set on destroyed view');
     }
   }
+});
+
+Ember.TextArea.reopen({
+  attributeBindings: ['readonly']
 });

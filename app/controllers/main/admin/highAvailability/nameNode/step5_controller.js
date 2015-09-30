@@ -22,43 +22,17 @@ App.HighAvailabilityWizardStep5Controller = App.HighAvailabilityProgressPageCont
 
   name:"highAvailabilityWizardStep5Controller",
 
-  isHA: true,
-
-  commands: ['stopAllServices', 'installNameNode', 'installJournalNodes', 'reconfigureHDFS', 'startJournalNodes', 'disableSNameNode'],
+  commands: ['stopServices', 'installNameNode', 'installJournalNodes', 'reconfigureHDFS', 'startJournalNodes', 'disableSNameNode'],
 
   hdfsSiteTag : "",
   coreSiteTag : "",
 
-  stopAllServices: function () {
-    App.ajax.send({
-      name: 'common.services.update',
-      data: {
-        context: "Stop all services",
-        "ServiceInfo": {
-          "state": "INSTALLED"
-        }
-      },
-      sender: this,
-      success: 'startPolling',
-      error: 'onTaskError'
-    });
-  },
-
   installNameNode: function () {
-    var hostName = this.get('content.masterComponentHosts').findProperty('isAddNameNode').hostName;
+    var hostName = this.get('content.masterComponentHosts').filterProperty('component', 'NAMENODE').findProperty('isInstalled', false).hostName;
     this.createComponent('NAMENODE', hostName, "HDFS");
   },
 
   installJournalNodes: function () {
-    App.ajax.send({
-      name: 'admin.high_availability.create_journalnode',
-      sender: this,
-      success: 'onJournalNodeCreate',
-      error: 'onJournalNodeCreate'
-    });
-  },
-
-  onJournalNodeCreate: function () {
     var hostNames = this.get('content.masterComponentHosts').filterProperty('component', 'JOURNALNODE').mapProperty('hostName');
     this.createComponent('JOURNALNODE', hostNames, "HDFS");
   },
@@ -85,8 +59,20 @@ App.HighAvailabilityWizardStep5Controller = App.HighAvailabilityProgressPageCont
 
   reconfigureHDFS: function () {
     var data = this.get('content.serviceConfigProperties');
+    if (App.get('isKerberosEnabled')) {
+      this.reconfigureSecureHDFS();
+    } else {
+      this.updateConfigProperties(data);
+    }
+  },
+
+  /**
+   * Update service configurations
+   * @param {Object} data - config object to update
+   */
+  updateConfigProperties: function(data) {
     var siteNames = ['hdfs-site','core-site'];
-    var configData = this.reconfigureSites(siteNames, data);
+    var configData = this.reconfigureSites(siteNames, data, Em.I18n.t('admin.highAvailability.step4.save.configuration.note').format(App.format.role('NAMENODE')));
     App.ajax.send({
       name: 'common.service.configurations',
       sender: this,
@@ -95,7 +81,7 @@ App.HighAvailabilityWizardStep5Controller = App.HighAvailabilityProgressPageCont
       },
       error: 'onTaskError',
       success: 'installHDFSClients'
-    })
+    });
   },
 
   installHDFSClients: function () {
@@ -110,6 +96,35 @@ App.HighAvailabilityWizardStep5Controller = App.HighAvailabilityProgressPageCont
       wizardControllerName: this.get('content.controllerName'),
       localdb: App.db.data
     });
+  },
+
+  /**
+   * Process configurations for hdfs on kerberized cluster.
+   * Secure properties will be applied to hdfs and core site after installing JournalNode.
+   * For this case we need to pull updated configurations from API, merge them with configurations created
+   * during `Review` step and store new configurations.
+   */
+  reconfigureSecureHDFS: function() {
+    App.router.get('highAvailabilityWizardStep3Controller').loadConfigsTags.call(this);
+  },
+
+  onLoadConfigsTags: function() {
+    App.router.get('highAvailabilityWizardStep3Controller').onLoadConfigsTags.apply(this, [].slice.call(arguments));
+  },
+
+  onLoadConfigs: function(data) {
+    var self = this;
+    var configController = App.router.get('highAvailabilityWizardStep3Controller');
+    var configItems = data.items.map(function(item) {
+      var fileName = Em.get(item, 'type');
+      var configTypeObject = self.get('content.serviceConfigProperties').items.findProperty('type', fileName);
+      if (configTypeObject) {
+        $.extend(item.properties, configTypeObject.properties);
+      }
+      return item;
+    });
+    configItems = configController.removeConfigs(configController.get('configsToRemove'), {items: configItems});
+    this.updateConfigProperties(configItems);
   }
 });
 

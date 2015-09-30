@@ -18,9 +18,9 @@
 
 var App = require('app');
 var filters = require('views/common/filter_view');
+require('utils/helper');
 
 describe('filters.getFilterByType', function () {
-
 
   describe('ambari-bandwidth', function () {
 
@@ -379,6 +379,11 @@ describe('filters.getFilterByType', function () {
         condition: 'hello',
         value: '',
         result: false
+      },
+      {
+        condition: '?',
+        value: 'hello',
+        result: false
       }
     ];
 
@@ -388,4 +393,178 @@ describe('filters.getFilterByType', function () {
       })
     });
   });
+
+  describe('sub-resource', function () {
+
+    var filter = filters.getFilterByType('sub-resource');
+
+    var testData = [
+      {
+        title: 'condition is null',
+        condition: null,
+        value: [Em.Object.create({
+          prop1: 1
+        })],
+        result: true
+      },
+      {
+        title: 'condition is empty',
+        condition: [],
+        value: [Em.Object.create({
+          prop1: 1
+        })],
+        result: true
+      },
+      {
+        title: 'condition match one property',
+        condition: [
+          {
+            property: 'prop1',
+            value: 1
+          }
+        ],
+        value: [Em.Object.create({
+          prop1: 1
+        })],
+        result: true
+      },
+      {
+        title: 'condition match two properties',
+        condition: [
+          {
+            property: 'prop1',
+            value: 1
+          },
+          {
+            property: 'prop2',
+            value: 2
+          }
+        ],
+        value: [Em.Object.create({
+          prop1: 1,
+          prop2: 2
+        })],
+        result: true
+      },
+      {
+        title: 'only one of two properties match',
+        condition: [
+          {
+            property: 'prop1',
+            value: 3
+          },
+          {
+            property: 'prop2',
+            value: 2
+          }
+        ],
+        value: [Em.Object.create({
+          prop1: 1,
+          prop2: 2
+        })],
+        result: false
+      },
+      {
+        title: 'none of two properties match',
+        condition: [
+          {
+            property: 'prop1',
+            value: 3
+          },
+          {
+            property: 'prop2',
+            value: 4
+          }
+        ],
+        value: [Em.Object.create({
+          prop1: 1,
+          prop2: 2
+        })],
+        result: false
+      }
+    ];
+
+    testData.forEach(function (test) {
+      it(test.title, function () {
+        expect(filter(test.value, test.condition)).to.equal(test.result);
+      })
+    });
+  });
+
+  describe('alert_status', function () {
+
+    var filter = filters.getFilterByType('alert_status');
+
+    Em.A([
+      {
+        origin: {OK: {count: 1, maintenanceCount: 0}},
+        compareValue: 'OK',
+        e: true
+      },
+      {
+        origin: {OK: {count: 0, maintenanceCount: 1}},
+        compareValue: 'OK',
+        e: true
+      },
+      {
+        origin: {WARN: {count: 1, maintenanceCount: 0}},
+        compareValue: 'OK',
+        e: false
+      },
+      {
+        origin: {WARN: {count: 0, maintenanceCount: 0}},
+        compareValue: 'WARN',
+        e: false
+      },
+      {
+        origin: {OK: {count: 0, maintenanceCount: 0}, WARN: {count: 0, maintenanceCount: 0}},
+        compareValue: 'PENDING',
+        e: true
+      },
+      {
+        origin: {},
+        compareValue: 'PENDING',
+        e: true
+      },
+      {
+        origin: {OK: {count: 1, maintenanceCount: 0}},
+        compareValue: 'PENDING',
+        e: false
+      }
+    ]).forEach(function(test, i) {
+        it('test #' + (i + 1), function() {
+          expect(filter(test.origin, test.compareValue)).to.equal(test.e);
+        });
+      });
+
+  });
+
+  describe('alert_group', function () {
+
+    var filter = filters.getFilterByType('alert_group');
+
+    Em.A([
+        {
+          origin: [{id: 1}, {id: 2}, {id: 3}],
+          compareValue: 1,
+          e: true
+        },
+        {
+          origin: [],
+          compareValue: 1,
+          e: false
+        },
+        {
+          origin: [{id: 2}, {id: 3}],
+          compareValue: 1,
+          e: false
+        }
+      ]).forEach(function(test, i) {
+        it('test #' + (i + 1), function() {
+          expect(filter(test.origin, test.compareValue)).to.equal(test.e);
+        });
+      });
+
+  });
+
 });

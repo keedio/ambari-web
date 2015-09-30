@@ -51,6 +51,7 @@ App.WizardStep2View = Em.View.extend({
 
   didInsertElement: function () {
     App.popover($("[rel=popover]"), {'placement': 'right', 'trigger': 'hover'});
+    App.tooltip($("[rel=tooltip]"), {'placement': 'top', 'trigger': 'hover'});
     //todo: move them to conroller
     this.set('controller.hostsError', null);
     this.set('controller.sshKeyError', null);
@@ -85,6 +86,8 @@ App.WizardStep2View = Em.View.extend({
 
     attributeBindings: ['type', 'checked'],
 
+    classNames: ['radio-btn-provide-ssh-key'],
+
     checked: function () {
       return this.get('controller.content.installOptions.useSsh');
     }.property('controller.content.installOptions.useSsh'),
@@ -105,6 +108,8 @@ App.WizardStep2View = Em.View.extend({
     tagName: 'input',
 
     attributeBindings: ['type', 'checked'],
+
+    classNames: ['radio-btn-manual-reg'],
 
     type: 'radio',
 

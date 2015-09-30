@@ -19,8 +19,6 @@
 var App = require('app');
 var uiEffects = require('utils/ui_effects');
 
-require('models/alert');
-
 App.MainDashboardServiceHealthView = Em.View.extend({
   classNameBindings: ["healthStatus", "healthStatusClass"],
   //template: Em.Handlebars.compile(""),
@@ -86,24 +84,23 @@ App.MainDashboardServiceHealthView = Em.View.extend({
   }.property('service.healthStatus','service.passiveState','service.serviceName'),
 
   healthStatusClass: function () {
-    switch (this.get('healthStatus')) {
-      case 'health-status-LIVE':
+    if (this.get('service.passiveState') != 'OFF' || App.get('services.clientOnly').contains(this.get('service.serviceName')))
+      return '';
+    switch (this.get('service.healthStatus')) {
+      case 'green':
+      case 'green-blinking':
         return App.healthIconClassGreen;
         break;
-      case 'health-status-DEAD-RED':
+      case 'red':
+      case 'red-blinking':
         return App.healthIconClassRed;
         break;
-      case 'health-status-DEAD-YELLOW':
+      case 'yellow':
         return App.healthIconClassYellow;
-        break;
-      case 'health-status-DEAD-ORANGE':
-        return App.healthIconClassOrange;
-        break;
       default:
-        return "";
-        break;
+        return '';
     }
-  }.property('healthStatus'),
+  }.property('service.healthStatus','service.passiveState','service.serviceName'),
 
   didInsertElement: function () {
     this.updateToolTip();
@@ -117,34 +114,46 @@ App.ComponentLiveTextView =  Em.View.extend({
   liveComponents: null,
   totalComponents: null,
   color: function() {
-    return this.get("liveComponents") === 0;
-  }.property("liveComponents")
+    return this.get("liveComponents") === 0 && this.get('totalComponents') !== 0;
+  }.property("liveComponents", 'totalComponents')
 });
 
-App.MainDashboardServiceView = Em.View.extend({
+App.MainDashboardServiceViewWrapper = Em.Mixin.create({
+  layoutName: require('templates/main/service/service'),
+  isFullWidth: false
+});
+
+App.MainDashboardServiceView = Em.View.extend(App.MainDashboardServiceViewWrapper, {
   classNames: ['service', 'clearfix'],
 
   data: function () {
     return this.get('controller.data.' + this.get('serviceName'));
   }.property('controller.data'),
 
-  dashboardMasterComponentView : Em.View.extend({
+  dashboardMasterComponentView: Em.View.extend({
     didInsertElement: function() {
-      App.tooltip($('[rel=healthTooltip]'));
+      App.tooltip($('[rel=SummaryComponentHealthTooltip]'));
     },
     templateName: require('templates/main/service/info/summary/master_components'),
     mastersComp: function () {
-      return this.get('parentView.service.hostComponents').filterProperty('isMaster', true);
-    }.property("service")
+      return this.get('parentView.parentView.mastersObj');
+    }.property("parentView.parentView.mastersObj"),
+    willDestroyElement: function() {
+      $('[rel=SummaryComponentHealthTooltip]').tooltip('destroy');
+    }
   }),
 
   formatUnavailable: function(value){
     return (value || value == 0) ? value : this.t('services.service.summary.notAvailable');
   },
 
-  criticalAlertsCount: function () {
-    return this.get('service.criticalAlertsCount');
-  }.property('service.criticalAlertsCount'),
+  alertsCount: function () {
+    return this.get('service.alertsCount');
+  }.property('service.alertsCount'),
+
+  hasCriticalAlerts: function () {
+    return this.get('service.hasCriticalAlerts');
+  }.property('service.hasCriticalAlerts'),
 
   isCollapsed: false,
 

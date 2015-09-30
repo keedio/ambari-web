@@ -23,7 +23,20 @@ var mainServiceInfoConfigsController = null;
 describe("App.MainServiceInfoConfigsController", function () {
 
   beforeEach(function () {
-    mainServiceInfoConfigsController = App.MainServiceInfoConfigsController.create({});
+    sinon.stub(App.themesMapper, 'generateAdvancedTabs').returns(Em.K);
+    mainServiceInfoConfigsController = App.MainServiceInfoConfigsController.create({
+      dependentServiceNames: [],
+      loadDependentConfigs: function () {
+        return {done: Em.K}
+      },
+      loadConfigTheme: function () {
+        return $.Deferred().resolve().promise();
+      }
+    });
+  });
+
+  afterEach(function() {
+    App.themesMapper.generateAdvancedTabs.restore();
   });
 
   describe("#showSavePopup", function () {
@@ -103,15 +116,20 @@ describe("App.MainServiceInfoConfigsController", function () {
     ];
 
     beforeEach(function () {
+      sinon.stub(mainServiceInfoConfigsController, "get", function(key) {
+        return key == 'isSubmitDisabled' ?  false : Em.get(mainServiceInfoConfigsController, key);
+      });
       sinon.stub(mainServiceInfoConfigsController, "restartServicePopup", Em.K);
       sinon.stub(mainServiceInfoConfigsController, "getHash", function () {
         return "hash"
       });
-      App.router.route = Em.K;
+      sinon.stub(App.router, "route", Em.K);
     });
     afterEach(function () {
+      mainServiceInfoConfigsController.get.restore();
       mainServiceInfoConfigsController.restartServicePopup.restore();
       mainServiceInfoConfigsController.getHash.restore();
+      App.router.route.restore();
     });
 
     tests.forEach(function (t) {
@@ -136,6 +154,24 @@ describe("App.MainServiceInfoConfigsController", function () {
   });
 
   describe("#hasUnsavedChanges", function () {
+    var cases = [
+      {
+        hash: null,
+        hasUnsavedChanges: false,
+        title: 'configs not rendered'
+      },
+      {
+        hash: 'hash1',
+        hasUnsavedChanges: true,
+        title: 'with unsaved'
+      },
+      {
+        hash: 'hash',
+        hasUnsavedChanges: false,
+        title: 'without unsaved'
+      }
+    ];
+
     beforeEach(function () {
       sinon.stub(mainServiceInfoConfigsController, "getHash", function () {
         return "hash"
@@ -145,44 +181,11 @@ describe("App.MainServiceInfoConfigsController", function () {
       mainServiceInfoConfigsController.getHash.restore();
     });
 
-    it("with unsaved", function () {
-      mainServiceInfoConfigsController.set("hash", "hash1");
-      expect(mainServiceInfoConfigsController.hasUnsavedChanges()).to.equal(true);
-    });
-
-    it("without unsaved", function () {
-      mainServiceInfoConfigsController.set("hash", "hash");
-      expect(mainServiceInfoConfigsController.hasUnsavedChanges()).to.equal(false);
-    });
-  });
-
-  describe("#manageConfigurationGroup", function () {
-    beforeEach(function () {
-      sinon.stub(mainServiceInfoConfigsController, "manageConfigurationGroups", Em.K);
-    });
-    afterEach(function () {
-      mainServiceInfoConfigsController.manageConfigurationGroups.restore();
-    });
-    it("run manageConfigurationGroups", function () {
-      mainServiceInfoConfigsController.manageConfigurationGroup();
-      expect(mainServiceInfoConfigsController.manageConfigurationGroups.calledOnce).to.equal(true);
-    });
-  });
-
-  describe("#addOverrideProperty", function () {
-    var serviceConfigProperty = Em.Object.create({
-      overrides: []
-    });
-
-    var newSCP = App.ServiceConfigProperty.create(serviceConfigProperty);
-    newSCP.set('value', '');
-    newSCP.set('isOriginalSCP', false);
-    newSCP.set('parentSCP', serviceConfigProperty);
-    newSCP.set('isEditable', true);
-
-    it("add new overridden property", function () {
-      mainServiceInfoConfigsController.addOverrideProperty(serviceConfigProperty);
-      expect(serviceConfigProperty.get("overrides")[0]).to.eql(newSCP);
+    cases.forEach(function (item) {
+      it(item.title, function () {
+        mainServiceInfoConfigsController.set('hash', item.hash);
+        expect(mainServiceInfoConfigsController.hasUnsavedChanges()).to.equal(item.hasUnsavedChanges);
+      });
     });
   });
 
@@ -191,15 +194,23 @@ describe("App.MainServiceInfoConfigsController", function () {
     var tests = [
       {
         input: {
-          'publicHostName1': ['TaskTracker'],
-          'publicHostName2': ['JobTracker', 'TaskTracker']
+          context: {
+            restartRequiredHostsAndComponents: {
+              'publicHostName1': ['TaskTracker'],
+              'publicHostName2': ['JobTracker', 'TaskTracker']
+            }
+          }
         },
         components: "2 TaskTrackers, 1 JobTracker",
         text: Em.I18n.t('service.service.config.restartService.shouldBeRestarted').format(Em.I18n.t('common.components'))
       },
       {
         input: {
-          'publicHostName1': ['TaskTracker']
+          context: {
+            restartRequiredHostsAndComponents: {
+              'publicHostName1': ['TaskTracker']
+            }
+          }
         },
         components: "1 TaskTracker",
         text: Em.I18n.t('service.service.config.restartService.shouldBeRestarted').format(Em.I18n.t('common.component'))
@@ -208,17 +219,14 @@ describe("App.MainServiceInfoConfigsController", function () {
 
     beforeEach(function () {
       sinon.stub(mainServiceInfoConfigsController, "showItemsShouldBeRestarted", Em.K);
-      mainServiceInfoConfigsController.set("content", {restartRequiredHostsAndComponents: ""});
     });
     afterEach(function () {
       mainServiceInfoConfigsController.showItemsShouldBeRestarted.restore();
-      mainServiceInfoConfigsController.set("content", undefined);
     });
 
     tests.forEach(function (t) {
       it("trigger showItemsShouldBeRestarted popup with components", function () {
-        mainServiceInfoConfigsController.set("content.restartRequiredHostsAndComponents", t.input);
-        mainServiceInfoConfigsController.showComponentsShouldBeRestarted();
+        mainServiceInfoConfigsController.showComponentsShouldBeRestarted(t.input);
         expect(mainServiceInfoConfigsController.showItemsShouldBeRestarted.calledWith(t.components, t.text)).to.equal(true);
       });
     });
@@ -229,15 +237,23 @@ describe("App.MainServiceInfoConfigsController", function () {
     var tests = [
       {
         input: {
-          'publicHostName1': ['TaskTracker'],
-          'publicHostName2': ['JobTracker', 'TaskTracker']
+          context: {
+            restartRequiredHostsAndComponents: {
+              'publicHostName1': ['TaskTracker'],
+              'publicHostName2': ['JobTracker', 'TaskTracker']
+            }
+          }
         },
         hosts: "publicHostName1, publicHostName2",
         text: Em.I18n.t('service.service.config.restartService.shouldBeRestarted').format(Em.I18n.t('common.hosts'))
       },
       {
         input: {
-          'publicHostName1': ['TaskTracker']
+          context: {
+            restartRequiredHostsAndComponents: {
+              'publicHostName1': ['TaskTracker']
+            }
+          }
         },
         hosts: "publicHostName1",
         text: Em.I18n.t('service.service.config.restartService.shouldBeRestarted').format(Em.I18n.t('common.host'))
@@ -246,17 +262,14 @@ describe("App.MainServiceInfoConfigsController", function () {
 
     beforeEach(function () {
       sinon.stub(mainServiceInfoConfigsController, "showItemsShouldBeRestarted", Em.K);
-      mainServiceInfoConfigsController.set("content", {restartRequiredHostsAndComponents: ""});
     });
     afterEach(function () {
       mainServiceInfoConfigsController.showItemsShouldBeRestarted.restore();
-      mainServiceInfoConfigsController.set("content", undefined);
     });
 
     tests.forEach(function (t) {
       it("trigger showItemsShouldBeRestarted popup with hosts", function () {
-        mainServiceInfoConfigsController.set("content.restartRequiredHostsAndComponents", t.input);
-        mainServiceInfoConfigsController.showHostsShouldBeRestarted();
+        mainServiceInfoConfigsController.showHostsShouldBeRestarted(t.input);
         expect(mainServiceInfoConfigsController.showItemsShouldBeRestarted.calledWith(t.hosts, t.text)).to.equal(true);
       });
     });
@@ -308,6 +321,36 @@ describe("App.MainServiceInfoConfigsController", function () {
       mainServiceInfoConfigsController.restartAllStaleConfigComponents().onPrimary();
       expect(batchUtils.restartAllServiceHostComponents.calledOnce).to.equal(true);
     });
+    it("trigger check last check point warning before triggering restartAllServiceHostComponents", function () {
+      var mainConfigsControllerHdfsStarted = App.MainServiceInfoConfigsController.create({
+        content: {
+          serviceName: "HDFS",
+          hostComponents: [{
+            componentName: 'NAMENODE',
+            workStatus: 'STARTED'
+          }],
+          restartRequiredHostsAndComponents: {
+            "host1": ['NameNode'],
+            "host2": ['DataNode', 'ZooKeeper']
+          }
+        }
+      });
+      var mainServiceItemController = App.MainServiceItemController.create({});
+      sinon.stub(mainServiceItemController, 'checkNnLastCheckpointTime', function() {
+        return true;
+      });
+      sinon.stub(App.router, 'get', function(k) {
+        if ('mainServiceItemController' === k) {
+          return mainServiceItemController;
+        }
+        return Em.get(App.router, k);
+      });
+
+      mainConfigsControllerHdfsStarted.restartAllStaleConfigComponents();
+      expect(mainServiceItemController.checkNnLastCheckpointTime.calledOnce).to.equal(true);
+      mainServiceItemController.checkNnLastCheckpointTime.restore();
+      App.router.get.restore();
+    });
   });
 
   describe("#doCancel", function () {
@@ -317,48 +360,12 @@ describe("App.MainServiceInfoConfigsController", function () {
     afterEach(function () {
       Em.run.once.restore();
     });
-    it("trigger onConfigGroupChange", function () {
+
+    it("should clear dependent configs", function() {
+      mainServiceInfoConfigsController.set('groupsToSave', { HDFS: 'my cool group'});
+      mainServiceInfoConfigsController.set('_dependentConfigValues', Em.A([{name: 'prop_1'}]));
       mainServiceInfoConfigsController.doCancel();
-      expect(Em.run.once.calledWith(mainServiceInfoConfigsController, "onConfigGroupChange")).to.equal(true);
-    });
-  });
-
-  describe("#getCurrentServiceComponents", function () {
-    var t = Em.Object.create({
-      content: Em.Object.create({
-        hostComponents: [
-          Em.Object.create({
-            componentName: "componentName1",
-            displayName: "displayName1"
-          }),
-          Em.Object.create({
-            componentName: "componentName2",
-            displayName: "displayName2"
-          })
-        ]
-      }),
-      validComponents: Em.A([
-        Em.Object.create({
-          componentName: "componentName1",
-          displayName: "displayName1",
-          selected: false
-        }),
-        Em.Object.create({
-          componentName: "componentName2",
-          displayName: "displayName2",
-          selected: false
-        })
-      ])
-    });
-
-    beforeEach(function () {
-      mainServiceInfoConfigsController.set("content", { hostComponents: Em.A([])});
-    });
-
-    it("get current service components", function () {
-      mainServiceInfoConfigsController.get("content.hostComponents").push(t.content.hostComponents[0]);
-      var com = mainServiceInfoConfigsController.get("getCurrentServiceComponents");
-      expect(com[0]).to.eql(t.validComponents[0]);
+      expect(App.isEmptyObject(mainServiceInfoConfigsController.get('_dependentConfigValues'))).to.be.true;
     });
   });
 
@@ -396,131 +403,17 @@ describe("App.MainServiceInfoConfigsController", function () {
       }
     ];
     tests.forEach(function(t){
-      beforeEach(function () {
-        mainServiceInfoConfigsController.set("content", { hostComponents: []});
-      });
-
       it(t.m, function () {
-        mainServiceInfoConfigsController.set("content.hostComponents", t.content.hostComponents);
+        sinon.stub(App.HostComponent, 'find', function(){
+          return t.content.hostComponents;
+        });
         expect(mainServiceInfoConfigsController.getMasterComponentHostValue(t.content.hostComponents[0].componentName, t.multiple)).to.eql(t.result);
+        App.HostComponent.find.restore();
       });
     });
   });
 
-  describe("#setServerConfigValue", function () {
-
-    it("parsing storm.zookeeper.servers property in non standart method", function () {
-      expect(mainServiceInfoConfigsController.setServerConfigValue("storm.zookeeper.servers", ["a", "b"])).to.equal('[\'a\',\'b\']');
-    });
-    it("parsing default properties", function () {
-      expect(mainServiceInfoConfigsController.setServerConfigValue("any.other.property", "value")).to.equal("value");
-    });
-  });
-
-  describe("#createSiteObj", function () {
-
-    var tests = [
-      {
-        siteName: "hdfs-site",
-        tagName: "version1",
-        siteObj: Em.A([
-          {
-            name: "property1",
-            value: "value1"
-          },
-          {
-            name: "property2",
-            value: "value2&lt;"
-          },
-          {
-            name: "property_heapsize",
-            value: "value3"
-          },
-          {
-            name: "property_permsize",
-            value: "value4m"
-          }
-        ]),
-        result: {
-          "type": "hdfs-site",
-          "tag": "version1",
-          "properties": {
-            "property1": "value1",
-            "property2": "value2&lt;",
-            "property_heapsize": "value3m",
-            "property_permsize": "value4m"
-          }
-        },
-        m: "default"
-      },
-      {
-        siteName: "falcon-startup.properties",
-        tagName: "version1",
-        siteObj: Em.A([
-          {
-            name: "property1",
-            value: "value1"
-          },
-          {
-            name: "property2",
-            value: "value2&lt;"
-          }
-        ]),
-        result: {
-          "type": "falcon-startup.properties",
-          "tag": "version1",
-          "properties": {
-            "property1": "value1",
-            "property2": "value2&lt;"
-          }
-        },
-        m: "for falcon-startup.properties"
-
-      }
-    ];
-    tests.forEach(function (t) {
-      it("create site object " + t.m, function () {
-        expect(mainServiceInfoConfigsController.createSiteObj(t.siteName, t.tagName, t.siteObj)).to.deep.eql(t.result)
-      });
-    });
-  });
-
-  describe("#createCoreSiteObj", function () {
-
-    var tests = [
-      {
-        tagName: "version1",
-        uiConfigs: Em.A([
-          Em.Object.create({
-            name: "property1",
-            value: "value1",
-            filename: "core-site.xml"
-          }),
-          Em.Object.create({
-            name: "property2",
-            value: "value2&lt;",
-            filename: "core-site.xml"
-          })
-        ]),
-        result: {
-          "type": "core-site",
-          "tag": "version1",
-          "properties": {
-            "property1": "value1",
-            "property2": "value2&lt;"
-          }
-        }
-      }
-    ];
-    tests.forEach(function (t) {
-      it("create core object", function () {
-        mainServiceInfoConfigsController.set("uiConfigs", t.uiConfigs);
-        expect(mainServiceInfoConfigsController.createCoreSiteObj(t.tagName)).to.deep.eql(t.result);
-      });
-    });
-  });
-
-  describe("#doPUTClusterConfigurationSites", function () {
+  describe("#putChangedConfigurations", function () {
       var sc = [
       Em.Object.create({
         configs: [
@@ -579,19 +472,19 @@ describe("App.MainServiceInfoConfigsController", function () {
       App.ajax.send.restore();
       App.router.getClusterName.restore();
     });
-    it("ajax request to put clsuter cfg", function () {
+    it("ajax request to put cluster cfg", function () {
       mainServiceInfoConfigsController.set('stepConfigs', sc);
-      expect(mainServiceInfoConfigsController.doPUTClusterConfigurationSites([])).to.equal(mainServiceInfoConfigsController.get("doPUTClusterConfigurationSiteResult"));
+      expect(mainServiceInfoConfigsController.putChangedConfigurations([]));
       expect(App.ajax.send.calledOnce).to.be.true;
     });
     it('values should be parsed', function () {
       mainServiceInfoConfigsController.set('stepConfigs', sc);
-      mainServiceInfoConfigsController.doPUTClusterConfigurationSites([]);
+      mainServiceInfoConfigsController.putChangedConfigurations([]);
       expect(mainServiceInfoConfigsController.get('stepConfigs')[0].get('configs').mapProperty('value').uniq()).to.eql(['1024m']);
     });
     it('values should not be parsed', function () {
       mainServiceInfoConfigsController.set('stepConfigs', scExc);
-      mainServiceInfoConfigsController.doPUTClusterConfigurationSites([]);
+      mainServiceInfoConfigsController.putChangedConfigurations([]);
       expect(mainServiceInfoConfigsController.get('stepConfigs')[0].get('configs').mapProperty('value').uniq()).to.eql(['1024m']);
     });
   });
@@ -649,135 +542,88 @@ describe("App.MainServiceInfoConfigsController", function () {
     });
   });
 
-  describe("#addDynamicProperties", function() {
+  describe("#isDirChanged", function() {
 
-    var tests = [
-      {
-        stepConfigs: [Em.Object.create({
-          serviceName: "HIVE",
-          configs: []
-        })],
-        content: Em.Object.create({
-          serviceName: "HIVE"
-        }),
-        m: "add dynamic property",
-        addDynamic: true
-      },
-      {
-        stepConfigs: [Em.Object.create({
-          serviceName: "HIVE",
-          configs: [
-            Em.Object.create({
-              name: "templeton.hive.properties"
+    describe("when service name is HDFS", function() {
+      beforeEach(function() {
+        mainServiceInfoConfigsController.set('content', Ember.Object.create ({ serviceName: 'HDFS' }));
+      });
+
+      describe("for hadoop 2", function() {
+
+        var tests = [
+          {
+            it: "should set dirChanged to false if none of the properties exist",
+            expect: false,
+            config: Ember.Object.create ({})
+          },
+          {
+            it: "should set dirChanged to true if dfs.namenode.name.dir is not default",
+            expect: true,
+            config: Ember.Object.create ({
+              name: 'dfs.namenode.name.dir',
+              isNotDefaultValue: true
             })
-          ]
-        })],
-        content: Em.Object.create({
-          serviceName: "HIVE"
-        }),
-        m: "don't add dynamic property (already included)",
-        addDynamic: false
-      },
-      {
-        stepConfigs: [Em.Object.create({
-          serviceName: "HDFS",
-          configs: []
-        })],
-        content: Em.Object.create({
-          serviceName: "HDFS"
-        }),
-        m: "don't add dynamic property (wrong service)",
-        addDynamic: false
-      }
-    ];
-    var dynamicProperty = {
-      "name": "templeton.hive.properties",
-      "templateName": ["hivemetastore_host"],
-      "foreignKey": null,
-      "value": "hive.metastore.local=false,hive.metastore.uris=thrift://<templateName[0]>:9083,hive.metastore.sasl.enabled=yes,hive.metastore.execute.setugi=true,hive.metastore.warehouse.dir=/apps/hive/warehouse",
-      "filename": "webhcat-site.xml"
-    };
-
-
-
-    tests.forEach(function(t) {
-      it(t.m, function() {
-        mainServiceInfoConfigsController.set("content", t.content);
-        mainServiceInfoConfigsController.set("stepConfigs", t.stepConfigs);
-        var configs = [];
-        mainServiceInfoConfigsController.addDynamicProperties(configs);
-        if (t.addDynamic){
-          expect(configs.findProperty("name","templeton.hive.properties")).to.deep.eql(dynamicProperty);
-        }
-      });
-    });
-  });
-
-  describe("#loadUiSideConfigs", function () {
-
-    var t = {
-      configMapping: [
-        {
-          foreignKey: null,
-          templateName: "",
-          value: "default",
-          name: "name1",
-          filename: "filename1"
-        },
-        {
-          foreignKey: "notNull",
-          templateName: "",
-          value: "default2",
-          name: "name2",
-          filename: "filename2"
-        }
-      ],
-      configMappingf: [
-        {
-          foreignKey: null,
-          templateName: "",
-          value: "default",
-          name: "name1",
-          filename: "filename1"
-        }
-      ],
-      valueWithOverrides: {
-        "value": "default",
-        "overrides": {
-          "value1": "value1",
-          "value2": "value2"
-        }
-      },
-      uiConfigs: [
-        {
-          "id": "site property",
-          "name": "name1",
-          "value": "default",
-          "filename": "filename1",
-          "overrides": {
-            "value1": "value1",
-            "value2": "value2"
+          },
+          {
+            it: "should set dirChanged to false if dfs.namenode.name.dir is default",
+            expect: false,
+            config: Ember.Object.create ({
+              name: 'dfs.namenode.name.dir',
+              isNotDefaultValue: false
+            })
+          },
+          {
+            it: "should set dirChanged to true if dfs.namenode.checkpoint.dir is not default",
+            expect: true,
+            config: Ember.Object.create ({
+              name: 'dfs.namenode.checkpoint.dir',
+              isNotDefaultValue: true
+            })
+          },
+          {
+            it: "should set dirChanged to false if dfs.namenode.checkpoint.dir is default",
+            expect: false,
+            config: Ember.Object.create ({
+              name: 'dfs.namenode.checkpoint.dir',
+              isNotDefaultValue: false
+            })
+          },
+          {
+            it: "should set dirChanged to true if dfs.datanode.data.dir is not default",
+            expect: true,
+            config: Ember.Object.create ({
+              name: 'dfs.datanode.data.dir',
+              isNotDefaultValue: true
+            })
+          },
+          {
+            it: "should set dirChanged to false if dfs.datanode.data.dir is default",
+            expect: false,
+            config: Ember.Object.create ({
+              name: 'dfs.datanode.data.dir',
+              isNotDefaultValue: false
+            })
           }
-        }
-      ]
-    };
+        ];
 
-    beforeEach(function(){
-      sinon.stub(mainServiceInfoConfigsController, "addDynamicProperties", Em.K);
-      sinon.stub(mainServiceInfoConfigsController, "getGlobConfigValueWithOverrides", function () {
-        return t.valueWithOverrides
+        beforeEach(function() {
+          sinon.stub(App, 'get').returns(true);
+        });
+
+        afterEach(function() {
+          App.get.restore();
+        });
+
+        tests.forEach(function(test) {
+          it(test.it, function() {
+            mainServiceInfoConfigsController.set('stepConfigs', [Ember.Object.create ({ configs: [test.config], serviceName: 'HDFS' })]);
+            expect(mainServiceInfoConfigsController.isDirChanged()).to.equal(test.expect);
+          })
+        });
       });
     });
 
-    afterEach(function(){
-      mainServiceInfoConfigsController.addDynamicProperties.restore();
-      mainServiceInfoConfigsController.getGlobConfigValueWithOverrides.restore();
-    });
-
-    it("load ui config", function() {
-      expect(mainServiceInfoConfigsController.loadUiSideConfigs(t.configMapping)[0]).to.deep.equal(t.uiConfigs[0]);
-      expect(mainServiceInfoConfigsController.addDynamicProperties.calledWith(t.configMappingf)).to.equal(true);
-    });
   });
 
   describe("#formatConfigValues", function () {
@@ -811,62 +657,6 @@ describe("App.MainServiceInfoConfigsController", function () {
 
   });
 
-  describe("#createConfigObject", function() {
-    var tests = [
-      {
-        siteName: "core-site",
-        serviceName: "HDFS",
-        method: "createCoreSiteObj"
-      },
-      {
-        siteName: "core-site",
-        serviceName: "ANY",
-        method: false
-      },
-      {
-        siteName: "any",
-        method: "createSiteObj"
-      },
-      {
-        siteName: "mapred-queue-acls",
-        method: false,
-        capacitySchedulerUi: false
-      },
-      {
-        siteName: "mapred-queue-acls",
-        method: "createSiteObj",
-        capacitySchedulerUi: true
-      }
-    ];
-
-    var capacitySchedulerUi = App.supports.capacitySchedulerUi;
-    beforeEach(function() {
-      sinon.stub(mainServiceInfoConfigsController, "createCoreSiteObj", Em.K);
-      sinon.stub(mainServiceInfoConfigsController, "createSiteObj", Em.K);
-      mainServiceInfoConfigsController.set("content", {});
-    });
-
-    afterEach(function() {
-      mainServiceInfoConfigsController.createCoreSiteObj.restore();
-      mainServiceInfoConfigsController.createSiteObj.restore();
-      App.supports.capacitySchedulerUi = capacitySchedulerUi;
-    });
-
-    tests.forEach(function(t) {
-      it("create object for " + t.siteName + " run method " + t.method, function() {
-        App.supports.capacitySchedulerUi = t.capacitySchedulerUi;
-        mainServiceInfoConfigsController.set("content.serviceName", t.serviceName);
-        mainServiceInfoConfigsController.createConfigObject(t.siteName, "versrion1");
-        if (t.method) {
-          expect(mainServiceInfoConfigsController[t.method].calledOnce).to.equal(true);
-        } else {
-          expect(mainServiceInfoConfigsController["createCoreSiteObj"].calledOnce).to.equal(false);
-          expect(mainServiceInfoConfigsController["createSiteObj"].calledOnce).to.equal(false);
-        }
-      });
-    });
-  });
-
   describe("#putConfigGroupChanges", function() {
 
     var t = {
@@ -892,114 +682,6 @@ describe("App.MainServiceInfoConfigsController", function () {
     it("updates configs groups", function() {
       mainServiceInfoConfigsController.putConfigGroupChanges(t.data);
       expect(JSON.parse($.ajax.args[0][0].data)).to.deep.equal(t.request);
-    });
-  });
-
-  describe("#setValueForCheckBox", function() {
-    var tests = [
-      {
-        serviceConfigPropertyInput: Em.Object.create({
-          value: "true",
-          defaultValue: "true",
-          displayType: 'checkbox'
-        }),
-        serviceConfigProperty: Em.Object.create({
-          value: true,
-          defaultValue: true,
-          displayType: 'checkbox'
-        })
-      },
-      {
-        serviceConfigPropertyInput: Em.Object.create({
-          value: "false",
-          defaultValue: "false",
-          displayType: 'checkbox'
-        }),
-        serviceConfigProperty: Em.Object.create({
-          value: false,
-          defaultValue: false,
-          displayType: 'checkbox'
-        })
-      },
-      {
-        serviceConfigPropertyInput: Em.Object.create({
-          value: "false",
-          defaultValue: "false"
-        }),
-        serviceConfigProperty: Em.Object.create({
-          value: "false",
-          defaultValue: "false"
-        })
-      }
-    ];
-    tests.forEach(function(t) {
-      it("set " + t.serviceConfigPropertyInput.value, function(){
-        var serviceConfigProperty = t.serviceConfigPropertyInput;
-        mainServiceInfoConfigsController.setValueForCheckBox(serviceConfigProperty);
-        expect(serviceConfigProperty).to.eql(t.serviceConfigProperty);
-      });
-    });
-  });
-
-  describe("#setEditability", function () {
-
-    var tests = [
-      {
-        isAdmin: true,
-        isHostsConfigsPage: false,
-        defaultGroupSelected: true,
-        isReconfigurable: true,
-        isEditable: true,
-        m: ""
-      },
-      {
-        isAdmin: false,
-        isHostsConfigsPage: false,
-        defaultGroupSelected: true,
-        isReconfigurable: true,
-        isEditable: false,
-        m: "(non admin)"
-      },
-      {
-        isAdmin: true,
-        isHostsConfigsPage: true,
-        defaultGroupSelected: true,
-        isReconfigurable: true,
-        isEditable: false,
-        m: "(isHostsConfigsPage)"
-      },
-      {
-        isAdmin: true,
-        isHostsConfigsPage: false,
-        defaultGroupSelected: false,
-        isReconfigurable: true,
-        isEditable: false,
-        m: "(defaultGroupSelected is false)"
-      },
-      {
-        isAdmin: true,
-        isHostsConfigsPage: false,
-        defaultGroupSelected: true,
-        isReconfigurable: false,
-        isEditable: false,
-        m: "(isReconfigurable is false)"
-      }
-    ];
-
-    var a = App.get('isAdmin');
-    afterEach(function () {
-      App.set('isAdmin', a);
-    });
-    tests.forEach(function(t) {
-      it("set isEditable " + t.isEditable + t.m, function(){
-        App.set('isAdmin', t.isAdmin);
-        mainServiceInfoConfigsController.set("isHostsConfigsPage", t.isHostsConfigsPage);
-        var serviceConfigProperty = Em.Object.create({
-          isReconfigurable: t.isReconfigurable
-        });
-        mainServiceInfoConfigsController.setEditability(serviceConfigProperty, t.defaultGroupSelected);
-        expect(serviceConfigProperty.get("isEditable")).to.equal(t.isEditable);
-      });
     });
   });
 
@@ -1062,174 +744,72 @@ describe("App.MainServiceInfoConfigsController", function () {
       }];
 
     beforeEach(function() {
-      sinon.stub(mainServiceInfoConfigsController,"addOverrideProperty", Em.K)
+      sinon.stub(App.config,"createOverride", Em.K)
     });
     afterEach(function() {
-      mainServiceInfoConfigsController.addOverrideProperty.restore();
+      App.config.createOverride.restore();
     });
     tests.forEach(function(t) {
       it(t.m, function() {
         mainServiceInfoConfigsController.set("overrideToAdd", t.overrideToAdd);
         mainServiceInfoConfigsController.checkOverrideProperty(t.componentConfig);
         if(t.add) {
-          expect(mainServiceInfoConfigsController.addOverrideProperty.calledWith(t.overrideToAdd)).to.equal(true);
+          expect(App.config.createOverride.calledWith(t.overrideToAdd)).to.equal(true);
           expect(mainServiceInfoConfigsController.get("overrideToAdd")).to.equal(null);
         } else {
-          expect(mainServiceInfoConfigsController.addOverrideProperty.calledOnce).to.equal(false);
+          expect(App.config.createOverride.calledOnce).to.equal(false);
         }
       });
-    });
-  });
-
-  describe("#setValuesForOverrides", function() {
-    var tests = [
-      {
-        overrides: [
-          {name: "override1"},
-          {name: "override2"}
-        ],
-        _serviceConfigProperty: {},
-        serviceConfigProperty: Em.Object.create({overrides: Em.A([])}),
-        defaultGroupSelected: true
-      }
-    ];
-    beforeEach(function() {
-      sinon.stub(mainServiceInfoConfigsController, "createNewSCP", function(override) {return {name: override.name}})
-    });
-    afterEach(function() {
-      mainServiceInfoConfigsController.createNewSCP.restore();
-    });
-    tests.forEach(function(t) {
-      it("set values for overrides. use createNewSCP method to do this", function() {
-        var serviceConfigProperty = t.serviceConfigProperty;
-        mainServiceInfoConfigsController.setValuesForOverrides(t.overrides, serviceConfigProperty, t.serviceConfigProperty, t.defaultGroupSelected);
-        expect(serviceConfigProperty.get("overrides")[0]).to.eql(t.overrides[0]);
-        expect(serviceConfigProperty.get("overrides")[1]).to.eql(t.overrides[1]);
-      });
-    });
-  });
-
-  describe("#createConfigProperty", function() {
-    var tests = [
-      {
-        _serviceConfigProperty: {
-          overrides: {
-
-          }
-        },
-        defaultGroupSelected: true,
-        restartData: {},
-        serviceConfigsData: {},
-        serviceConfigProperty: {
-          overrides: null,
-          isOverridable: true
-        }
-      }];
-    beforeEach(function() {
-      sinon.stub(mainServiceInfoConfigsController, "setValueForCheckBox", Em.K);
-      sinon.stub(mainServiceInfoConfigsController, "setValidator", Em.K);
-      sinon.stub(mainServiceInfoConfigsController, "setValuesForOverrides", Em.K);
-      sinon.stub(mainServiceInfoConfigsController, "setEditability", Em.K);
-    });
-    afterEach(function() {
-      mainServiceInfoConfigsController.setValueForCheckBox.restore();
-      mainServiceInfoConfigsController.setValidator.restore();
-      mainServiceInfoConfigsController.setValuesForOverrides.restore();
-      mainServiceInfoConfigsController.setEditability.restore();
-    });
-    tests.forEach(function(t) {
-      it("create service config. run methods to correctly set object fileds", function() {
-        var result = mainServiceInfoConfigsController.createConfigProperty(t._serviceConfigProperty, t.defaultGroupSelected, t.restartData, t.serviceConfigsData);
-        expect(mainServiceInfoConfigsController.setValueForCheckBox.calledWith(t.serviceConfigProperty));
-        expect(mainServiceInfoConfigsController.setValidator.calledWith(t.serviceConfigProperty, t.serviceConfigsData));
-        expect(mainServiceInfoConfigsController.setValuesForOverrides.calledWith(t._serviceConfigProperty.overrides, t._serviceConfigProperty, t.serviceConfigProperty, t.defaultGroupSelected));
-        expect(mainServiceInfoConfigsController.setValidator.calledWith(t.serviceConfigProperty, t.defaultGroupSelected));
-        expect(result.getProperties('overrides','isOverridable')).to.eql(t.serviceConfigProperty);
-      });
-    });
-  });
-
-  describe("#createNewSCP", function() {
-    var tests = [
-      {
-        overrides: {
-          value: "value",
-          group: {
-            value: "group1"
-          }
-        },
-        _serviceConfigProperty: {},
-        serviceConfigProperty: Em.Object.create({
-          value: "parentSCP",
-          supportsFinal: true
-        }),
-        defaultGroupSelected: true,
-
-        newSCP: {
-          value: "value",
-          isOriginalSCP: false,
-          parentSCP:Em.Object.create({
-            value: "parentSCP",
-            supportsFinal: true
-          }),
-          group: {
-            value: "group1"
-          },
-          isEditable: false
-        }
-      }
-    ];
-    tests.forEach(function(t) {
-      it("", function() {
-        var newSCP = mainServiceInfoConfigsController.createNewSCP(t.overrides, t._serviceConfigProperty, t.serviceConfigProperty, t.defaultGroupSelected);
-        expect(newSCP.getProperties("value", "isOriginalSCP", "parentSCP", "group", "isEditable")).to.eql(t.newSCP);
-      });
-    });
-  });
-
-  describe("setCompareDefaultGroupConfig", function () {
-    beforeEach(function () {
-      sinon.stub(mainServiceInfoConfigsController, "getComparisonConfig").returns("compConfig");
-      sinon.stub(mainServiceInfoConfigsController, "getMockComparisonConfig").returns("mockConfig");
-      sinon.stub(mainServiceInfoConfigsController, "hasCompareDiffs").returns(true);
-    });
-    afterEach(function () {
-      mainServiceInfoConfigsController.getComparisonConfig.restore();
-      mainServiceInfoConfigsController.getMockComparisonConfig.restore();
-      mainServiceInfoConfigsController.hasCompareDiffs.restore();
-    });
-    it("expect that setCompareDefaultGroupConfig will not run anything", function () {
-      expect(mainServiceInfoConfigsController.setCompareDefaultGroupConfig({}).compareConfigs.length).to.equal(0);
-    });
-    it("expect that setCompareDefaultGroupConfig will not run anything", function () {
-      expect(mainServiceInfoConfigsController.setCompareDefaultGroupConfig({}, {}).compareConfigs.length).to.equal(0);
-    });
-    it("expect that serviceConfig.compareConfigs will be getMockComparisonConfig", function () {
-      expect(mainServiceInfoConfigsController.setCompareDefaultGroupConfig({isUserProperty: true}, null)).to.eql({compareConfigs: ["mockConfig"], isUserProperty: true, isComparison: true, hasCompareDiffs: true});
-    });
-    it("expect that serviceConfig.compareConfigs will be getComparisonConfig", function () {
-      expect(mainServiceInfoConfigsController.setCompareDefaultGroupConfig({isUserProperty: true}, {})).to.eql({compareConfigs: ["compConfig"], isUserProperty: true, isComparison: true, hasCompareDiffs: true});
-    });
-    it("expect that serviceConfig.compareConfigs will be getComparisonConfig", function () {
-      expect(mainServiceInfoConfigsController.setCompareDefaultGroupConfig({isReconfigurable: true}, {})).to.eql({compareConfigs: ["compConfig"], isReconfigurable: true, isComparison: true, hasCompareDiffs: true});
-    });
-    it("expect that serviceConfig.compareConfigs will be getComparisonConfig", function () {
-      expect(mainServiceInfoConfigsController.setCompareDefaultGroupConfig({isReconfigurable: true, isMock: true}, {})).to.eql({compareConfigs: ["compConfig"], isReconfigurable: true, isMock: true, isComparison: true, hasCompareDiffs: true});
     });
   });
 
   describe("#trackRequest()", function () {
     after(function(){
-      mainServiceInfoConfigsController.set('requestInProgress', null);
+      mainServiceInfoConfigsController.get('requestsInProgress').clear();
     });
-    it("should set requestInProgress", function () {
+    it("should set requestsInProgress", function () {
+      mainServiceInfoConfigsController.get('requestsInProgress').clear();
       mainServiceInfoConfigsController.trackRequest({'request': {}});
-      expect(mainServiceInfoConfigsController.get('requestInProgress')).to.eql({'request': {}});
+      expect(mainServiceInfoConfigsController.get('requestsInProgress')[0]).to.eql({'request': {}});
     });
   });
-});
 
-describe("#setCompareDefaultGroupConfig", function() {
+  describe("#setCompareDefaultGroupConfig", function() {
+    beforeEach(function() {
+      sinon.stub(mainServiceInfoConfigsController, "getComparisonConfig").returns("compConfig");
+      sinon.stub(mainServiceInfoConfigsController, "getMockComparisonConfig").returns("mockConfig");
+      sinon.stub(mainServiceInfoConfigsController, "hasCompareDiffs").returns(true);
+    });
+    afterEach(function() {
+      mainServiceInfoConfigsController.getComparisonConfig.restore();
+      mainServiceInfoConfigsController.getMockComparisonConfig.restore();
+      mainServiceInfoConfigsController.hasCompareDiffs.restore();
+    });
+    it("empty service config passed, expect that setCompareDefaultGroupConfig will not run anything", function() {
+      expect(mainServiceInfoConfigsController.setCompareDefaultGroupConfig({}).compareConfigs.length).to.equal(0);
+    });
+    it("empty service config and comparison passed, expect that setCompareDefaultGroupConfig will not run anything", function() {
+      expect(mainServiceInfoConfigsController.setCompareDefaultGroupConfig({},{}).compareConfigs.length).to.equal(0);
+    });
+    it("expect that serviceConfig.compareConfigs will be getMockComparisonConfig", function() {
+      expect(mainServiceInfoConfigsController.setCompareDefaultGroupConfig({isUserProperty: true}, null)).to.eql({compareConfigs: ["mockConfig"], isUserProperty: true, isComparison: true, hasCompareDiffs: true});
+    });
+    it("expect that serviceConfig.compareConfigs will be getComparisonConfig", function() {
+      expect(mainServiceInfoConfigsController.setCompareDefaultGroupConfig({isUserProperty: true}, {})).to.eql({compareConfigs: ["compConfig"], isUserProperty: true, isComparison: true, hasCompareDiffs: true});
+    });
+    it("expect that serviceConfig.compareConfigs will be getComparisonConfig", function() {
+      expect(mainServiceInfoConfigsController.setCompareDefaultGroupConfig({isReconfigurable: true}, {})).to.eql({compareConfigs: ["compConfig"], isReconfigurable: true, isComparison: true, hasCompareDiffs: true});
+    });
+    it("expect that serviceConfig.compareConfigs will be getComparisonConfig", function() {
+      expect(mainServiceInfoConfigsController.setCompareDefaultGroupConfig({isReconfigurable: true, isMock: true}, {})).to.eql({compareConfigs: ["compConfig"], isReconfigurable: true, isMock: true, isComparison: true, hasCompareDiffs: true});
+    });
+    it("property was created during upgrade and have no comparison, compare with 'Undefined' value should be created", function() {
+      expect(mainServiceInfoConfigsController.setCompareDefaultGroupConfig({name: 'prop1', isUserProperty: false}, null)).to.eql({
+        name: 'prop1', isUserProperty: false, compareConfigs: ["mockConfig"],
+        isComparison: true, hasCompareDiffs: true
+      });
+    });
+  });
 
   describe('#showSaveConfigsPopup', function () {
 
@@ -1237,6 +817,7 @@ describe("#setCompareDefaultGroupConfig", function() {
 
     describe('#bodyClass', function () {
       beforeEach(function() {
+        sinon.stub(App.StackService, 'find').returns([{dependentServiceNames: []}]);
         sinon.stub(App.ajax, 'send', Em.K);
         // default implementation
         bodyView = mainServiceInfoConfigsController.showSaveConfigsPopup().get('bodyClass').create({
@@ -1246,6 +827,7 @@ describe("#setCompareDefaultGroupConfig", function() {
 
       afterEach(function() {
         App.ajax.send.restore();
+        App.StackService.find.restore();
       });
 
       describe('#componentsFilterSuccessCallback', function () {
@@ -1274,6 +856,281 @@ describe("#setCompareDefaultGroupConfig", function() {
         });
       });
     });
+  });
+
+  describe('#setHiveHostName', function () {
+    beforeEach(function () {
+      sinon.stub(App.StackService, 'find').returns([
+        {
+          serviceName: 'HIVE'
+        },
+        {
+          serviceName: 'OOZIE'
+        }
+      ]);
+    });
+
+    afterEach(function () {
+      App.StackService.find.restore();
+    });
+    Em.A([
+        {
+          globals: [
+            Em.Object.create({name: 'hive_database', value: 'New MySQL Database'}),
+            Em.Object.create({name: 'hive_database_type', value: 'mysql'}),
+            Em.Object.create({name: 'hive_ambari_host', value: 'h1'}),
+            Em.Object.create({name: 'hive_hostname', value: 'h2'})
+          ],
+          removed: ['hive_existing_mysql_host', 'hive_existing_mysql_database', 'hive_existing_oracle_host', 'hive_existing_oracle_database', 'hive_existing_postgresql_host', 'hive_existing_postgresql_database', 'hive_existing_mssql_server_database', 'hive_existing_mssql_server_host', 'hive_existing_mssql_server_2_database', 'hive_existing_mssql_server_2_host'],
+          m: 'hive_database: New MySQL Database',
+          host: 'h2'
+        },
+        {
+          globals: [
+            Em.Object.create({name: 'hive_database', value: 'New PostgreSQL Database'}),
+            Em.Object.create({name: 'hive_database_type', value: 'mysql'}),
+            Em.Object.create({name: 'hive_ambari_host', value: 'h1'}),
+            Em.Object.create({name: 'hive_hostname', value: 'h2'})
+          ],
+          removed: ['hive_existing_mysql_host', 'hive_existing_mysql_database', 'hive_existing_oracle_host', 'hive_existing_oracle_database', 'hive_existing_postgresql_host', 'hive_existing_postgresql_database', 'hive_existing_mssql_server_database', 'hive_existing_mssql_server_host', 'hive_existing_mssql_server_2_database', 'hive_existing_mssql_server_2_host'],
+          m: 'hive_database: New PostgreSQL Database',
+          host: 'h2'
+        },
+        {
+          globals: [
+            Em.Object.create({name: 'hive_database', value: 'Existing MySQL Database'}),
+            Em.Object.create({name: 'hive_database_type', value: 'mysql'}),
+            Em.Object.create({name: 'hive_existing_mysql_host', value: 'h1'}),
+            Em.Object.create({name: 'hive_hostname', value: 'h2'})
+          ],
+          removed: ['hive_ambari_database', 'hive_existing_oracle_host', 'hive_existing_oracle_database', 'hive_existing_postgresql_host', 'hive_existing_postgresql_database', 'hive_existing_mssql_server_database', 'hive_existing_mssql_server_host', 'hive_existing_mssql_server_2_database', 'hive_existing_mssql_server_2_host'],
+          m: 'hive_database: Existing MySQL Database',
+          host: 'h2'
+        },
+        {
+          globals: [
+            Em.Object.create({name: 'hive_database', value: 'Existing PostgreSQL Database'}),
+            Em.Object.create({name: 'hive_database_type', value: 'postgresql'}),
+            Em.Object.create({name: 'hive_existing_postgresql_host', value: 'h1'}),
+            Em.Object.create({name: 'hive_hostname', value: 'h2'})
+          ],
+          removed: ['hive_ambari_database', 'hive_existing_mysql_host', 'hive_existing_mysql_database', 'hive_existing_oracle_host', 'hive_existing_oracle_database', 'hive_existing_mssql_server_database', 'hive_existing_mssql_server_host', 'hive_existing_mssql_server_2_database', 'hive_existing_mssql_server_2_host'],
+          m: 'hive_database: Existing PostgreSQL Database',
+          host: 'h2'
+        },
+        {
+          globals: [
+            Em.Object.create({name: 'hive_database', value: 'Existing Oracle Database'}),
+            Em.Object.create({name: 'hive_database_type', value: 'oracle'}),
+            Em.Object.create({name: 'hive_existing_oracle_host', value: 'h1'}),
+            Em.Object.create({name: 'hive_hostname', value: 'h2'})
+          ],
+          removed: ['hive_ambari_database', 'hive_existing_mysql_host', 'hive_existing_mysql_database', 'hive_existing_postgresql_host', 'hive_existing_postgresql_database', 'hive_existing_mssql_server_database', 'hive_existing_mssql_server_host', 'hive_existing_mssql_server_2_database', 'hive_existing_mssql_server_2_host'],
+          m: 'hive_database: Existing Oracle Database',
+          host: 'h2'
+        },
+        {
+          globals: [
+            Em.Object.create({name: 'hive_database', value: 'Existing MSSQL Server database with SQL authentication'}),
+            Em.Object.create({name: 'hive_database_type', value: 'mssql'}),
+            Em.Object.create({name: 'hive_existing_mssql_server_host', value: 'h1'}),
+            Em.Object.create({name: 'hive_hostname', value: 'h2'})
+          ],
+          removed: ['hive_ambari_database', 'hive_existing_mysql_host', 'hive_existing_mysql_database', 'hive_existing_postgresql_host', 'hive_existing_postgresql_database', 'hive_existing_oracle_host', 'hive_existing_oracle_database', 'hive_existing_mssql_server_2_database', 'hive_existing_mssql_server_2_host'],
+          m: 'hive_database: Existing MSSQL Server database with SQL authentication',
+          host: 'h2'
+        },
+        {
+          globals: [
+            Em.Object.create({name: 'hive_database', value: 'Existing MSSQL Server database with integrated authentication'}),
+            Em.Object.create({name: 'hive_database_type', value: 'mssql'}),
+            Em.Object.create({name: 'hive_existing_mssql_server_2_host', value: 'h1'}),
+            Em.Object.create({name: 'hive_hostname', value: 'h2'})
+          ],
+          removed: ['hive_ambari_database', 'hive_existing_mysql_host', 'hive_existing_mysql_database', 'hive_existing_postgresql_host', 'hive_existing_postgresql_database', 'hive_existing_oracle_host', 'hive_existing_oracle_database', 'hive_existing_mssql_server_database', 'hive_existing_mssql_server_host'],
+          m: 'hive_database: Existing MSSQL Server database with integrated authentication',
+          host: 'h2'
+        }
+      ]).forEach(function (test) {
+        it(test.m, function () {
+          var configs = test.globals.slice();
+          test.removed.forEach(function (c) {
+            configs.pushObject(Em.Object.create({name: c}))
+          });
+          configs = mainServiceInfoConfigsController.setHiveHostName(configs);
+          test.removed.forEach(function (name) {
+            if (!Em.isNone(configs.findProperty('name', name))) console.log('!!!!', name);
+            expect(Em.isNone(configs.findProperty('name', name))).to.equal(true);
+          });
+          expect(configs.findProperty('name', 'hive_hostname').value).to.equal(test.host);
+        });
+      });
+
+  });
+
+  describe('#setOozieHostName', function () {
+    beforeEach(function () {
+      sinon.stub(App.StackService, 'find').returns([
+        {
+          serviceName: 'HIVE'
+        },
+        {
+          serviceName: 'OOZIE'
+        }
+      ]);
+    });
+
+    afterEach(function () {
+      App.StackService.find.restore();
+    });
+    Em.A([
+        {
+          globals: [
+            Em.Object.create({name: 'oozie_database', value: 'New Derby Database'}),
+            Em.Object.create({name: 'oozie_ambari_host', value: 'h1'}),
+            Em.Object.create({name: 'oozie_hostname', value: 'h2'})
+          ],
+          removed: ['oozie_ambari_database', 'oozie_existing_mysql_host', 'oozie_existing_mysql_database', 'oozie_existing_oracle_host', 'oozie_existing_oracle_database', 'oozie_existing_postgresql_host', 'oozie_existing_postgresql_database', 'oozie_existing_mssql_server_database', 'oozie_existing_mssql_server_host', 'oozie_existing_mssql_server_2_database', 'oozie_existing_mssql_server_2_host'],
+          m: 'oozie_database: New Derby Database',
+          host: 'h2'
+        },
+        {
+          globals: [
+            Em.Object.create({name: 'oozie_database', value: 'New MySQL Database'}),
+            Em.Object.create({name: 'oozie_ambari_host', value: 'h1'}),
+            Em.Object.create({name: 'oozie_hostname', value: 'h2'})
+          ],
+          removed: ['oozie_existing_mysql_host', 'oozie_existing_mysql_database', 'oozie_existing_oracle_host', 'oozie_existing_oracle_database', 'oozie_derby_database', 'oozie_existing_postgresql_host', 'oozie_existing_postgresql_database', 'oozie_existing_mssql_server_database', 'oozie_existing_mssql_server_host', 'oozie_existing_mssql_server_2_database', 'oozie_existing_mssql_server_2_host'],
+          m: 'oozie_database: New MySQL Database',
+          host: 'h1'
+        },
+        {
+          globals: [
+            Em.Object.create({name: 'oozie_database', value: 'Existing MySQL Database'}),
+            Em.Object.create({name: 'oozie_existing_mysql_host', value: 'h1'}),
+            Em.Object.create({name: 'oozie_hostname', value: 'h2'})
+          ],
+          removed: ['oozie_ambari_database', 'oozie_existing_oracle_host', 'oozie_existing_oracle_database', 'oozie_derby_database', 'oozie_existing_postgresql_host', 'oozie_existing_postgresql_database', 'oozie_existing_mssql_server_database', 'oozie_existing_mssql_server_host', 'oozie_existing_mssql_server_2_database', 'oozie_existing_mssql_server_2_host'],
+          m: 'oozie_database: Existing MySQL Database',
+          host: 'h2'
+        },
+        {
+          globals: [
+            Em.Object.create({name: 'oozie_database', value: 'Existing PostgreSQL Database'}),
+            Em.Object.create({name: 'oozie_existing_postgresql_host', value: 'h1'}),
+            Em.Object.create({name: 'oozie_hostname', value: 'h2'})
+          ],
+          removed: ['oozie_ambari_database', 'oozie_existing_mysql_host', 'oozie_existing_mysql_database', 'oozie_existing_oracle_host', 'oozie_existing_oracle_database', 'oozie_existing_mssql_server_database', 'oozie_existing_mssql_server_host', 'oozie_existing_mssql_server_2_database', 'oozie_existing_mssql_server_2_host'],
+          m: 'oozie_database: Existing PostgreSQL Database',
+          host: 'h2'
+        },
+        {
+          globals: [
+            Em.Object.create({name: 'oozie_database', value: 'Existing Oracle Database'}),
+            Em.Object.create({name: 'oozie_existing_oracle_host', value: 'h1'}),
+            Em.Object.create({name: 'oozie_hostname', value: 'h2'})
+          ],
+          removed: ['oozie_ambari_database', 'oozie_existing_mysql_host', 'oozie_existing_mysql_database', 'oozie_derby_database', 'oozie_existing_mssql_server_database', 'oozie_existing_mssql_server_host', 'oozie_existing_mssql_server_2_database', 'oozie_existing_mssql_server_2_host'],
+          m: 'oozie_database: Existing Oracle Database',
+          host: 'h2'
+        },
+        {
+          globals: [
+            Em.Object.create({name: 'oozie_database', value: 'Existing MSSQL Server database with SQL authentication'}),
+            Em.Object.create({name: 'oozie_existing_oracle_host', value: 'h1'}),
+            Em.Object.create({name: 'oozie_hostname', value: 'h2'})
+          ],
+          removed: ['oozie_ambari_database', 'oozie_existing_oracle_host', 'oozie_existing_oracle_database', 'oozie_derby_database', 'oozie_existing_postgresql_host', 'oozie_existing_postgresql_database', 'oozie_existing_mysql_host', 'oozie_existing_mysql_database', 'oozie_existing_mssql_server_2_database', 'oozie_existing_mssql_server_2_host'],
+          m: 'oozie_database: Existing MSSQL Server database with SQL authentication',
+          host: 'h2'
+        },
+        {
+          globals: [
+            Em.Object.create({name: 'oozie_database', value: 'Existing MSSQL Server database with integrated authentication'}),
+            Em.Object.create({name: 'oozie_existing_oracle_host', value: 'h1'}),
+            Em.Object.create({name: 'oozie_hostname', value: 'h2'})
+          ],
+          removed: ['oozie_ambari_database', 'oozie_existing_oracle_host', 'oozie_existing_oracle_database', 'oozie_derby_database', 'oozie_existing_postgresql_host', 'oozie_existing_postgresql_database', 'oozie_existing_mysql_host', 'oozie_existing_mysql_database', 'oozie_existing_mssql_server_database', 'oozie_existing_mssql_server_host'],
+          m: 'oozie_database: Existing MSSQL Server database with integrated authentication',
+          host: 'h2'
+        }
+      ]).forEach(function (test) {
+        it(test.m, function () {
+          var configs = test.globals.slice();
+          test.removed.forEach(function (c) {
+            if (!configs.findProperty('name', c)) {
+              configs.pushObject(Em.Object.create({name: c}))
+            }
+          });
+          configs = mainServiceInfoConfigsController.setOozieHostName(configs);
+          test.removed.forEach(function (name) {
+            expect(Em.isNone(configs.findProperty('name', name))).to.equal(true);
+          });
+          expect(configs.findProperty('name', 'oozie_hostname').value).to.equal(test.host);
+        });
+      });
+
+  });
+
+  describe('#errorsCount', function () {
+
+    it('should ignore configs with widgets (enhanced configs)', function () {
+
+      mainServiceInfoConfigsController.reopen({selectedService: {
+        configs: [
+          Em.Object.create({isVisible: true, widget: Em.View, isValid: false}),
+          Em.Object.create({isVisible: true, widget: Em.View, isValid: true}),
+          Em.Object.create({isVisible: true, isValid: true}),
+          Em.Object.create({isVisible: true, isValid: false})
+        ]
+      }});
+
+      expect(mainServiceInfoConfigsController.get('errorsCount')).to.equal(1);
+
+    });
+
+    it('should ignore configs with widgets (enhanced configs) and hidden configs', function () {
+
+      mainServiceInfoConfigsController.reopen({selectedService: {
+        configs: [
+          Em.Object.create({isVisible: true, widget: Em.View, isValid: false}),
+          Em.Object.create({isVisible: true, widget: Em.View, isValid: true}),
+          Em.Object.create({isVisible: false, isValid: false}),
+          Em.Object.create({isVisible: true, isValid: true}),
+          Em.Object.create({isVisible: true, isValid: false})
+        ]
+      }});
+
+      expect(mainServiceInfoConfigsController.get('errorsCount')).to.equal(1);
+
+    });
+
+  });
+
+  describe('#_onLoadComplete', function () {
+
+    beforeEach(function () {
+      sinon.stub(Em.run, 'next', Em.K);
+      mainServiceInfoConfigsController.setProperties({
+        dataIsLoaded: false,
+        versionLoaded: false,
+        isInit: true
+      });
+    });
+
+    afterEach(function () {
+      Em.run.next.restore();
+    });
+
+    it('should update flags', function () {
+
+      mainServiceInfoConfigsController._onLoadComplete();
+      expect(mainServiceInfoConfigsController.get('dataIsLoaded')).to.be.true;
+      expect(mainServiceInfoConfigsController.get('versionLoaded')).to.be.true;
+      expect(mainServiceInfoConfigsController.get('isInit')).to.be.false;
+
+    });
+
   });
 
 });

@@ -27,6 +27,15 @@ App.HighAvailabilityWizardStep3Controller = Em.Controller.extend({
   once: false,
   isLoaded: false,
   versionLoaded: true,
+  hideDependenciesInfoBar: true,
+
+  /**
+   * Map of sites and properties to delete
+   * @type Object
+   */
+  configsToRemove: {
+    'hdfs-site': ['dfs.namenode.secondary.http-address']
+  },
 
   clearStep: function () {
     this.get('stepConfigs').clear();
@@ -62,6 +71,11 @@ App.HighAvailabilityWizardStep3Controller = Em.Controller.extend({
       urlParams.push('(type=hbase-site&tag=' + hbaseSiteTag + ')');
       this.set("hbaseSiteTag", {name : "hbaseSiteTag", value : hbaseSiteTag});
     }
+    if (App.Service.find().someProperty('serviceName', 'ACCUMULO')) {
+      var accumuloSiteTag = data.Clusters.desired_configs['accumulo-site'].tag;
+      urlParams.push('(type=accumulo-site&tag=' + accumuloSiteTag + ')');
+      this.set("accumuloSiteTag", {name : "accumuloSiteTag", value : accumuloSiteTag});
+    }
     App.ajax.send({
       name: 'admin.get.all_configurations',
       sender: this,
@@ -75,6 +89,7 @@ App.HighAvailabilityWizardStep3Controller = Em.Controller.extend({
 
   onLoadConfigs: function (data) {
     this.set('serverConfigData',data);
+    this.removeConfigs(this.get('configsToRemove'), this.get('serverConfigData'));
     this.tweakServiceConfigs(this.get('haConfig.configs'));
     this.renderServiceConfigs(this.get('haConfig'));
     this.set('isLoaded', true);
@@ -102,8 +117,8 @@ App.HighAvailabilityWizardStep3Controller = Em.Controller.extend({
   },
 
   tweakServiceConfigValues: function(configs,nameServiceId) {
-    var currentNameNodeHost = this.get('content.masterComponentHosts').findProperty('isCurNameNode').hostName;
-    var newNameNodeHost = this.get('content.masterComponentHosts').findProperty('isAddNameNode').hostName;
+    var currentNameNodeHost = this.get('content.masterComponentHosts').filterProperty('component', 'NAMENODE').findProperty('isInstalled', true).hostName;
+    var newNameNodeHost = this.get('content.masterComponentHosts').filterProperty('component', 'NAMENODE').findProperty('isInstalled', false).hostName;
     var journalNodeHosts = this.get('content.masterComponentHosts').filterProperty('component', 'JOURNALNODE').mapProperty('hostName');
     var zooKeeperHosts = this.get('content.masterComponentHosts').filterProperty('component', 'ZOOKEEPER_SERVER').mapProperty('hostName');
     var config = configs.findProperty('name','dfs.namenode.rpc-address.' + nameServiceId + '.nn1');
@@ -127,11 +142,43 @@ App.HighAvailabilityWizardStep3Controller = Em.Controller.extend({
      var value = this.get('serverConfigData.items').findProperty('type', 'hbase-site').properties['hbase.rootdir'].replace(/\/\/[^\/]*/, '//' + nameServiceId);
      this.setConfigInitialValue(config,value);
     }
+    config = configs.findProperty('name','instance.volumes');
+    var config2 = configs.findProperty('name','instance.volumes.replacements');
+    if (App.Service.find().someProperty('serviceName', 'ACCUMULO')) {
+      var oldValue = this.get('serverConfigData.items').findProperty('type', 'accumulo-site').properties['instance.volumes'];
+      var value = oldValue.replace(/\/\/[^\/]*/, '//' + nameServiceId);
+      var replacements = oldValue + " " + value;
+      this.setConfigInitialValue(config,value);
+      this.setConfigInitialValue(config2,replacements)
+    }
+    config = configs.findProperty('name','dfs.journalnode.edits.dir');
+    if (App.get('isHadoopWindowsStack') && App.Service.find().someProperty('serviceName', 'HDFS')) {
+     var value = this.get('serverConfigData.items').findProperty('type', 'hdfs-site').properties['dfs.journalnode.edits.dir'];
+     this.setConfigInitialValue(config, value);
+    }
+  },
+
+  /**
+   * Find and remove config properties in <code>serverConfigData</code>
+   * @param configsToRemove - map of config sites and properties to remove
+   * @param configs - configuration object
+   * @returns {Object}
+   */
+  removeConfigs:function (configsToRemove, configs) {
+    Em.keys(configsToRemove).forEach(function(site){
+      var siteConfigs = configs.items.findProperty('type', site);
+      if (siteConfigs) {
+        configsToRemove[site].forEach(function (property) {
+          delete siteConfigs.properties[property];
+        });
+      }
+    });
+    return configs;
   },
 
   setConfigInitialValue: function(config,value) {
     config.value = value;
-    config.defaultValue = value;
+    config.recommendedValue = value;
   },
 
   renderServiceConfigs: function (_serviceConfig) {

@@ -24,33 +24,33 @@ App.MainDashboardView = Em.View.extend({
   templateName: require('templates/main/dashboard'),
 
   selectedBinding: 'controller.selectedCategory',
-  categories: function () {
-    var categories = [
-      {
-        name: 'widgets',
-        url: 'dashboard.index',
-        label: Em.I18n.t('dashboard.widgets.title')
-      },
-      {
-        name: 'charts',
-        url: 'dashboard.charts.index',
-        label: Em.I18n.t('dashboard.heatmaps.title')
-      }
-    ];
-    if (App.get('supports.configHistory')) {
-      categories.push({
-        name: 'configHistory',
-        url: 'dashboard.configHistory',
-        label: Em.I18n.t('dashboard.configHistory.title')
-      })
+  categories: [
+    {
+      name: 'widgets',
+      url: 'dashboard.index',
+      label: Em.I18n.t('dashboard.widgets.title')
+    },
+    {
+      name: 'charts',
+      url: 'dashboard.charts.index',
+      label: Em.I18n.t('dashboard.heatmaps.title')
+    },
+    {
+      name: 'configHistory',
+      url: 'dashboard.configHistory',
+      label: Em.I18n.t('dashboard.configHistory.title')
     }
-    return categories;
-  }.property('App.supports.configHistory'),
+  ],
+
   NavItemView: Ember.View.extend({
     tagName: 'li',
     classNameBindings: 'isActive:active'.w(),
     isActive: function () {
       return this.get('item') === this.get('parentView.selected');
-    }.property('item', 'parentView.selected')
+    }.property('item', 'parentView.selected'),
+    elementId: Ember.computed(function(){
+      var label = Em.get(this, 'templateData.keywords.category.label');
+      return label ? 'dashboard-view-tab-' + label.toLowerCase().replace(/\s/g, '-') : "";
+    })
   })
 });

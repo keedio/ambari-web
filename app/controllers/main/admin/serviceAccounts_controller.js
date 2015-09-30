@@ -24,6 +24,7 @@ require('controllers/main/service/info/configs');
 App.MainAdminServiceAccountsController = App.MainServiceInfoConfigsController.extend({
   name: 'mainAdminServiceAccountsController',
   users: null,
+  serviceConfigTags: [],
   content: Em.Object.create({
     serviceName: 'MISC'
   }),
@@ -44,37 +45,80 @@ App.MainAdminServiceAccountsController = App.MainServiceInfoConfigsController.ex
   },
   loadServiceTagSuccess: function (data, opt, params) {
     var self = this;
-    var installedServices = App.Service.find().mapProperty("serviceName");
     var serviceConfigsDef = params.serviceConfigsDef;
-    var serviceName = this.get('selectedService');
     var loadedClusterSiteToTagMap = {};
 
-    for (var site in data.Clusters.desired_configs) {
-      if (!!serviceConfigsDef.configTypes[site]) {
+    for (var site in Em.get(data, 'Clusters.desired_configs')) {
+      if (serviceConfigsDef.get('configTypes').hasOwnProperty(site)) {
         loadedClusterSiteToTagMap[site] = data.Clusters.desired_configs[site]['tag'];
       }
     }
     this.setServiceConfigTags(loadedClusterSiteToTagMap);
-    App.router.get('configurationController').getConfigsByTags(this.get('serviceConfigTags')).done(function (configGroups) {
-      var configSet = App.config.mergePreDefinedWithLoaded(configGroups, [], self.get('serviceConfigTags'), serviceName);
-
-      var misc_configs = configSet.configs.filterProperty('serviceName', self.get('selectedService')).filterProperty('category', 'Users and Groups').filterProperty('isVisible', true);
-
-      misc_configs = App.config.miscConfigVisibleProperty(misc_configs, installedServices);
-
-      var sortOrder = self.get('configs').filterProperty('serviceName', self.get('selectedService')).filterProperty('category', 'Users and Groups').filterProperty('isVisible', true).mapProperty('name');
-
-
-      self.setProxyUserGroupLabel(misc_configs);
-
-      self.set('users', self.sortByOrder(sortOrder, misc_configs));
-
-      self.setContentProperty('hdfsUser', 'hdfs_user', misc_configs);
-      self.setContentProperty('group', 'user_group', misc_configs);
-      self.setContentProperty('smokeuser', 'smokeuser', misc_configs);
-
-      self.set('dataIsLoaded', true);
+    // load server stored configurations
+    App.router.get('configurationController').getConfigsByTags(this.get('serviceConfigTags')).done(function (serverConfigs) {
+      self.createConfigObject(serverConfigs);
     });
+  },
+
+
+  /**
+   * Changes format from Object to Array
+   *
+   * {
+   *  'core-site': 'version1',
+   *  'hdfs-site': 'version1',
+   *  ...
+   * }
+   *
+   * to
+   *
+   * [
+   *  {
+   *    siteName: 'core-site',
+   *    tagName: 'version1',
+   *    newTageName: null
+   *  },
+   *  ...
+   * ]
+   *
+   * set tagnames for configuration of the *-site.xml
+   * @private
+   * @method setServiceConfigTags
+   */
+  setServiceConfigTags: function (desiredConfigsSiteTags) {
+    var newServiceConfigTags = [];
+    for (var index in desiredConfigsSiteTags) {
+      newServiceConfigTags.pushObject({
+        siteName: index,
+        tagName: desiredConfigsSiteTags[index],
+        newTagName: null
+      }, this);
+    }
+    this.set('serviceConfigTags', newServiceConfigTags);
+  },
+
+  /**
+   * Generate configuration object that will be rendered
+   *
+   * @param {Object[]} serverConfigs
+   */
+  createConfigObject: function(serverConfigs) {
+    var configs = App.config.mergePredefinedWithSaved(serverConfigs, this.get('selectedService'));
+    var miscConfigs = configs.filterProperty('displayType', 'user').filterProperty('category', 'Users and Groups').filterProperty('isVisible', true);
+
+    miscConfigs = App.config.miscConfigVisibleProperty(miscConfigs, App.Service.find().mapProperty('serviceName').concat('MISC'));
+
+    // load specific users along the wizards which called <code>loadUsers</code> method
+    var wizardContentProperties = [
+      {key: 'group', configName: 'user_group'},
+      {key: 'smokeuser', configName: 'smokeuser'},
+      {key: 'hdfsUser', configName: 'hdfs_user'}
+    ];
+    wizardContentProperties.forEach(function(item) {
+      this.setContentProperty(item.key, item.configName, miscConfigs);
+    }, this);
+    this.set('users', miscConfigs.filterProperty('isVisible'));
+    this.set('dataIsLoaded', true);
   },
   /**
    * set config value to property of "content"

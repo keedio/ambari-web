@@ -18,6 +18,7 @@
 
 var App = require('app');
 var c;
+
 describe('App.ManageConfigGroupsController', function() {
   var controller = App.ManageConfigGroupsController.create({});
 
@@ -25,141 +26,54 @@ describe('App.ManageConfigGroupsController', function() {
     c = App.ManageConfigGroupsController.create({});
   });
 
-  describe('Host Name converting', function() {
-    describe('#convertHostNames', function() {
-      var hosts = [
-        Em.Object.create({
-          hostName: 'internal-1.com',
-          publicHostName: 'external-1.com'
-        }),
-        Em.Object.create({
-          hostName: 'internal-2.com',
-          publicHostName: 'external-2.com'
-        }),
-        Em.Object.create({
-          hostName: 'internal-3.com',
-          publicHostName: 'external-3.com'
-        })
-      ];
+	var manageConfigGroupsController = App.ManageConfigGroupsController.create({});
 
-      describe('#hostsToPublic', function() {
-        beforeEach(function() {
-          controller = App.ManageConfigGroupsController.create({
-            clusterHosts: Em.A(hosts)
-          });
-        });
+	describe('#addConfigGroup', function() {
+		beforeEach(function() {
+			manageConfigGroupsController.addConfigGroup();
+		});
 
-        var tests = [
-          {
-            hostsList: ['internal-1.com', 'internal-2.com', 'internal-3.com'],
-            e: ['external-1.com', 'external-2.com', 'external-3.com']
-          },
-          {
-            hostsList: 'internal-2.com',
-            e: 'external-2.com'
-          }
-        ];
-        var message = 'should convert internal host names `{0}` to external host names `{1}`';
-        tests.forEach(function(test) {
-          it(message.format(test.hostsList, test.e), function() {
-            expect(controller.hostsToPublic(test.hostsList)).to.eql(test.e);
-          });
-        });
-      });
+		describe("#validate", function() {
+			it("should display no warning if user inputs valid characters into group name", function() {
 
-      describe('#publicToHostName', function() {
-        beforeEach(function() {
-          controller = App.ManageConfigGroupsController.create({
-            clusterHosts: Em.A(hosts)
-          });
-        });
+				manageConfigGroupsController.addGroupPopup.set('configGroupName', 'hello');
 
-        var tests = [
-          {
-            hostsList: ['external-1.com', 'external-2.com', 'external-3.com'],
-            e: ['internal-1.com', 'internal-2.com', 'internal-3.com']
-          },
-          {
-            hostsList: 'external-2.com',
-            e: 'internal-2.com'
-          }
-        ];
-        var message = 'should convert internal host names `{0}` to external host names `{1}`';
-        tests.forEach(function(test) {
-          it(message.format(test.hostsList, test.e), function() {
-            expect(controller.publicToHostName(test.hostsList)).to.eql(test.e);
-          });
-        });
-      });
-    });
+				expect(manageConfigGroupsController.addGroupPopup.warningMessage).to.be.empty;
+			});
 
-  });
+			it("should display warning if user inputs invalid characters into group name", function() {
+				manageConfigGroupsController.addGroupPopup.set('configGroupName', '/{"!@#$%');
 
-  describe('#deleteHosts', function() {
-    var hosts = [
-      Em.Object.create({
-        hostName: 'internal-1.com',
-        publicHostName: 'external-1.com'
-      }),
-      Em.Object.create({
-        hostName: 'internal-2.com',
-        publicHostName: 'external-2.com'
-      }),
-      Em.Object.create({
-        hostName: 'internal-3.com',
-        publicHostName: 'external-3.com'
-      })
-    ];
+				expect(manageConfigGroupsController.addGroupPopup.warningMessage).to.equal('Invalid Group Name. Only alphanumerics, hyphens, spaces and underscores are allowed.');
+			});
+		});
+	});
 
-    beforeEach(function() {
-      controller = App.ManageConfigGroupsController.create({
-        clusterHosts: hosts
-      });
-    });
+	describe('#renameConfigGroup', function() {
+		beforeEach(function() {
+			var configGroup = Ember.Object.create ({
+				name: 'name',
+				description: 'description'
+			});
 
-    var createConfigGroupWithParentMock = function(groupHosts, groupPublicHosts, allHosts) {
-      var parentCGHosts = allHosts.filter(function(host) {
-        return !groupHosts.contains(host.get('hostName'));
-      });
-      return Em.Object.create({
-        parentConfigGroup: {
-          hosts: parentCGHosts.mapProperty('hostName'),
-          publicHosts: parentCGHosts.mapProperty('publicHostName')
-        },
-        hosts: groupHosts,
-        publicHosts: groupPublicHosts
-      });
-    };
+			manageConfigGroupsController.set('selectedConfigGroup', configGroup);
+			manageConfigGroupsController.renameConfigGroup();
+		});
 
-    var tests = [
-      {
-        selectedHosts: ['external-1.com', 'external-2.com'],
-        selectedConfigGroup: createConfigGroupWithParentMock(
-          ['internal-1.com', 'internal-2.com'],
-          ['external-1.com', 'external-2.com'], hosts),
-        e: []
-      },
-      {
-        selectedHosts: ['external-1.com'],
-        selectedConfigGroup: createConfigGroupWithParentMock(
-          ['internal-1.com', 'internal-2.com'],
-          ['external-1.com', 'external-2.com'], hosts),
-        e: ['external-2.com']
-      }
-    ];
+		describe("#validate", function() {
+			it("should display no warning if user inputs valid characters into group name", function() {
+				manageConfigGroupsController.renameGroupPopup.set('configGroupName', 'hello');
 
-    tests.forEach(function(test) {
-      it('should remove {0}'.format(test.selectedHosts.slice(0)), function() {
-        controller.reopen({
-          selectedHosts: test.selectedHosts,
-          selectedConfigGroup: test.selectedConfigGroup
-        });
-        controller.deleteHosts();
-        expect(controller.get('selectedConfigGroup.publicHosts').toArray()).to.eql(test.e);
-      });
-    });
+				expect(manageConfigGroupsController.renameGroupPopup.warningMessage).to.be.empty;
+			});
 
-  });
+			it("should display warning if user inputs invalid characters into group name", function() {
+				manageConfigGroupsController.renameGroupPopup.set('configGroupName', '/{"!@#$%');
+
+				expect(manageConfigGroupsController.renameGroupPopup.warningMessage).to.equal('Invalid Group Name. Only alphanumerics, hyphens, spaces and underscores are allowed.');
+			});
+		});
+	});
 
   describe('#addHostsCallback', function() {
 
@@ -168,20 +82,11 @@ describe('App.ManageConfigGroupsController', function() {
       c.reopen({
         selectedConfigGroup: Em.Object.create({
           hosts: ['h1'],
-          publicHosts: ['p_h1'],
           parentConfigGroup: Em.Object.create({
-            hosts: ['h2', 'h3'],
-            publicHosts: ['p_h2', 'p_h3']
+            hosts: ['h2', 'h3']
           })
         })
       });
-
-      sinon.stub(c, 'hostsToPublic', function(s) {return 'p_' + s;});
-
-    });
-
-    afterEach(function() {
-      c.hostsToPublic.restore();
     });
 
     it('should set hosts to selectedConfigGroup and remove them form default group', function () {
@@ -189,11 +94,269 @@ describe('App.ManageConfigGroupsController', function() {
       c.addHostsCallback(['h2', 'h3']);
 
       expect(c.get('selectedConfigGroup.hosts')).to.include.members(['h1','h2','h3']);
-      expect(c.get('selectedConfigGroup.publicHosts')).to.include.members(['p_h1','p_h2','p_h3']);
       expect(c.get('selectedConfigGroup.parentConfigGroup.hosts').toArray()).to.be.empty;
-      expect(c.get('selectedConfigGroup.parentConfigGroup.publicHosts').toArray()).to.be.empty;
     });
 
   });
 
+  describe('#isHostsModified', function () {
+
+    Em.A([
+        {
+          o: {
+            toClearHosts: [],
+            toDelete: [],
+            toSetHosts: [],
+            toCreate: []
+          },
+          e: false
+        },
+        {
+          o: {
+            toClearHosts: [{}],
+            toDelete: [],
+            toSetHosts: [],
+            toCreate: []
+          },
+          e: true
+        },
+        {
+          o: {
+            toClearHosts: [],
+            toDelete: [{}],
+            toSetHosts: [],
+            toCreate: []
+          },
+          e: true
+        },
+        {
+          o: {
+            toClearHosts: [],
+            toDelete: [],
+            toSetHosts: [{}],
+            toCreate: []
+          },
+          e: true
+        },
+        {
+          o: {
+            toClearHosts: [],
+            toDelete: [],
+            toSetHosts: [],
+            toCreate: [{}]
+          },
+          e: true
+        }
+    ]).forEach(function (test, index) {
+        it('test #' + index, function () {
+          c.reopen({
+            isLoaded: true,
+            hostsModifiedConfigGroups: test.o
+          });
+          expect(c.get('isHostsModified')).to.equal(test.e);
+        });
+      });
+
+  });
+
+  describe('#deleteConfigGroup', function () {
+
+    beforeEach(function() {
+
+      var defaultGroup = Em.Object.create({
+        hosts: ['h2', 'h3'],
+        isDefault: true
+      });
+
+      var selectedGroup = Em.Object.create({
+        hosts: ['h1'],
+        parentConfigGroup: defaultGroup
+      });
+
+      c.reopen({
+        configGroups: [defaultGroup, selectedGroup],
+        selectedConfigGroup: selectedGroup
+      });
+    });
+
+    it('after deleting some config group, Default should be selected', function () {
+
+      c.deleteConfigGroup();
+
+      expect(c.get('configGroups.length')).to.equal(1);
+      expect(c.get('selectedConfigGroup.hosts')).to.include.members(['h1','h2','h3']);
+      expect(c.get('selectedConfigGroup.isDefault')).to.be.true;
+    });
+
+  });
+
+  describe("#manageConfigurationGroups", function () {
+    var service = Em.Object.create({});
+    manageConfigGroupsController.set('hostsModifiedConfigGroups', {});
+    describe("#controller passed", function () {
+      var controller = Em.Object.create({
+        content: Em.Object.create()
+      });
+      var popup = manageConfigGroupsController.manageConfigurationGroups(controller, service);
+
+      describe("#onPrimary()", function () {
+        beforeEach(function () {
+          sinon.stub(popup, 'onPrimaryWizard', Em.K);
+        });
+        afterEach(function () {
+          popup.onPrimaryWizard.restore();
+        });
+        it("", function () {
+          popup.onPrimary();
+          expect(popup.onPrimaryWizard.calledOnce).to.be.true;
+        });
+      });
+
+      describe("#onPrimaryWizard()", function () {
+        var ctrl = Em.Object.create({
+          selectedService: Em.Object.create({
+            selected: false
+          }),
+          selectedServiceObserver: Em.K,
+          setGroupsToDelete: Em.K
+        });
+        beforeEach(function () {
+          sinon.spy(ctrl, 'selectedServiceObserver');
+          sinon.spy(ctrl, 'setGroupsToDelete');
+          sinon.stub(manageConfigGroupsController, 'persistConfigGroups', Em.K);
+          sinon.stub(popup, 'updateConfigGroupOnServicePage', Em.K);
+          sinon.stub(popup, 'hide', Em.K);
+        });
+        afterEach(function () {
+          ctrl.setGroupsToDelete.restore();
+          ctrl.selectedServiceObserver.restore();
+          manageConfigGroupsController.persistConfigGroups.restore();
+          popup.updateConfigGroupOnServicePage.restore();
+          popup.hide.restore();
+        });
+        it("groups deleted on 7th step", function () {
+          ctrl.set('name', 'wizardStep7Controller');
+          popup.onPrimaryWizard(ctrl, {toDelete: [1]});
+          expect(ctrl.selectedServiceObserver.calledOnce).to.be.true;
+          expect(ctrl.setGroupsToDelete.calledWith([1])).to.be.true;
+          expect(manageConfigGroupsController.persistConfigGroups.calledOnce).to.be.true;
+          expect(popup.updateConfigGroupOnServicePage.calledOnce).to.be.true;
+          expect(popup.hide.calledOnce).to.be.true;
+        });
+        it("wizard not on 7th step", function () {
+          ctrl.set('name', '');
+          popup.onPrimaryWizard(ctrl, {});
+          expect(ctrl.selectedServiceObserver.calledOnce).to.be.true;
+          expect(ctrl.setGroupsToDelete.called).to.be.false;
+          expect(manageConfigGroupsController.persistConfigGroups.called).to.be.false;
+          expect(popup.updateConfigGroupOnServicePage.called).to.be.false;
+          expect(popup.hide.calledOnce).to.be.true;
+        });
+        it("wizard on 7th step, service selected", function () {
+          ctrl.set('name', 'wizardStep7Controller');
+          ctrl.set('selectedService.selected', true);
+          popup.onPrimaryWizard(ctrl, {toDelete: [1]});
+          expect(ctrl.selectedServiceObserver.calledOnce).to.be.true;
+          expect(ctrl.setGroupsToDelete.called).to.be.false;
+          expect(manageConfigGroupsController.persistConfigGroups.calledOnce).to.be.true;
+          expect(popup.updateConfigGroupOnServicePage.calledOnce).to.be.true;
+          expect(popup.hide.calledOnce).to.be.true;
+        });
+        it("wizard on 7th step, no groups to delete", function () {
+          ctrl.set('name', 'wizardStep7Controller');
+          ctrl.set('selectedService.selected', false);
+          popup.onPrimaryWizard(ctrl, {toDelete: []});
+          expect(ctrl.selectedServiceObserver.calledOnce).to.be.true;
+          expect(ctrl.setGroupsToDelete.called).to.be.false;
+          expect(manageConfigGroupsController.persistConfigGroups.calledOnce).to.be.true;
+          expect(popup.updateConfigGroupOnServicePage.calledOnce).to.be.true;
+          expect(popup.hide.calledOnce).to.be.true;
+        });
+      });
+    });
+
+    describe("#controller not passed", function () {
+      var popup = manageConfigGroupsController.manageConfigurationGroups(null, service);
+
+      describe("#onPrimary()", function () {
+        beforeEach(function () {
+          sinon.stub(popup, 'runClearCGQueue').returns({
+            done: function (callback) {
+              callback();
+            }
+          });
+          sinon.stub(popup, 'runModifyCGQueue').returns({
+            done: function (callback) {
+              callback();
+            }
+          });
+          sinon.stub(popup, 'runCreateCGQueue').returns({
+            done: function (callback) {
+              callback();
+            }
+          });
+          sinon.stub(popup, 'updateConfigGroupOnServicePage', Em.K);
+          sinon.stub(popup, 'hide', Em.K);
+        });
+        afterEach(function () {
+          popup.runCreateCGQueue.restore();
+          popup.runModifyCGQueue.restore();
+          popup.runClearCGQueue.restore();
+          popup.updateConfigGroupOnServicePage.restore();
+          popup.hide.restore();
+        });
+        it("", function () {
+          popup.onPrimary();
+          expect(popup.runClearCGQueue.calledOnce).to.be.true;
+          expect(popup.runModifyCGQueue.calledOnce).to.be.true;
+          expect(popup.runCreateCGQueue.calledOnce).to.be.true;
+          expect(popup.updateConfigGroupOnServicePage.calledOnce).to.be.true;
+          expect(popup.hide.calledOnce).to.be.true;
+        });
+      });
+      describe("#runClearCGQueue()", function () {
+        beforeEach(function () {
+          sinon.stub(manageConfigGroupsController, 'updateConfigurationGroup', Em.K);
+          sinon.stub(manageConfigGroupsController, 'deleteConfigurationGroup', Em.K);
+        });
+        afterEach(function () {
+          manageConfigGroupsController.updateConfigurationGroup.restore();
+          manageConfigGroupsController.deleteConfigurationGroup.restore();
+        });
+        it("", function () {
+          popup.runClearCGQueue(Em.K, {
+            initialGroups: [],
+            toClearHosts: [Em.Object.create()],
+            toDelete: [1]
+          });
+          expect(manageConfigGroupsController.updateConfigurationGroup.calledOnce).to.be.true;
+          expect(manageConfigGroupsController.deleteConfigurationGroup.calledOnce).to.be.true;
+        });
+      });
+      describe("#runModifyCGQueue()", function () {
+        beforeEach(function () {
+          sinon.stub(manageConfigGroupsController, 'updateConfigurationGroup', Em.K);
+        });
+        afterEach(function () {
+          manageConfigGroupsController.updateConfigurationGroup.restore();
+        });
+        it("", function () {
+          popup.runModifyCGQueue(Em.K, {toSetHosts: [1]});
+          expect(manageConfigGroupsController.updateConfigurationGroup.calledOnce).to.be.true;
+        });
+      });
+      describe("#runCreateCGQueue()", function () {
+        beforeEach(function () {
+          sinon.stub(manageConfigGroupsController, 'postNewConfigurationGroup', Em.K);
+        });
+        afterEach(function () {
+          manageConfigGroupsController.postNewConfigurationGroup.restore();
+        });
+        it("", function () {
+          popup.runCreateCGQueue(Em.K, {toCreate: [1]});
+          expect(manageConfigGroupsController.postNewConfigurationGroup.calledOnce).to.be.true;
+        });
+      });
+    });
+  });
 });

@@ -29,7 +29,6 @@ App.Service = DS.Model.extend({
   workStatus: DS.attr('string'),
   rand: DS.attr('string'),
   toolTipContent: DS.attr('string'),
-  criticalAlertsCount: DS.attr('number'),
   quickLinks: DS.hasMany('App.QuickLinks'),  // mapped in app/mappers/service_metrics_mapper.js method - mapQuickLinks
   hostComponents: DS.hasMany('App.HostComponent'),
   serviceConfigsTemplate: App.config.get('preDefinedServiceConfigs'),
@@ -41,6 +40,7 @@ App.Service = DS.Model.extend({
 
   clientComponents: DS.hasMany('App.ClientComponent'),
   slaveComponents: DS.hasMany('App.SlaveComponent'),
+  masterComponents: DS.hasMany('App.MasterComponent'),
 
   /**
    * @type {bool}
@@ -48,6 +48,13 @@ App.Service = DS.Model.extend({
   isInPassive: function() {
     return this.get('passiveState') === "ON";
   }.property('passiveState'),
+
+  serviceComponents: function() {
+    var clientComponents = this.get('clientComponents').mapProperty('componentName');
+    var slaveComponents = this.get('slaveComponents').mapProperty('componentName');
+    var masterComponents = this.get('masterComponents').mapProperty('componentName');
+    return clientComponents.concat(slaveComponents).concat(masterComponents);
+  }.property('clientComponents.@each', 'slaveComponents.@each','masterComponents.@each'),
 
   // Instead of making healthStatus a computed property that listens on hostComponents.@each.workStatus,
   // we are creating a separate observer _updateHealthStatus.  This is so that healthStatus is updated
@@ -84,9 +91,9 @@ App.Service = DS.Model.extend({
   serviceTypes: function() {
     var typeServiceMap = {
       GANGLIA: ['MONITORING'],
-      NAGIOS:  ['MONITORING'],
       HDFS: ['HA_MODE'],
-      YARN: ['HA_MODE']
+      YARN: ['HA_MODE'],
+      RANGER: ['HA_MODE']
     };
     return typeServiceMap[this.get('serviceName')] || [];
   }.property('serviceName'),
@@ -98,6 +105,7 @@ App.Service = DS.Model.extend({
   isRestartRequired: function () {
     var rhc = this.get('hostComponents').filterProperty('staleConfigs', true);
     var hc = {};
+
     rhc.forEach(function(_rhc) {
       var hostName = _rhc.get('hostName');
       if (!hc[hostName]) {
@@ -106,9 +114,8 @@ App.Service = DS.Model.extend({
       hc[hostName].push(_rhc.get('displayName'));
     });
     this.set('restartRequiredHostsAndComponents', hc);
-    return (rhc.length>0);
-
-  }.property('serviceName', 'hostComponents.@each.staleConfigs'),
+    return (rhc.length > 0);
+  }.property('serviceName'),
   
   /**
    * Contains a map of which hosts and host_components
@@ -141,7 +148,20 @@ App.Service = DS.Model.extend({
     }
     hostsMsg += "</ul>";
     return this.t('services.service.config.restartService.TooltipMessage').format(hcCount, hostCount, hostsMsg);
-  }.property('restartRequiredHostsAndComponents')
+  }.property('restartRequiredHostsAndComponents'),
+
+  /**
+   * Does service have Critical Alerts
+   * @type {boolean}
+   */
+  hasCriticalAlerts: false,
+
+  /**
+   * Number of the Critical and Warning alerts for current service
+   * @type {number}
+   */
+  alertsCount: 0
+
 });
 
 App.Service.Health = {
@@ -174,7 +194,6 @@ App.Service.Health = {
  */
   App.Service.extendedModel = {
   'HDFS': 'HDFSService',
-  'MAPREDUCE': 'MapReduceService',
   'HBASE': 'HBaseService',
   'YARN': 'YARNService',
   'MAPREDUCE2': 'MapReduce2Service',

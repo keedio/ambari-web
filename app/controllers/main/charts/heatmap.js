@@ -17,100 +17,205 @@
 
 var App = require('app');
 
-App.MainChartsHeatmapController = Em.Controller.extend({
+App.MainChartsHeatmapController = Em.Controller.extend(App.WidgetSectionMixin, {
   name: 'mainChartsHeatmapController',
-  modelRacks: App.Rack.find(),
-  racks: function () {
-    var racks = [];
-    this.get('modelRacks').forEach(function (rack) {
-      racks.push(Em.Object.create({
-        name: rack.get('name'),
-        hosts: rack.get('hosts'),
-        isLoaded: false
-      }));
-    });
-    return racks;
-  }.property('modelRacks.@each.isLoaded'),
+  rackMap: {},
+  racks: [],
+  rackViews: [],
 
-  allMetrics: function () {
-    var metrics = [
-      Em.Object.create({
-        label: Em.I18n.t('charts.heatmap.category.host'),
-        category: 'host',
-        items: [
-          App.MainChartHeatmapDiskSpaceUsedMetric.create(),
-          App.MainChartHeatmapMemoryUsedMetric.create(),
-          App.MainChartHeatmapCpuWaitIOMetric.create()
-          /*, App.MainChartHeatmapProcessRunMetric.create()*/
-        ]
-      })
-    ];
+  /**
+   * @type {boolean}
+   */
+  isLoaded: false,
 
-    if (App.HDFSService.find().get('length')) {
-      metrics.push(
-        Em.Object.create({
-          label: Em.I18n.t('charts.heatmap.category.hdfs'),
-          category: 'hdfs',
-          items: [
-            App.MainChartHeatmapDFSBytesReadMetric.create(),
-            App.MainChartHeatmapDFSBytesWrittenMetric.create(),
-            App.MainChartHeatmapDFSGCTimeMillisMetric.create(),
-            App.MainChartHeatmapDFSMemHeapUsedMetric.create()
-          ]
-        })
-      );
+  /**
+   * Heatmap metrics that are available choices  on the page
+   */
+  heatmapCategories: [],
+
+  allHeatmaps:[],
+
+  layoutNameSuffix: "_heatmap",
+
+  sectionNameSuffix: "_HEATMAPS",
+
+  loadRacksUrlParams: 'fields=Hosts/rack_info,Hosts/host_name,Hosts/public_host_name,Hosts/os_type,Hosts/ip,host_components,metrics/disk,metrics/cpu/cpu_system,metrics/cpu/cpu_user,metrics/memory/mem_total,metrics/memory/mem_free&minimal_response=true',
+
+  loadHeatmapsUrlParams: function() {
+    var serviceName = this.get('content.serviceName');
+    if (serviceName) {
+      return 'WidgetInfo/widget_type=HEATMAP&WidgetInfo/scope=CLUSTER&WidgetInfo/metrics.matches(.*\"service_name\":\"' + serviceName + '\".*)&fields=WidgetInfo/metrics';
+    } else {
+      return 'WidgetInfo/widget_type=HEATMAP&WidgetInfo/scope=CLUSTER&fields=WidgetInfo/metrics';
     }
+  }.property('content.serviceName'),
 
-    if (App.MapReduceService.find().get('length')) {
-      metrics.push(
-        Em.Object.create({
-          label: Em.I18n.t('charts.heatmap.category.mapreduce'),
-          category: 'mapreduce',
-          items: [
-            App.MainChartHeatmapMapreduceMapsRunningMetric.create(),
-            App.MainChartHeatmapMapreduceReducesRunningMetric.create(),
-            App.MainChartHeatmapMapreduceGCTimeMillisMetric.create(),
-            App.MainChartHeatmapMapreduceMemHeapUsedMetric.create()
-          ]
-        })
-      );
-    }
-
-    if (App.YARNService.find().get('length')) {
-      metrics.push(
-        Em.Object.create({
-          label: Em.I18n.t('charts.heatmap.category.yarn'),
-          category: 'yarn',
-          items: [
-            App.MainChartHeatmapYarnGCTimeMillisMetric.create(),
-            App.MainChartHeatmapYarnMemHeapUsedMetric.create(),
-            App.MainChartHeatmapYarnResourceUsedMetric.create()
-          ]
-        })
-      );
-    }
-
-    if (App.HBaseService.find().get('length')) {
-      metrics.push(
-        Em.Object.create({
-          label: Em.I18n.t('charts.heatmap.category.hbase'),
-          category: 'hbase',
-          items: [
-            App.MainChartHeatmapHbaseReadReqCount.create(),
-            App.MainChartHeatmapHbaseWriteReqCount.create(),
-            App.MainChartHeatmapHbaseCompactionQueueSize.create(),
-            App.MainChartHeatmapHbaseRegions.create(),
-            App.MainChartHeatmapHbaseMemStoreSize.create()
-          ]
-        })
-      );
-    }
-    return metrics;
-  }.property(),
 
   selectedMetric: null,
 
   inputMaximum: '',
+
+  /**
+   * Heatmap widget currently shown on the page
+   */
+  activeWidget: function() {
+    if (this.get('widgets') && this.get('widgets').length) {
+      return this.get('widgets')[0];
+    } else {
+      return false;
+    }
+  }.property('widgets.@each'),
+
+
+  /**
+   * This function is called from the bound view of the controller
+   */
+  loadPageData: function () {
+    var self = this;
+
+    this.loadRacks().always(function () {
+      self.resetPageData();
+      self.getAllHeatMaps().done(function (allHeatmapData) {
+        self.set('isLoaded', true);
+        allHeatmapData.items.forEach(function (_allHeatmapData) {
+          self.get('allHeatmaps').pushObject(_allHeatmapData.WidgetInfo);
+        });
+        var categories = self.categorizeByServiceName(self.get('allHeatmaps'));
+        self.set('heatmapCategories', categories);
+        self.getActiveWidgetLayout();
+      });
+    });
+  },
+
+  /**
+   * categorize heatmaps with respect to service names
+   * @param {Array} allHeatmaps
+   * @return {Array}
+   */
+  categorizeByServiceName: function(allHeatmaps) {
+    var categories = [];
+    allHeatmaps.forEach(function(_heatmap){
+    var serviceNames = JSON.parse(_heatmap.metrics).mapProperty('service_name').uniq();
+      serviceNames.forEach(function(_serviceName){
+        var category = categories.findProperty('serviceName',_serviceName);
+        if (!category) {
+          categories.pushObject(Em.Object.create({
+            serviceName: _serviceName,
+            displayName: _serviceName === 'STACK' ? 'Host' : App.StackService.find().findProperty('serviceName',_serviceName).get('displayName'),
+            heatmaps: [_heatmap]
+          }));
+        } else {
+          category.get('heatmaps').pushObject(_heatmap);
+        }
+      },this);
+    },this);
+    return categories;
+  },
+
+  /**
+   * clears/resets the data. This function should be called every time user navigates to heatmap page
+   */
+  resetPageData: function() {
+    this.get('heatmapCategories').clear();
+    this.get('allHeatmaps').clear();
+  },
+
+  /**
+   *  Gets all heatmap widgets that should be available in select metrics dropdown on heatmap page
+   * @return {$.ajax}
+   */
+  getAllHeatMaps: function() {
+    var urlParams = this.get('loadHeatmapsUrlParams');
+
+    return App.ajax.send({
+      name: 'widgets.get',
+      sender: this,
+      data: {
+        urlParams: urlParams,
+        sectionName: this.get('sectionName')
+      }
+    });
+  },
+
+
+  /**
+   * get hosts from server
+   */
+  loadRacks: function () {
+    this.get('racks').clear();
+    this.set('rackMap', {});
+    var urlParams = this.get('loadRacksUrlParams');
+    return App.ajax.send({
+      name: 'hosts.heatmaps',
+      sender: this,
+      data: {
+        urlParams: urlParams
+      },
+      success: 'loadRacksSuccessCallback'
+    });
+  },
+
+  loadRacksSuccessCallback: function (data, opt, params) {
+    var hosts = [];
+    data.items.forEach(function (item) {
+      hosts.push({
+        hostName: item.Hosts.host_name,
+        publicHostName: item.Hosts.public_host_name,
+        osType: item.Hosts.os_type,
+        ip: item.Hosts.ip,
+        rack: item.Hosts.rack_info,
+        diskTotal: item.metrics ? item.metrics.disk.disk_total : 0,
+        diskFree: item.metrics ? item.metrics.disk.disk_free : 0,
+        cpuSystem: item.metrics ? item.metrics.cpu.cpu_system : 0,
+        cpuUser: item.metrics ? item.metrics.cpu.cpu_user : 0,
+        memTotal: item.metrics ? item.metrics.memory.mem_total : 0,
+        memFree: item.metrics ? item.metrics.memory.mem_free : 0,
+        hostComponents: item.host_components.mapProperty('HostRoles.component_name')
+      });
+    });
+    var rackMap = this.indexByRackId(hosts);
+    var racks = this.toList(rackMap);
+    //this list has an empty host array property
+    this.set('rackMap', rackMap);
+    this.set('racks', racks);
+  },
+
+  indexByRackId: function (hosts) {
+    var rackMap = {};
+    hosts.forEach(function (host) {
+      var rackId = host.rack;
+      if(!rackMap[rackId]) {
+        rackMap[rackId] =
+          Em.Object.create({
+            name: rackId,
+            rackId: rackId,
+            hosts: [host]
+          });
+      } else {
+        rackMap[rackId].hosts.push(host);
+      }
+    });
+    return rackMap;
+  },
+
+  toList: function (rackMap) {
+    var racks = [];
+    var i = 0;
+    for (var rackKey in rackMap) {
+      if (rackMap.hasOwnProperty(rackKey)) {
+        racks.push(
+          Em.Object.create({
+            name: rackKey,
+            rackId: rackKey,
+            hosts: rackMap[rackKey].hosts,
+            isLoaded: false,
+            index: i++
+          })
+        );
+      }
+    }
+    return racks;
+  },
 
   validation: function () {
     if (this.get('selectedMetric')) {
@@ -123,29 +228,32 @@ App.MainChartsHeatmapController = Em.Controller.extend({
     }
   }.observes('inputMaximum'),
 
-  showHeatMapMetric: function (event) {
-    var metricItem = event.context;
-    if (metricItem) {
-      this.set('selectedMetric', metricItem);
+
+  addRackView: function (view) {
+    this.get('rackViews').push(view);
+    if (this.get('rackViews').length == this.get('racks').length) {
+      this.displayAllRacks();
     }
+  },
+
+  displayAllRacks: function () {
+    if (this.get('rackViews').length) {
+      this.get('rackViews').pop().displayHosts();
+      this.displayAllRacks();
+    }
+  },
+
+  showHeatMapMetric: function (event) {
+    var self = this;
+    var metricItem = Em.Object.create(event.context);
+    this.saveWidgetLayout([metricItem]).done(function(){
+      self.getActiveWidgetLayout();
+    });
   },
 
   hostToSlotMap: function () {
     return this.get('selectedMetric.hostToSlotMap');
   }.property('selectedMetric.hostToSlotMap'),
-
-  loadMetrics: function () {
-    var selectedMetric = this.get('selectedMetric');
-    var hostNames = [];
-
-    if (selectedMetric && this.get('racks').everyProperty('isLoaded', true)) {
-      this.get('racks').forEach(function (rack) {
-        hostNames = hostNames.concat(rack.hosts.mapProperty('hostName'));
-      });
-      selectedMetric.refreshHostSlots(hostNames);
-    }
-    this.set('inputMaximum', this.get('selectedMetric.maximumValue'));
-  }.observes('selectedMetric'),
 
   /**
    * return class name for to be used for containing each rack.

@@ -22,11 +22,11 @@ App.HBaseLinksView = App.LinkDashboardWidgetView.extend({
 
   templateName: require('templates/main/dashboard/widgets/hbase_links'),
   title: Em.I18n.t('dashboard.widgets.HBaseLinks'),
-  id: '19',
+  id: '12',
 
   model_type: 'hbase',
 
-  port: '60010',
+  port: App.get('isHadoop23Stack') ? '16010' : '60010',
 
   componentName: 'HBASE_REGIONSERVER',
 
@@ -40,28 +40,17 @@ App.HBaseLinksView = App.LinkDashboardWidgetView.extend({
    * Passive master components
    */
   passiveMasters: function () {
-    if (App.supports.multipleHBaseMasters) {
-      return this.get('masters').filterProperty('haStatus', 'false');
-    }
-    return [];
+    return this.get('masters').filterProperty('haStatus', 'false');
   }.property('masters'),
   /**
    * One(!) active master component
    */
   activeMaster: function () {
-    if(App.supports.multipleHBaseMasters) {
-      return this.get('masters').findProperty('haStatus', 'true');
-    } else {
-      return this.get('masters')[0];
-    }
+    return this.get('masters').findProperty('haStatus', 'true');
   }.property('masters'),
 
   activeMasterTitle: function(){
-    if (App.supports.multipleHBaseMasters) {
-      return this.t('service.hbase.activeMaster');
-    } else {
-      return this.get('activeMaster.host.publicHostName');
-    }
+    return this.t('service.hbase.activeMaster');
   }.property('activeMaster'),
 
   hbaseMasterWebUrl: function () {

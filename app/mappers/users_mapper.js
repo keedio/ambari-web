@@ -34,8 +34,8 @@ App.usersMapper = App.QuickDataMapper.create({
       var result= [];
       if(!App.User.find().someProperty("userName", item.Users.user_name)) {
         item.permissions = [];
-        var privileges = item.privileges;
-        if (!!Em.get(privileges, 'length')) {
+        var privileges = item.privileges || [];
+        if (privileges.length) {
           item.permissions = privileges.mapProperty('PrivilegeInfo.permission_name');
         }
         item.Users.admin = self.isAdmin(item.permissions);
@@ -62,6 +62,6 @@ App.usersMapper = App.QuickDataMapper.create({
    * @return {Boolean}
    **/
   isOperator: function(permissionList) {
-    return permissionList.indexOf('CLUSTER.OPERATE') > -1;
+    return permissionList.indexOf('CLUSTER.OPERATE') > -1 && !(permissionList.indexOf('AMBARI.ADMIN') > -1);
   }
 });

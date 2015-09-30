@@ -32,7 +32,7 @@ var heatmap = require('utils/heatmap');
  * </ul>
  * 
  */
-App.MainChartHeatmapMetric = Em.Object.extend(heatmap.mappers, {
+App.MainChartHeatmapMetric = Em.Object.extend({
   /**
    * Name of this metric
    */
@@ -93,11 +93,6 @@ App.MainChartHeatmapMetric = Em.Object.extend(heatmap.mappers, {
    */
   units: '',
 
-  /**
-   * Indicates whether this metric is currently loading data from the server.
-   * {Boolean}
-   */
-  loading: false,
 
   /**
    * Provides following information about slots in an array of objects.
@@ -115,63 +110,28 @@ App.MainChartHeatmapMetric = Em.Object.extend(heatmap.mappers, {
    * 
    */
   slotDefinitions: function () {
-    var min = this.get('minimumValue');
     var max = parseFloat(this.get('maximumValue'));
     var slotCount = this.get('numberOfSlots');
     var labelSuffix = this.get('slotDefinitionLabelSuffix');
-    var delta = (max - min) / slotCount;
+    var delta = (max - this.get('minimumValue')) / slotCount;
     var defs = [];
     var slotColors = this.get('slotColors');
     var slotColorIndex = 0;
     for ( var c = 0; c < slotCount - 1; c++) {
-      var from = this.formatLegendNumber(c * delta);
-      var to = this.formatLegendNumber((c + 1) * delta);
-      var label;
-      if ($.trim(labelSuffix) == 'ms') {
-      	label = date.timingFormat(from, 'zeroValid') + " - " + date.timingFormat(to, 'zeroValid');
-      } else {
-	      label = from + labelSuffix + " - " + to + labelSuffix;
-      }
       var slotColor = slotColors[slotColorIndex++];
-      defs.push(Em.Object.create({
-        from: from,
-        to: to,
-        label: label,
-        cssStyle: "background-color:rgb(" + slotColor.r + "," + slotColor.g + "," + slotColor.b + ")"
-      }));
+      var start = (c * delta);
+      var end = ((c + 1) * delta);
+      defs.push(this.generateSlot(start, end, labelSuffix, slotColor));
     }
-    from = this.formatLegendNumber((slotCount - 1) * delta);
-    to = this.formatLegendNumber(max);
-
-    if ($.trim(labelSuffix) == 'ms') {
-      label = date.timingFormat(from, 'zeroValid') + " - " + date.timingFormat(to, 'zeroValid');
-    } else {
-      label = from + labelSuffix + " - " + to + labelSuffix;
-    }
-
     slotColor = slotColors[slotColorIndex++];
-    defs.push(Em.Object.create({
-      from: from,
-      to: to,
-      label: label,
-      cssStyle: "background-color:rgb(" + slotColor.r + "," + slotColor.g + "," + slotColor.b + ")"
-    }));
-    var hatchStyle = "background-color:rgb(135, 206, 250)";
-    if(jQuery.browser.webkit){
-      hatchStyle = "background-image:-webkit-repeating-linear-gradient(-45deg, #FF1E10, #FF1E10 3px, #ff6c00 3px, #ff6c00 6px)";
-    }else if(jQuery.browser.mozilla){
-      hatchStyle = "background-image:repeating-linear-gradient(-45deg, #FF1E10, #FF1E10 3px, #ff6c00 3px, #ff6c00 6px)";
-    }else if(jQuery.browser.msie && jQuery.browser.version){
-      var majorVersion =  parseInt(jQuery.browser.version.split('.')[0]);
-      if(majorVersion>9){
-        hatchStyle = "background-image:repeating-linear-gradient(-45deg, #FF1E10, #FF1E10 3px, #ff6c00 3px, #ff6c00 6px)";
-      }
-    }
+    start = ((slotCount - 1) * delta);
+    defs.push(this.generateSlot(start, max, labelSuffix, slotColor));
+
     defs.push(Em.Object.create({
       from: NaN,
       to: NaN,
       label: Em.I18n.t('charts.heatmap.label.invalidData'),
-      cssStyle: hatchStyle
+      cssStyle: this.getHatchStyle()
     }));
     defs.push(Em.Object.create({
       from: -1,
@@ -181,6 +141,51 @@ App.MainChartHeatmapMetric = Em.Object.extend(heatmap.mappers, {
     }));
     return defs;
   }.property('minimumValue', 'maximumValue', 'numberOfSlots'),
+  /**
+   * genarate slot by given parameters
+   *
+   * @param min
+   * @param max
+   * @param labelSuffix
+   * @param slotColor
+   * @return {object}
+   * @method generateSlot
+   */
+  generateSlot: function (min, max, labelSuffix, slotColor) {
+    var from = this.formatLegendNumber(min);
+    var to = this.formatLegendNumber(max);
+    var label;
+    if ($.trim(labelSuffix) == 'ms') {
+      label = date.timingFormat(from, 'zeroValid') + " - " + date.timingFormat(to, 'zeroValid');
+    } else {
+      label = from + labelSuffix + " - " + to + labelSuffix;
+    }
+    return Em.Object.create({
+      from: from,
+      to: to,
+      label: label,
+      cssStyle: "background-color:rgb(" + slotColor.r + "," + slotColor.g + "," + slotColor.b + ")"
+    });
+  },
+
+  /**
+   * calculate hatch style of slot according to browser version used
+   * @return {String}
+   */
+  getHatchStyle: function () {
+    var hatchStyle = "background-color:rgb(135, 206, 250)";
+    if (jQuery.browser.webkit) {
+      hatchStyle = "background-image:-webkit-repeating-linear-gradient(-45deg, #FF1E10, #FF1E10 3px, #ff6c00 3px, #ff6c00 6px)";
+    } else if (jQuery.browser.mozilla) {
+      hatchStyle = "background-image:repeating-linear-gradient(-45deg, #FF1E10, #FF1E10 3px, #ff6c00 3px, #ff6c00 6px)";
+    } else if (jQuery.browser.msie && jQuery.browser.version) {
+      var majorVersion = parseInt(jQuery.browser.version.split('.')[0]);
+      if (majorVersion > 9) {
+        hatchStyle = "background-image:repeating-linear-gradient(-45deg, #FF1E10, #FF1E10 3px, #ff6c00 3px, #ff6c00 6px)";
+      }
+    }
+    return hatchStyle;
+  },
 
   /**
    * In slot definitions this value is used to construct the label by appending
@@ -189,120 +194,53 @@ App.MainChartHeatmapMetric = Em.Object.extend(heatmap.mappers, {
    */
   slotDefinitionLabelSuffix: '',
 
-  defaultMetric: '',
-
-  /**
-   * Name in the <code>App.ajax</code>
-   * @type {String}
-   */
-  ajaxIndex: 'hosts.metrics',
-
-  /**
-   * Additional data for ajax-request
-   * May be redeclared in child-objects
-   * @type {Object}
-   */
-  ajaxData: {},
-
-  /**
-   * Maps server JSON into an object where keys are hostnames and values are the
-   * true metric values. This function by default will map 'defaultMetric' into
-   * its corresponding value.
-   * 
-   * @Function
-   */
-  metricMapper: function (json) {
-    var hostToValueMap = {};
-    var metricName = this.get('defaultMetric');
-    if (json.items) {
-      var props = metricName.split('.');
-      json.items.forEach(function (item) {
-        var value = item;
-        props.forEach(function (prop) {
-          if (value != null && prop in value) {
-            value = value[prop];
-          } else {
-            value = null;
-          }
-        });
-        if (value != null) {
-          var hostName = item.Hosts.host_name;
-          hostToValueMap[hostName] = value;
-        }
-      });
-    }
-    return hostToValueMap;
-  },
-
   hostToValueMap: null,
 
-  hostToSlotMap: function(){
+  hostToSlotMap: function () {
     var hostToValueMap = this.get('hostToValueMap');
-    var slotDefs = this.get('slotDefinitions');
     var hostNames = this.get('hostNames');
     var hostToSlotMap = {};
     if (hostToValueMap && hostNames) {
-      hostNames.forEach(function(hostName){
-        var slot = -1;
-        if (hostName in hostToValueMap) {
-          var value = hostToValueMap[hostName];
-          if (isNaN(value)) {
-            slot = slotDefs.length - 2;
-          } else {
-            for ( var slotIndex = 0; slotIndex < slotDefs.length - 2; slotIndex++) {
-              var slotDef = slotDefs[slotIndex];
-              if (value >= slotDef.from && value <= slotDef.to) {
-                slot = slotIndex;
-              }
-            }
-            if(slot < 0){
-              // Assign it to the last legend
-              slot = slotDefs.length - 3;
-            }
-          }
-        } else {
-          slot = slotDefs.length - 1;
-        }
+      hostNames.forEach(function (hostName) {
+        var slot = this.calculateSlot(hostToValueMap, hostName);
         if (slot > -1) {
           hostToSlotMap[hostName] = slot;
         }
-      });
+      }, this);
     }
     return hostToSlotMap;
   }.property('hostToValueMap', 'slotDefinitions'),
 
   /**
-   * Determines which slot each host falls into. This information is given to
-   * the callback's #map(hostnameToSlotObject) method. The
-   * 'hostnameToSlotObject' has key as hostname, and the slot index as value.
+   * calculate slot position in hostToSlotMap by hostname
+   * @param hostToValueMap
+   * @param hostName
+   * @return {Number}
    */
-  refreshHostSlots: function (hostNames) {
-    this.set('loading', true);
-    this.set('hostNames', hostNames);
-    var fixedMetricName = this.get('defaultMetric');
-    fixedMetricName = fixedMetricName.replace(/\./g, "/");
-    var ajaxData = {
-      metricName: fixedMetricName
-    };
-    jQuery.extend(ajaxData, this.get('ajaxData'));
+  calculateSlot: function (hostToValueMap, hostName) {
+    var slot = -1;
+    var slotDefs = this.get('slotDefinitions');
 
-    App.ajax.send({
-      name: this.get('ajaxIndex'),
-      sender: this,
-      data: ajaxData,
-      success: 'refreshHostSlotsSuccessCallback',
-      error: 'refreshHostSlotsErrorCallback'
-    });
-  },
-
-  refreshHostSlotsSuccessCallback: function (data) {
-    var hostToValueMap = this.metricMapper(data);
-    this.set('hostToValueMap', hostToValueMap);
-    this.set('loading', false);
-  },
-
-  refreshHostSlotsErrorCallback: function () {
-    this.set('loading', false);
+    if (hostName in hostToValueMap) {
+      var value = hostToValueMap[hostName];
+      if (isNaN(value)) {
+        slot = slotDefs.length - 2;
+      } else {
+        for (var slotIndex = 0; slotIndex < slotDefs.length - 2; slotIndex++) {
+          var slotDef = slotDefs[slotIndex];
+          if (value >= slotDef.from && value <= slotDef.to) {
+            slot = slotIndex;
+          }
+        }
+        if (slot < 0) {
+          // Assign it to the last legend
+          slot = slotDefs.length - 3;
+        }
+      }
+    } else {
+      slot = slotDefs.length - 1;
+    }
+    return slot;
   },
 
   /**

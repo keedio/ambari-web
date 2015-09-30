@@ -100,4 +100,56 @@ describe('App.MainHostServiceConfigsController', function () {
     });
   });
 
+	describe("#loadStep()", function () {
+    beforeEach(function() {
+      sinon.stub(controller, 'loadCurrentVersions', Em.K);
+    });
+    afterEach(function() {
+      controller.loadCurrentVersions.restore();
+    });
+		it("should set host", function () {
+			controller.set('content', {
+				host: 'host1',
+        dependentServiceNames: []
+			});
+			controller.loadStep();
+			expect(controller.get('host')).to.be.equal('host1');
+		});
+	});
+
+	describe("#renderServiceConfigs()", function () {
+		it("should call filterServiceConfigs", function () {
+			var serviceConfigs = {
+				configCategories: 'val'
+			};
+			sinon.stub(controller, 'filterServiceConfigs', function () {
+				this._super = Em.K;
+			});
+			controller.renderServiceConfigs(serviceConfigs);
+
+			expect(controller.filterServiceConfigs.calledWith('val')).to.be.true;
+			controller.filterServiceConfigs.restore();
+		});
+	});
+
+	describe("#switchHostGroup()", function () {
+
+    beforeEach(function() {
+      sinon.stub(controller, 'launchSwitchConfigGroupOfHostDialog', Em.K);
+      });
+
+    afterEach(function () {
+      controller.launchSwitchConfigGroupOfHostDialog.restore();
+    });
+
+		it("should call launchSwitchConfigGroupOfHostDialog", function () {
+			controller.set('selectedConfigGroup', {});
+			controller.set('configGroups', []);
+			controller.set('host', {hostName: 'host1'});
+			controller.switchHostGroup();
+
+			expect(controller.launchSwitchConfigGroupOfHostDialog.calledWith({}, [], 'host1')).to.be.true;
+		});
+	});
+
 });

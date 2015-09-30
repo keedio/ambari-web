@@ -50,7 +50,6 @@ require('models/stack_service_component');
       isMasterAddableInstallerWizard: false,
       isHAComponentOnly: false,
       isRequiredOnAllHosts: false,
-      isNotPreferableOnAmbariServerHost: false,
       defaultNoOfMasterHosts: 1,
       coHostedComponents: [],
       isOtherComponentCoHosted: false,
@@ -104,7 +103,6 @@ var componentPropertiesValidationTests = [
       isMasterAddableInstallerWizard: true,
       isHAComponentOnly: false,
       isRequiredOnAllHosts: false,
-      isNotPreferableOnAmbariServerHost: false,
       defaultNoOfMasterHosts: 3,
       coHostedComponents: [],
       isOtherComponentCoHosted: false,
@@ -122,7 +120,7 @@ var componentPropertiesValidationTests = [
       isSlave: false,
       isMaster: true,
       isRestartable: true,
-      isReassignable: false,
+      isReassignable: true,
       isDeletable: false,
       isRollinRestartAllowed: false,
       isDecommissionAllowed: false,
@@ -135,7 +133,6 @@ var componentPropertiesValidationTests = [
       isMasterAddableInstallerWizard: false,
       isHAComponentOnly: false,
       isRequiredOnAllHosts: false,
-      isNotPreferableOnAmbariServerHost: false,
       coHostedComponents: [],
       isOtherComponentCoHosted: false,
       isCoHostedComponent: false
@@ -165,7 +162,6 @@ var componentPropertiesValidationTests = [
       isMasterAddableInstallerWizard: false,
       isHAComponentOnly: false,
       isRequiredOnAllHosts: true,
-      isNotPreferableOnAmbariServerHost: false,
       coHostedComponents: [],
       isOtherComponentCoHosted: false,
       isCoHostedComponent: false
@@ -195,7 +191,6 @@ var componentPropertiesValidationTests = [
       isMasterAddableInstallerWizard: false,
       isHAComponentOnly: false,
       isRequiredOnAllHosts: false,
-      isNotPreferableOnAmbariServerHost: false,
       coHostedComponents: [],
       isOtherComponentCoHosted: false,
       isCoHostedComponent: false
@@ -212,12 +207,12 @@ var componentPropertiesValidationTests = [
       isSlave: false,
       isMaster: true,
       isRestartable: true,
-      isReassignable: false,
-      isDeletable: false,
+      isReassignable: true,
+      isDeletable: true,
       isRollinRestartAllowed: false,
       isDecommissionAllowed: false,
       isRefreshConfigsAllowed: false,
-      isAddableToHost: false,
+      isAddableToHost: true,
       isShownOnInstallerAssignMasterPage: true,
       isShownOnInstallerSlaveClientPage: false,
       isShownOnAddServiceAssignMasterPage: true,
@@ -225,10 +220,9 @@ var componentPropertiesValidationTests = [
       isMasterAddableInstallerWizard: false,
       isHAComponentOnly: false,
       isRequiredOnAllHosts: false,
-      isNotPreferableOnAmbariServerHost: false,
       coHostedComponents: [],
       isOtherComponentCoHosted: false,
-      isCoHostedComponent: true
+      isCoHostedComponent: false
     }
   },
   {
@@ -242,12 +236,12 @@ var componentPropertiesValidationTests = [
       isSlave: false,
       isMaster: true,
       isRestartable: true,
-      isReassignable: false,
-      isDeletable: false,
+      isReassignable: true,
+      isDeletable: true,
       isRollinRestartAllowed: false,
       isDecommissionAllowed: false,
       isRefreshConfigsAllowed: false,
-      isAddableToHost: false,
+      isAddableToHost: true,
       isShownOnInstallerAssignMasterPage: true,
       isShownOnInstallerSlaveClientPage: false,
       isShownOnAddServiceAssignMasterPage: true,
@@ -255,8 +249,7 @@ var componentPropertiesValidationTests = [
       isMasterAddableInstallerWizard: false,
       isHAComponentOnly: false,
       isRequiredOnAllHosts: false,
-      isNotPreferableOnAmbariServerHost: false,
-      coHostedComponents: ['HIVE_METASTORE','WEBHCAT_SERVER'],
+      coHostedComponents: ['WEBHCAT_SERVER'],
       isOtherComponentCoHosted: true,
       isCoHostedComponent: false
     }
@@ -285,7 +278,6 @@ var componentPropertiesValidationTests = [
       isMasterAddableInstallerWizard: false,
       isHAComponentOnly: false,
       isRequiredOnAllHosts: false,
-      isNotPreferableOnAmbariServerHost: false,
       coHostedComponents: [],
       isOtherComponentCoHosted: false,
       isCoHostedComponent: false
@@ -294,13 +286,13 @@ var componentPropertiesValidationTests = [
   {
     componentName: 'POSTGRESQL_SERVER',
     expected: {
-      isShownOnInstallerAssignMasterPage: false,
+      isShownOnInstallerAssignMasterPage: false
     }
   },
   {
     componentName: 'MYSQL_SERVER',
     expected: {
-      isShownOnInstallerAssignMasterPage: false,
+      isShownOnInstallerAssignMasterPage: false
     }
   },
 ];

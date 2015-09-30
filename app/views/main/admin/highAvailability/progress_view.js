@@ -19,7 +19,7 @@
 
 var App = require('app');
 
-App.HighAvailabilityProgressPageView = Em.View.extend({
+App.HighAvailabilityProgressPageView = Em.View.extend(App.wizardProgressPageViewMixin, {
 
   didInsertElement: function () {
     this.get('controller').loadStep();
@@ -33,12 +33,6 @@ App.HighAvailabilityProgressPageView = Em.View.extend({
       return  Em.I18n.t('admin.highAvailability.wizard.step' + currentStep + '.header.title');
     }
   }.property(),
-
-  submitButtonText: Em.I18n.t('common.next'),
-
-  noticeCompleted: Em.I18n.t('admin.highAvailability.wizard.progressPage.notice.completed'),
-
-  noticeFailed: Em.I18n.t('admin.highAvailability.wizard.progressPage.notice.failed'),
 
   noticeInProgress: function () {
     var currentStep = App.router.get('highAvailabilityWizardController.currentStep');
@@ -74,6 +68,9 @@ App.HighAvailabilityProgressPageView = Em.View.extend({
 
     didInsertElement: function () {
       this.onStatus();
+      $('body').tooltip({
+        selector: '[rel=tooltip]'
+      });
     },
 
     barWidth: function () {
@@ -101,6 +98,14 @@ App.HighAvailabilityProgressPageView = Em.View.extend({
 
     showProgressBar: function () {
       return this.get('content.status') === "IN_PROGRESS";
-    }.property('content.status')
+    }.property('content.status'),
+
+    hidePercent: function() {
+      return this.get('content.command') === 'testDBConnection';
+    }.property('content.command'),
+
+    showDBTooltip: function() {
+      return this.get('content.command') !== 'testDBConnection';
+    }.property('content.command')
   })
 });

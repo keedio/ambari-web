@@ -21,7 +21,7 @@ var App = require('app');
 App.HBaseRegionsInTransitionView = App.TextDashboardWidgetView.extend({
 
   title: Em.I18n.t('dashboard.widgets.HBaseRegionsInTransition'),
-  id: '22',
+  id: '15',
 
   model_type: 'hbase',
   hiddenInfo: function () {
@@ -131,7 +131,7 @@ App.HBaseRegionsInTransitionView = App.TextDashboardWidgetView.extend({
       },
 
       didInsertElement: function () {
-        var colors = ['#95A800', '#FF8E00', '#B80000']; //color green, orange ,red
+        var colors = [App.healthStatusGreen, App.healthStatusOrange, App.healthStatusRed]; //color green, orange ,red
         var handlers = [33, 66]; //fixed value
 
         if (browserVerion == -1 || browserVerion > 9) {

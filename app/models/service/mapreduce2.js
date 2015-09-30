@@ -18,10 +18,7 @@
 var App = require('app');
 
 App.MapReduce2Service = App.Service.extend({
-  version: DS.attr('string'),
-  jobHistoryServer: function () {
-    return this.get('hostComponents').findProperty('componentName', 'HISTORYSERVER');
-  }.property('hostComponents'),
+  jobHistoryServer: DS.belongsTo('App.HostComponent'),
   mapReduce2Clients: DS.attr('number')
 });
 

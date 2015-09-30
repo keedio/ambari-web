@@ -34,9 +34,102 @@ module.exports = Em.Application.create({
   }),
   isAdmin: false,
   isOperator: false,
-  isManager: function() {
-    return this.get('isAdmin') || this.get('isOperator');
-  }.property('isAdmin','isOperator'),
+  isPermissionDataLoaded: false,
+
+  /**
+   * state of stack upgrade process
+   * states:
+   *  - INIT
+   *  - PENDING
+   *  - IN_PROGRESS
+   *  - HOLDING
+   *  - COMPLETED
+   * @type {String}
+   */
+  upgradeState: 'INIT',
+
+  /**
+   * flag is true when upgrade process is running
+   * @returns {boolean}
+   */
+  upgradeInProgress: function() {
+    return ["IN_PROGRESS"].contains(this.get('upgradeState'));
+  }.property('upgradeState'),
+
+  /**
+   * flag is true when upgrade process is waiting for user action
+   * to procced, retry, perform manual steps etc.
+   * @returns {boolean}
+   */
+  upgradeHolding: function() {
+    return this.get('upgradeState').contains("HOLDING");
+  }.property('upgradeState'),
+
+  /**
+   * flag is true when upgrade process is aborted
+   * @returns {boolean}
+   */
+  upgradeAborted: function() {
+    return this.get('upgradeState') === "ABORTED";
+  }.property('upgradeState'),
+
+  /**
+   * RU is running
+   * @type {boolean}
+   */
+  upgradeIsRunning: function() {
+    return this.get('upgradeInProgress') || this.get('upgradeHolding');
+  }.property('upgradeInProgress', 'upgradeHolding'),
+
+  /**
+   * flag is true when upgrade process is running or aborted
+   * or wizard used by another user
+   * @returns {boolean}
+   */
+  wizardIsNotFinished: function () {
+    return this.get('upgradeIsRunning') || this.get('upgradeAborted') || App.router.get('wizardWatcherController.isNonWizardUser');
+  }.property('upgradeIsRunning', 'upgradeAborted', 'router.wizardWatcherController.isNonWizardUser'),
+
+  /**
+   * compute user access rights by permission type
+   * types:
+   *  - ADMIN
+   *  - MANAGER
+   *  - OPERATOR
+   *  - ONLY_ADMIN
+   * prefix "upgrade_" mean that element will not be unconditionally blocked while stack upgrade running
+   * @param type {string}
+   * @return {boolean}
+   */
+  isAccessible: function (type) {
+    if (!App.get('supports.opsDuringRollingUpgrade') && !['INIT', 'COMPLETED'].contains(this.get('upgradeState')) && !type.contains('upgrade_')) {
+      return false;
+    }
+
+    if (App.router.get('wizardWatcherController').get('isNonWizardUser')) {
+      return false;
+    }
+
+    if (type.contains('upgrade_')) {
+      //slice off "upgrade_" prefix to have actual permission type
+      type = type.slice(8);
+    }
+
+    switch (type) {
+      case 'ADMIN':
+        return this.get('isAdmin');
+      case 'NON_ADMIN':
+        return !this.get('isAdmin');
+      case 'MANAGER':
+        return this.get('isAdmin') || this.get('isOperator');
+      case 'OPERATOR':
+        return this.get('isOperator');
+      case 'ONLY_ADMIN':
+        return this.get('isAdmin') && !this.get('isOperator');
+      default:
+        return false;
+    }
+  },
 
   isStackServicesLoaded: false,
   /**
@@ -72,29 +165,53 @@ module.exports = Em.Application.create({
   currentStackVersion: '',
   currentStackName: function() {
     return Em.get((this.get('currentStackVersion') || this.get('defaultStackVersion')).match(/(.+)-\d.+/), '1');
-  }.property('currentStackVersion'),
+  }.property('currentStackVersion', 'defaultStackVersion'),
+
+  /**
+   * true if cluster has only 1 host
+   * for now is used to disable move/HA actions
+   * @type {boolean}
+   */
+  isSingleNode: function() {
+    return this.get('allHostNames.length') === 1;
+  }.property('allHostNames.length'),
 
   allHostNames: [],
 
   currentStackVersionNumber: function () {
     var regExp = new RegExp(this.get('currentStackName') + '-');
     return (this.get('currentStackVersion') || this.get('defaultStackVersion')).replace(regExp, '');
-  }.property('currentStackVersion', 'currentStackName'),
+  }.property('currentStackVersion', 'defaultStackVersion', 'currentStackName'),
 
-  isHadoop2Stack: function () {
-    var result = true;
-    var hdfsService = App.StackService.find().findProperty('serviceName','HDFS');
-    if (hdfsService) {
-      result = stringUtils.compareVersions(hdfsService.get('serviceVersion'), "2.0") > -1;
-    } else {
-      result = stringUtils.compareVersions(this.get('currentStackVersionNumber'), "2.0") > -1;
-    }
-    return result;
-  }.property('router.clusterController.isLoaded', 'isStackServicesLoaded','currentStackVersionNumber'),
+  isHadoop23Stack: function () {
+    return (stringUtils.compareVersions(this.get('currentStackVersionNumber'), "2.3") > -1);
+  }.property('currentStackVersionNumber'),
 
   isHadoop22Stack: function () {
     return (stringUtils.compareVersions(this.get('currentStackVersionNumber'), "2.2") > -1);
   }.property('currentStackVersionNumber'),
+
+  /**
+   * Determines if current stack is 2.0.*
+   * @type {boolean}
+   */
+  isHadoop20Stack: function () {
+    return (stringUtils.compareVersions(this.get('currentStackVersionNumber'), "2.1") == -1 && stringUtils.compareVersions(this.get('currentStackVersionNumber'), "2.0") > -1);
+  }.property('currentStackVersionNumber'),
+
+  isHadoopWindowsStack: function() {
+    return this.get('currentStackName') == "HDPWIN";
+  }.property('currentStackName'),
+
+  /**
+   * when working with enhanced configs we should rely on stack version
+   * as version that is below 2.2 doesn't supports it
+   * even if flag <code>supports.enhancedConfigs<code> is true
+   * @type {boolean}
+   */
+  isClusterSupportsEnhancedConfigs: function() {
+    return this.get('isHadoop22Stack') && this.get('supports.enhancedConfigs');
+  }.property('isHadoop22Stack', 'supports.enhancedConfigs'),
 
   /**
    * If NameNode High Availability is enabled
@@ -103,14 +220,13 @@ module.exports = Em.Application.create({
    * @type {bool}
    */
   isHaEnabled: function () {
-    if (!this.get('isHadoop2Stack')) return false;
     var isHDFSInstalled = App.Service.find().findProperty('serviceName','HDFS');
     return !!isHDFSInstalled && !this.HostComponent.find().someProperty('componentName', 'SECONDARY_NAMENODE');
-  }.property('router.clusterController.isLoaded', 'isHadoop2Stack'),
+  }.property('router.clusterController.dataLoadList.services', 'router.clusterController.isServiceContentFullyLoaded'),
 
   /**
    * If ResourceManager High Availability is enabled
-   * Based on number of ResourceManager components host components installed
+   * Based on number of ResourceManager host components installed
    *
    * @type {bool}
    */
@@ -121,7 +237,22 @@ module.exports = Em.Application.create({
       result = this.HostComponent.find().filterProperty('componentName', 'RESOURCEMANAGER').length > 1;
     }
     return result;
-  }.property('router.clusterController.isLoaded'),
+  }.property('router.clusterController.isLoaded', 'isStackServicesLoaded'),
+
+  /**
+   * If Ranger Admin High Availability is enabled
+   * Based on number of Ranger Admin host components installed
+   *
+   * @type {bool}
+   */
+  isRAHaEnabled: function () {
+    var result = false;
+    var raStackComponent = App.StackServiceComponent.find().findProperty('componentName','RANGER_ADMIN');
+    if (raStackComponent && raStackComponent.get('isMultipleAllowed')) {
+      result = App.HostComponent.find().filterProperty('componentName', 'RANGER_ADMIN').length > 1;
+    }
+    return result;
+  }.property('router.clusterController.isLoaded', 'isStackServicesLoaded'),
 
   /**
    * Object with utility functions for list of service names with similar behavior
@@ -151,8 +282,20 @@ module.exports = Em.Application.create({
       return App.StackService.find().filterProperty('isNoConfigTypes').mapProperty('serviceName');
     }.property('App.router.clusterController.isLoaded'),
 
+    servicesWithHeatmapTab: function () {
+      return App.StackService.find().filterProperty('hasHeatmapSection').mapProperty('serviceName');
+    }.property('App.router.clusterController.isLoaded'),
+
     monitoring: function () {
       return App.StackService.find().filterProperty('isMonitoringService').mapProperty('serviceName');
+    }.property('App.router.clusterController.isLoaded'),
+
+    hostMetrics: function () {
+      return App.StackService.find().filterProperty('isHostMetricsService').mapProperty('serviceName');
+    }.property('App.router.clusterController.isLoaded'),
+
+    serviceMetrics: function () {
+      return App.StackService.find().filterProperty('isServiceMetricsService').mapProperty('serviceName');
     }.property('App.router.clusterController.isLoaded'),
 
     supportsServiceCheck: function() {

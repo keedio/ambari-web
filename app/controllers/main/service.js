@@ -37,11 +37,11 @@ App.MainServiceController = Em.ArrayController.extend({
    * @type {Ember.Object}
    */
   cluster: function () {
-    if (!App.router.get('clusterController.isLoaded')) {
+    if (!App.router.get('clusterController.isClusterDataLoaded')) {
       return null;
     }
     return App.Cluster.find().objectAt(0);
-  }.property('App.router.clusterController.isLoaded'),
+  }.property('App.router.clusterController.isClusterDataLoaded'),
 
   /**
    * Check if all services are installed
@@ -51,9 +51,6 @@ App.MainServiceController = Em.ArrayController.extend({
   isAllServicesInstalled: function () {
     if (!this.get('content.content')) return false;
     var availableServices = App.StackService.find().mapProperty('serviceName');
-    if (!App.get('supports.hue')) {
-      availableServices = availableServices.without('HUE');
-    }
     return this.get('content.content').length == availableServices.length;
   }.property('content.content.@each', 'content.content.length'),
 
@@ -120,9 +117,22 @@ App.MainServiceController = Em.ArrayController.extend({
       return null;
     }
     var self = this;
-    return App.showConfirmationFeedBackPopup(function (query) {
-      self.allServicesCall(state, query);
+    var bodyMessage = Em.Object.create({
+      confirmMsg: state == 'INSTALLED' ? Em.I18n.t('services.service.stopAll.confirmMsg') : Em.I18n.t('services.service.startAll.confirmMsg'),
+      confirmButton: state == 'INSTALLED' ? Em.I18n.t('services.service.stop.confirmButton') : Em.I18n.t('services.service.start.confirmButton')
     });
+
+    if (state == 'INSTALLED' && App.Service.find().filterProperty('serviceName', 'HDFS').someProperty('workStatus', App.HostComponentStatus.started)) {
+      App.router.get('mainServiceItemController').checkNnLastCheckpointTime(function () {
+        return App.showConfirmationFeedBackPopup(function (query) {
+          self.allServicesCall(state, query);
+        }, bodyMessage);
+      });
+    } else {
+      return App.showConfirmationFeedBackPopup(function (query) {
+        self.allServicesCall(state, query);
+      }, bodyMessage);
+    }
   },
 
   /**
@@ -147,6 +157,94 @@ App.MainServiceController = Em.ArrayController.extend({
       },
       success: 'allServicesCallSuccessCallback',
       error: 'allServicesCallErrorCallback'
+    });
+  },
+
+  /**
+   * Restart all services - stops all services, then starts them back
+   */
+  restartAllServices: function () {
+    this.silentStopAllServices();
+  },
+
+  /**
+   * Silent stop all services - without user confirmation
+   * @returns {$.ajax}
+   */
+  silentStopAllServices: function () {
+    return App.ajax.send({
+      name: 'common.services.update',
+      sender: this,
+      data: {
+        context: App.BackgroundOperationsController.CommandContexts.STOP_ALL_SERVICES,
+        ServiceInfo: {
+          state: 'INSTALLED'
+        }
+      },
+      success: 'silentStopSuccess'
+    });
+  },
+
+  isStopAllServicesFailed: function() {
+    var workStatuses = App.Service.find().mapProperty('workStatus');
+    for (var i = 0; i < workStatuses.length; i++) {
+      if (workStatuses[i] != 'INSTALLED' && workStatuses[i] != 'STOPPING') {
+        return true;
+      }
+    }
+    return false;
+  },
+
+  /**
+   * Success callback for silent stop
+   */
+  silentStopSuccess: function () {
+    var self = this;
+
+    App.router.get('applicationController').dataLoading().done(function (initValue) {
+      if (initValue) {
+        App.router.get('backgroundOperationsController').showPopup();
+      }
+
+      Ember.run.later(function () {
+        self.set('shouldStart', true);
+      }, App.bgOperationsUpdateInterval);
+    });
+  },
+
+  /**
+   * Silent start all services - without user confirmation
+   */
+  silentStartAllServices: function () {
+    if (
+      !App.router.get('backgroundOperationsController').get('allOperationsCount')
+      && this.get('shouldStart')
+      && !this.isStopAllServicesFailed()
+    ) {
+      this.set('shouldStart', false);
+      return App.ajax.send({
+        name: 'common.services.update',
+        sender: this,
+        data: {
+          context: App.BackgroundOperationsController.CommandContexts.START_ALL_SERVICES,
+          ServiceInfo: {
+            state: 'STARTED'
+          }
+        },
+        success: 'silentCallSuccessCallback'
+      });
+    }
+  }.observes('shouldStart', 'controllers.backgroundOperationsController.allOperationsCount'),
+
+  /**
+   * Success callback for silent start
+   */
+  silentCallSuccessCallback: function () {
+    // load data (if we need to show this background operations popup) from persist
+    App.router.get('applicationController').dataLoading().done(function (initValue) {
+      if (initValue) {
+        App.router.get('backgroundOperationsController').showPopup();
+      }
     });
   },
 
@@ -189,6 +287,7 @@ App.MainServiceController = Em.ArrayController.extend({
     if (this.get('isAllServicesInstalled')) {
       return;
     }
+    App.router.get('addServiceController').setDBProperty('onClosePath', 'main.services.index');
     App.router.transitionTo('main.serviceAdd');
   }
 });

@@ -18,11 +18,11 @@
 
 <div class="span7">
   {{#if view.isUpgradeFailed}}
-    {{#if App.isAdmin}}
+    {{#isAccessible ADMIN}}
       <a href="#" {{action "upgradeComponent" view.content target="controller"}} >
         <i title="Component upgrade failed" class="components-health icon-arrow-up"></i>
       </a>
-    {{/if}}
+    {{/isAccessible}}
   {{else}}
     <span rel='componentHealthTooltip' {{bindAttr class="view.statusClass view.statusIconClass :components-health" data-original-title="view.componentTextStatus"}}></span>&nbsp;
   {{/if}}
@@ -32,7 +32,7 @@
     {{component.displayName}}
   {{/if}}
   &nbsp;/&nbsp;
-  <a href="#" {{action routeToService component.service target="controller"}}>{{component.service.displayName}}</a>
+  <a href="#" {{action routeToService component.service}}>{{component.service.displayName}}</a>
   &nbsp;
   {{#if component.staleConfigs}}
     <span class="text-warning icon-refresh"></span>
@@ -42,7 +42,7 @@
   {{/unless}}
 </div>
 <div class="span5 pull-right">
-  {{#if App.isAdmin}}
+  {{#isAccessible ADMIN}}
     <div class="btn-group pull-right">
       <a {{ bindAttr class="view.disabled :btn :dropdown-toggle"}} data-toggle="dropdown">
         {{view.componentTextStatus}}
@@ -94,7 +94,7 @@
             </li>
           {{/if}}
           {{#if view.isReassignable}}
-            <li {{bindAttr class="view.noActionAvailable"}}>
+            <li {{bindAttr class="view.noActionAvailable view.isMoveComponentDisabled:disabled"}}>
               <a href="javascript:void(null)" data-toggle="modal" {{action "moveComponent" view.content target="controller"}}>
                 {{t common.move}}
               </a>
@@ -112,7 +112,7 @@
           </li>
         {{/unless}}
         {{#if view.isInit}}
-          <li {{bindAttr class="view."}}>
+          <li>
             <a href="javascript:void(null)" data-toggle="modal" {{action "installComponent" view.content target="controller"}}>
               {{t common.reinstall}}
             </a>
@@ -140,5 +140,5 @@
       {{/each}}
       </ul>
     </div>
-  {{/if}}
+  {{/isAccessible}}
 </div>

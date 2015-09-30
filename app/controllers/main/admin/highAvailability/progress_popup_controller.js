@@ -57,10 +57,20 @@ App.HighAvailabilityProgressPopupController = Ember.Controller.extend({
   hostsData: [],
 
   /**
+   *  StageId for the command.
+   *  @type {Number}
+   */
+  stageId: null,
+
+  /**
    * During loading and calculations show popup with spinner
    * @type {Object}
    */
   spinnerPopup: null,
+
+  isTaskPolling: false,
+
+  taskInfo: null,
 
   /**
    * Get info for <code>requestIds</code> and initialize <code>App.HostPopup</code>
@@ -68,8 +78,9 @@ App.HighAvailabilityProgressPopupController = Ember.Controller.extend({
    * @param requestIds {Array}
    * @param progressController {App.HighAvailabilityProgressPageController}
    * @param showSpinner {Boolean}
+   * @param stageId {Number}
    */
-  initPopup: function (popupTitle, requestIds, progressController, showSpinner) {
+  initPopup: function (popupTitle, requestIds, progressController, showSpinner, stageId) {
     if(showSpinner){
       var loadingPopup = App.ModalPopup.show({
         header: Em.I18n.t('jobs.loadingTasks'),
@@ -85,6 +96,7 @@ App.HighAvailabilityProgressPopupController = Ember.Controller.extend({
     this.set('popupTitle', popupTitle);
     this.set('requestIds', requestIds);
     this.set('hostsData', []);
+    this.set('stageId', stageId);
     this.getHosts();
   },
 
@@ -93,12 +105,21 @@ App.HighAvailabilityProgressPopupController = Ember.Controller.extend({
    */
   getHosts: function () {
     var requestIds = this.get('requestIds');
+    var stageId = this.get('stageId');
+    var name = 'background_operations.get_by_request';
+    if (!Em.isNone(stageId)) {
+      name = 'common.request.polling';
+      if (stageId === 0) {
+        stageId = '0';
+      }
+    }
     requestIds.forEach(function (requestId) {
       App.ajax.send({
-        name: 'admin.high_availability.polling',
+        name: name,
         sender: this,
         data: {
-          requestId: requestId
+          requestId: requestId,
+          stageId: stageId
         },
         success: 'onGetHostsSuccess'
       })
@@ -165,7 +186,14 @@ App.HighAvailabilityProgressPopupController = Ember.Controller.extend({
    */
   getDataFromProgressController: function () {
     var data = this.get('hostsData');
-    var tasksData = this.get('progressController.logs');
+    var tasksData = [];
+    var stageId = this.get('stageId');
+    // If the progress page is broken into stages then update host with only stage's tasks
+    if (!!stageId) {
+      tasksData = this.get('progressController.logs').filterProperty('Tasks.stage_id',stageId);
+    } else {
+      tasksData = this.get('progressController.logs');
+    }
     if (tasksData.length) {
       var tasks = [];
       tasksData.forEach(function (logs) {
@@ -194,6 +222,46 @@ App.HighAvailabilityProgressPopupController = Ember.Controller.extend({
       }
     });
     return result;
+  },
+
+  startTaskPolling: function (requestId, taskId) {
+    this.setProperties({
+      isTaskPolling: true,
+      taskInfo: {
+        id: taskId,
+        requestId: requestId
+      }
+    });
+    App.updater.run(this, 'updateTask', 'isTaskPolling', App.bgOperationsUpdateInterval);
+    App.updater.immediateRun('updateTask');
+  },
+
+  stopTaskPolling: function () {
+    this.set('isTaskPolling', false);
+  },
+
+  updateTask: function (callback) {
+    App.ajax.send({
+      name: 'background_operations.get_by_task',
+      sender: this,
+      data: {
+        requestId: this.get('taskInfo.requestId'),
+        taskId: this.get('taskInfo.id')
+      },
+      success: 'updateTaskSuccessCallback',
+      callback: callback
+    })
+  },
+
+  updateTaskSuccessCallback: function (data) {
+    this.setProperties({
+      'taskInfo.stderr': data.Tasks.stderr,
+      'taskInfo.stdout': data.Tasks.stdout,
+      'taskInfo.outputLog': data.Tasks.output_log,
+      'taskInfo.errorLog': data.Tasks.error_log,
+      'isTaskPolling': !['FAILED', 'COMPLETED', 'TIMEDOUT', 'ABORTED'].contains(data.Tasks.status)
+    });
   }
+
 });
 

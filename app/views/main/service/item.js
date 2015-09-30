@@ -44,106 +44,6 @@ App.MainServiceItemView = Em.View.extend({
     'KNOX_GATEWAY': ['STARTDEMOLDAP','STOPDEMOLDAP']
   },
 
-  actionMap: function() {
-    return {
-      RESTART_ALL: {
-        action: 'restartAllHostComponents',
-        context: this.get('serviceName'),
-        label: Em.I18n.t('restart.service.all'),
-        cssClass: 'icon-repeat',
-        disabled: false
-      },
-      RUN_SMOKE_TEST: {
-        action: 'runSmokeTest',
-        label: Em.I18n.t('services.service.actions.run.smoke'),
-        cssClass: 'icon-thumbs-up-alt'
-      },
-      REFRESH_CONFIGS: {
-        action: 'refreshConfigs',
-        label: Em.I18n.t('hosts.host.details.refreshConfigs'),
-        cssClass: 'icon-refresh',
-        disabled: !this.get('controller.content.isRestartRequired')
-      },
-      REFRESH_YARN_QUEUE: {
-        action: 'refreshYarnQueues',
-        customCommand: 'REFRESHQUEUES',
-        label: Em.I18n.t('services.service.actions.run.yarnRefreshQueues.menu'),
-        cssClass: 'icon-refresh',
-        disabled: false
-      },
-      ROLLING_RESTART: {
-        action: 'rollingRestart',
-        context: this.get('rollingRestartComponent'),
-        label: Em.I18n.t('rollingrestart.dialog.title'),
-        cssClass: 'icon-time',
-        disabled: false
-      },
-      TOGGLE_PASSIVE: {
-        action: 'turnOnOffPassive',
-        context: this.get('isPassive') ? Em.I18n.t('passiveState.turnOffFor').format(this.get('displayName')) : Em.I18n.t('passiveState.turnOnFor').format(this.get('displayName')),
-        label: this.get('isPassive') ? Em.I18n.t('passiveState.turnOff') : Em.I18n.t('passiveState.turnOn'),
-        cssClass: 'icon-medkit',
-        disabled: false
-      },
-      TOGGLE_NN_HA: {
-        action: App.get('isHaEnabled') ? 'disableHighAvailability' : 'enableHighAvailability',
-        label: App.get('isHaEnabled') ? Em.I18n.t('admin.highAvailability.button.disable') : Em.I18n.t('admin.highAvailability.button.enable'),
-        cssClass: App.get('isHaEnabled') ? 'icon-arrow-down' : 'icon-arrow-up',
-        isHidden: (App.get('isHaEnabled') && !App.get('supports.autoRollbackHA'))
-      },
-      TOGGLE_RM_HA: {
-        action: 'enableRMHighAvailability',
-        label: Em.I18n.t('admin.rm_highAvailability.button.enable'),
-        cssClass: 'icon-arrow-up',
-        isHidden: !App.get('supports.resourceManagerHighAvailability') || App.get('isRMHaEnabled')
-      },
-      MOVE_COMPONENT: {
-        action: 'reassignMaster',
-        context: '',
-        label: Em.I18n.t('services.service.actions.reassign.master'),
-        cssClass: 'icon-share-alt',
-        disabled: false
-      },
-      STARTDEMOLDAP: {
-        action: 'startLdapKnox',
-        customCommand: 'STARTDEMOLDAP',
-        label: Em.I18n.t('services.service.actions.run.startLdapKnox.context'),
-        cssClass: 'icon-play-sign',
-        disabled: false
-      },
-      STOPDEMOLDAP: {
-        action: 'stopLdapKnox',
-        customCommand: 'STOPDEMOLDAP',
-        label: Em.I18n.t('services.service.actions.run.stopLdapKnox.context'),
-        cssClass: 'icon-stop',
-        disabled: false
-      },
-      REBALANCE_HDFS: {
-        action: 'rebalanceHdfsNodes',
-        customCommand: 'REBALANCEHDFS',
-        context: Em.I18n.t('services.service.actions.run.rebalanceHdfsNodes.context'),
-        label: Em.I18n.t('services.service.actions.run.rebalanceHdfsNodes'),
-        cssClass: 'icon-refresh',
-        disabled: false
-      },
-      DOWNLOAD_CLIENT_CONFIGS: {
-        action: this.get('controller.isSeveralClients') ? '' : 'downloadClientConfigs',
-        label: Em.I18n.t('services.service.actions.downloadClientConfigs'),
-        cssClass: 'icon-download-alt',
-        isHidden: !(App.get('supports.downloadClientConfigs') && this.get('controller.content.hostComponents').findProperty('isClient')),
-        disabled: false,
-        hasSubmenu: this.get('controller.isSeveralClients'),
-        submenuOptions: this.get('controller.clientComponents')
-      },
-      MASTER_CUSTOM_COMMAND: {
-        action: 'executeCustomCommand',
-        cssClass: 'icon-play-circle',
-        isHidden: false,
-        disabled: false
-      }
-    }
-  },
-
    addActionMap: function() {
      return [
       {
@@ -151,6 +51,20 @@ App.MainServiceItemView = Em.View.extend({
         'label': '{0} {1}'.format(Em.I18n.t('add'), Em.I18n.t('dashboard.services.hbase.masterServer')),
         service: 'HBASE',
         component: 'HBASE_MASTER'
+      },
+      {
+       cssClass: 'icon-plus',
+       'label': '{0} {1}'.format(Em.I18n.t('add'), Em.I18n.t('dashboard.services.hive.metastore')),
+       service: 'HIVE',
+       component: 'HIVE_METASTORE',
+       isHidden: !App.get('isHadoop22Stack')
+      },
+      {
+       cssClass: 'icon-plus',
+       'label': '{0} {1}'.format(Em.I18n.t('add'), Em.I18n.t('dashboard.services.hive.server2')),
+       service: 'HIVE',
+       component: 'HIVE_SERVER',
+       isHidden: !App.get('isHadoop22Stack')
       },
       {
         cssClass: 'icon-plus',
@@ -163,13 +77,25 @@ App.MainServiceItemView = Em.View.extend({
         'label': '{0} {1}'.format(Em.I18n.t('add'), Em.I18n.t('dashboard.services.flume.agentLabel')),
         service: 'FLUME',
         component: 'FLUME_HANDLER'
+      },
+      {
+        cssClass: 'icon-plus',
+        'label': '{0} {1}'.format(Em.I18n.t('add'), App.format.role('RANGER_KMS_SERVER')),
+        service: 'RANGER_KMS',
+        component: 'RANGER_KMS_SERVER'
+      },
+      {
+        cssClass: 'icon-plus',
+        'label': '{0} {1}'.format(Em.I18n.t('add'), App.format.role('NIMBUS')),
+        service: 'STORM',
+        component: 'NIMBUS'
       }
     ]
   },
   /**
    * Create option for MOVE_COMPONENT or ROLLING_RESTART task.
    *
-   * @param {Object} option - one of the options that return by <code>actionMap()</code>
+   * @param {Object} option - one of the options that return by <code>App.HostComponentActionMap.getMap()</code>
    * @param {Object} fields - option fields to add/rewrite
    * @return {Object}
    */
@@ -177,13 +103,24 @@ App.MainServiceItemView = Em.View.extend({
     return $.extend(true, {}, option, fields);
   },
 
-  maintenance: function(){
+  maintenance: [],
+
+  isMaintenanceSet: false,
+
+  observeMaintenance: function() {
+    if (!this.get('isMaintenanceSet') && this.get('controller.isServicesInfoLoaded')) {
+      this.observeMaintenanceOnce();
+    }
+    Em.run.once(this, 'clearIsMaintenanceSet');
+  },
+
+  observeMaintenanceOnce: function() {
     var self = this;
     var options = [];
     var service = this.get('controller.content');
     var allMasters = service.get('hostComponents').filterProperty('isMaster').mapProperty('componentName').uniq();
-    var allSlaves = service.get('hostComponents').filterProperty('isSlave').mapProperty('componentName').uniq();
-    var actionMap = this.actionMap();
+    var allSlaves = service.get('slaveComponents').rejectProperty('totalCount', 0).mapProperty('componentName');
+    var actionMap = App.HostComponentActionMap.getMap(this);
     var serviceCheckSupported = App.get('services.supportsServiceCheck').contains(service.get('serviceName'));
     var hasConfigTab = this.get('hasConfigTab');
     var excludedCommands = this.get('mastersExcludedCommands');
@@ -200,15 +137,15 @@ App.MainServiceItemView = Em.View.extend({
         options.push(actionMap.REFRESH_CONFIGS);
       }
       if (this.get('serviceName') === 'YARN') {
-        options.push(actionMap.REFRESH_YARN_QUEUE);
+        options.push(actionMap.REFRESHQUEUES);
       }
       options.push(actionMap.RESTART_ALL);
-      allSlaves.filter(function (slave) {
-        return App.get('components.rollinRestartAllowed').contains(slave);
-      }).forEach(function(slave) {
+      allSlaves.concat(allMasters).filter(function (_component) {
+        return App.get('components.rollinRestartAllowed').contains(_component);
+      }).forEach(function(_component) {
         options.push(self.createOption(actionMap.ROLLING_RESTART, {
-          context: slave,
-          label: actionMap.ROLLING_RESTART.label.format(App.format.role(slave))
+          context: _component,
+          label: actionMap.ROLLING_RESTART.label.format(App.format.role(_component))
         }));
       });
       allMasters.filter(function(master) {
@@ -216,7 +153,8 @@ App.MainServiceItemView = Em.View.extend({
       }).forEach(function(master) {
         options.push(self.createOption(actionMap.MOVE_COMPONENT, {
           context: master,
-          label: actionMap.MOVE_COMPONENT.label.format(App.format.role(master))
+          label: actionMap.MOVE_COMPONENT.label.format(App.format.role(master)),
+          disabled: App.allHostNames.length === App.HostComponent.find().filterProperty('componentName', master).mapProperty('hostName').length
         }));
       });
       if (service.get('serviceTypes').contains('HA_MODE')) {
@@ -226,6 +164,9 @@ App.MainServiceItemView = Em.View.extend({
             break;
           case 'YARN':
             options.push(actionMap.TOGGLE_RM_HA);
+            break;
+          case 'RANGER':
+            options.push(actionMap.TOGGLE_RA_HA);
             break;
         }
       }
@@ -239,7 +180,7 @@ App.MainServiceItemView = Em.View.extend({
       if (serviceName === 'HDFS' && nnComponent) {
         var namenodeCustomCommands = nnComponent.get('customCommands');
         if (namenodeCustomCommands && namenodeCustomCommands.contains('REBALANCEHDFS'))
-        options.push(actionMap.REBALANCE_HDFS);
+        options.push(actionMap.REBALANCEHDFS);
       }
 
       if (serviceName === 'KNOX' && knoxGatewayComponent) {
@@ -251,10 +192,12 @@ App.MainServiceItemView = Em.View.extend({
         });
       }
       self.addActionMap().filterProperty('service', serviceName).forEach(function(item) {
-        item.action = 'add' + item.component;
-        item.disabled = self.get('controller.isAddDisabled-' + item.component);
-        item.tooltip = self.get('controller.addDisabledTooltip' + item.component);
-        options.push(item);
+        if (App.get('components.addableToHost').contains(item.component)) {
+          item.action = 'add' + item.component;
+          item.disabled = self.get('controller.isAddDisabled-' + item.component);
+          item.tooltip = self.get('controller.addDisabledTooltip' + item.component);
+          options.push(item);
+        }
       });
 
       allMasters.forEach(function(master) {
@@ -287,19 +230,55 @@ App.MainServiceItemView = Em.View.extend({
       options.push(actionMap.DOWNLOAD_CLIENT_CONFIGS);
     }
 
-    return options;
-  }.property('controller.content', 'controller.isStopDisabled','controller.isClientsOnlyService', 'controller.content.isRestartRequired', 'isPassive'),
+    if (!this.get('maintenance').length) {
+      this.set('maintenance', options);
+    } else {
+      this.get('maintenance').forEach(function(option, index) {
+        if ( JSON.stringify(option) != JSON.stringify(options[index])  ) {
+          self.get('maintenance').removeAt(index).insertAt(index, options[index]);
+        }
+      });
+      options.forEach(function(opt, index) {
+        if ( JSON.stringify(opt) != JSON.stringify(self.get('maintenance')[index])  ) {
+          self.get('maintenance').pushObject(opt);
+        }
+      });
+    }
+    this.set('isMaintenanceSet', true);
+  },
+
+  clearIsMaintenanceSet: function () {
+    this.set('isMaintenanceSet', false);
+  },
 
   isMaintenanceActive: function() {
-    return this.get('maintenance').length !== 0;
+    return this.get('state') !== 'inDOM' || this.get('maintenance').length !== 0;
   }.property('maintenance'),
 
   hasConfigTab: function() {
     return !App.get('services.noConfigTypes').contains(this.get('controller.content.serviceName'));
   }.property('controller.content.serviceName','App.services.noConfigTypes'),
 
+  hasHeatmapTab: function() {
+    return App.get('services.servicesWithHeatmapTab').contains(this.get('controller.content.serviceName'));
+  }.property('controller.content.serviceName', 'App.services.servicesWithHeatmapTab'),
+
   didInsertElement: function () {
     this.get('controller').setStartStopState();
+  },
+
+  willInsertElement: function () {
+    this.addObserver('controller.isStopDisabled', this, 'observeMaintenance');
+    this.addObserver('controller.isClientsOnlyService', this, 'observeMaintenance');
+    this.addObserver('controller.content.isRestartRequired', this, 'observeMaintenance');
+    this.addObserver('controller.isServicesInfoLoaded', this, 'observeMaintenance');
+  },
+
+  willDestroyElement: function() {
+    this.removeObserver('controller.isStopDisabled', this, 'observeMaintenance');
+    this.removeObserver('controller.isClientsOnlyService', this, 'observeMaintenance');
+    this.removeObserver('controller.content.isRestartRequired', this, 'observeMaintenance');
+    this.removeObserver('controller.isServicesInfoLoaded', this, 'observeMaintenance');
   },
   service:function () {
     var svc = this.get('controller.content');
@@ -311,9 +290,6 @@ App.MainServiceItemView = Em.View.extend({
           break;
         case 'yarn':
           svc = App.YARNService.find().objectAt(0);
-          break;
-        case 'mapreduce':
-          svc = App.MapReduceService.find().objectAt(0);
           break;
         case 'hbase':
           svc = App.HBaseService.find().objectAt(0);

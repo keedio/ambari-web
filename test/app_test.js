@@ -150,64 +150,6 @@ describe('App', function () {
     });
   });
 
-  describe('#isHadoop2Stack', function () {
-    before(function () {
-      App.set('defaultStackVersion', '');
-    });
-    after(function () {
-      App.set('defaultStackVersion', 'HDP-2.0.5');
-    });
-    var testCasesWithoutHDFSDefined = [
-      {
-        title: 'if currentStackVersion is empty then isHadoop2Stack should be false',
-        currentStackVersion: '',
-        result: false
-      },
-      {
-        title: 'if currentStackVersion is "HDP-1.9.9" then isHadoop2Stack should be false',
-        currentStackVersion: 'HDP-1.9.9',
-        result: false
-      },
-      {
-        title: 'if currentStackVersion is "HDP-2.0.0" then isHadoop2Stack should be true',
-        currentStackVersion: 'HDP-2.0.0',
-        result: true
-      },
-      {
-        title: 'if currentStackVersion is "HDP-2.0.1" then isHadoop2Stack should be true',
-        currentStackVersion: 'HDP-2.0.1',
-        result: true
-      }
-    ];
-
-    testCasesWithoutHDFSDefined.forEach(function (test) {
-      it(test.title, function () {
-        App.set('currentStackVersion', test.currentStackVersion);
-        expect(App.get('isHadoop2Stack')).to.equal(test.result);
-        App.set('currentStackVersion', "HDP-1.2.2");
-      });
-    });
-
-
-    it('HDFS service version should get priority when defined', function () {
-      var stackServices = [
-        Em.Object.create({
-          serviceName: 'HDFS',
-          serviceVersion: '2.1'
-        })
-      ];
-      sinon.stub(App.StackService, 'find', function () {
-        return stackServices;
-      });
-      App.set('currentStackVersion', '0.8');
-      App.set('isStackServicesLoaded', true);
-      expect(App.get('isHadoop2Stack')).to.equal(true);
-      App.set('isStackServicesLoaded', false);
-      App.set('currentStackVersion', "HDP-1.2.2");
-      App.StackService.find.restore();
-    });
-  });
-
   describe('#isHaEnabled when HDFS is installed:', function () {
 
     beforeEach(function () {
@@ -225,24 +167,17 @@ describe('App', function () {
       App.Service.find.restore();
     });
 
-    it('if hadoop stack version less than 2 then isHaEnabled should be false', function () {
-      App.set('currentStackVersion', 'HDP-1.3.1');
-      expect(App.get('isHaEnabled')).to.equal(false);
-      App.set('currentStackVersion', "HDP-1.2.2");
-    });
     it('if hadoop stack version higher than 2 then isHaEnabled should be true', function () {
-      App.set('currentStackVersion', 'HDP-2.0.1');
+      App.propertyDidChange('isHaEnabled');
       expect(App.get('isHaEnabled')).to.equal(true);
-      App.set('currentStackVersion', "HDP-1.2.2");
     });
     it('if cluster has SECONDARY_NAMENODE then isHaEnabled should be false', function () {
       App.store.load(App.HostComponent, {
         id: 'SECONDARY_NAMENODE',
         component_name: 'SECONDARY_NAMENODE'
       });
-      App.set('currentStackVersion', 'HDP-2.0.1');
+      App.propertyDidChange('isHaEnabled');
       expect(App.get('isHaEnabled')).to.equal(false);
-      App.set('currentStackVersion', "HDP-1.2.2");
     });
   });
 
@@ -407,7 +342,8 @@ describe('App', function () {
           data: [
             Em.Object.create({
               componentName: 'C9',
-              isMasterAddableInstallerWizard: true
+              isMasterAddableInstallerWizard: true,
+              showAddBtnInInstall: true
             })
           ],
           result: ['C9']
@@ -461,4 +397,219 @@ describe('App', function () {
       })
     })
   });
+
+  describe("#isAccessible()", function() {
+    it("Upgrade running, element should be blocked", function() {
+      App.set('upgradeState', "IN_PROGRESS");
+      App.set('isAdmin', true);
+      expect(App.isAccessible('ADMIN')).to.be.false;
+    });
+    it("Upgrade running, upgrade element should not be blocked", function() {
+      App.set('upgradeState', "IN_PROGRESS");
+      App.set('isAdmin', true);
+      expect(App.isAccessible('upgrade_ADMIN')).to.be.true;
+    });
+    it("Upgrade running, upgrade element should not be blocked", function() {
+      App.set('upgradeState', "IN_PROGRESS");
+      App.set('isAdmin', true);
+      App.set('supports.opsDuringRollingUpgrade', true);
+      expect(App.isAccessible('ADMIN')).to.be.true;
+      App.set('supports.opsDuringRollingUpgrade', false);
+    });
+    it("ADMIN type, isAdmin true", function() {
+      App.set('upgradeState', "INIT");
+      App.set('isAdmin', true);
+      expect(App.isAccessible('ADMIN')).to.be.true;
+    });
+    it("ADMIN type, isAdmin false", function() {
+      App.set('upgradeState', "INIT");
+      App.set('isAdmin', false);
+      expect(App.isAccessible('ADMIN')).to.be.false;
+    });
+    it("MANAGER type, isOperator false", function() {
+      App.set('upgradeState', "INIT");
+      App.set('isAdmin', true);
+      App.set('isOperator', false);
+      expect(App.isAccessible('MANAGER')).to.be.true;
+    });
+    it("MANAGER type, isAdmin false", function() {
+      App.set('upgradeState', "INIT");
+      App.set('isAdmin', false);
+      App.set('isOperator', true);
+      expect(App.isAccessible('MANAGER')).to.be.true;
+    });
+    it("MANAGER type, isAdmin and isOperator false", function() {
+      App.set('upgradeState', "INIT");
+      App.set('isAdmin', false);
+      App.set('isOperator', false);
+      expect(App.isAccessible('MANAGER')).to.be.false;
+    });
+    it("OPERATOR type, isOperator false", function() {
+      App.set('upgradeState', "INIT");
+      App.set('isOperator', false);
+      expect(App.isAccessible('OPERATOR')).to.be.false;
+    });
+    it("OPERATOR type, isOperator false", function() {
+      App.set('upgradeState', "INIT");
+      App.set('isOperator', true);
+      expect(App.isAccessible('OPERATOR')).to.be.true;
+    });
+    it("ONLY_ADMIN type, isAdmin false", function() {
+      App.set('upgradeState', "INIT");
+      App.set('isAdmin', false);
+      expect(App.isAccessible('ONLY_ADMIN')).to.be.false;
+    });
+    it("ONLY_ADMIN type, isAdmin true, isOperator false", function() {
+      App.set('upgradeState', "INIT");
+      App.set('isAdmin', true);
+      App.set('isOperator', false);
+      expect(App.isAccessible('ONLY_ADMIN')).to.be.true;
+    });
+    it("ONLY_ADMIN type, isAdmin true, isOperator true", function() {
+      App.set('upgradeState', "INIT");
+      App.set('isAdmin', true);
+      App.set('isOperator', true);
+      expect(App.isAccessible('ONLY_ADMIN')).to.be.false;
+    });
+    it("unknown type", function() {
+      App.set('upgradeState', "INIT");
+      expect(App.isAccessible('')).to.be.false;
+    });
+  });
+
+  describe('#isHadoop20Stack', function () {
+
+    Em.A([
+      {
+        currentStackVersion: 'HDP-2.2',
+        e: false
+      },
+        {
+          currentStackVersion: 'HDP-2.1',
+          e: false
+        },
+        {
+          currentStackVersion: 'HDP-2.0',
+          e: true
+        },
+        {
+          currentStackVersion: 'HDP-2.0.0',
+          e: true
+        },
+        {
+          currentStackVersion: 'HDP-2.0.6',
+          e: true
+        },
+        {
+          currentStackVersion: 'HDPLocal-2.2',
+          e: false
+        },
+        {
+          currentStackVersion: 'HDPLocal-2.1',
+          e: false
+        },
+        {
+          currentStackVersion: 'HDPLocal-2.0',
+          e: true
+        },
+        {
+          currentStackVersion: 'HDPLocal-2.0.0',
+          e: true
+        },
+        {
+          currentStackVersion: 'HDPLocal-2.0.6',
+          e: true
+        }
+    ]).forEach(function (test) {
+        it('for ' + test.currentStackVersion + ' isHadoop20Stack = ' + test.e.toString(), function () {
+          App.set('currentStackVersion', test.currentStackVersion);
+          expect(App.get('isHadoop20Stack')).to.equal(test.e);
+        });
+      });
+
+  });
+
+  describe('#upgradeIsRunning', function () {
+
+    Em.A([
+        {
+          upgradeState: 'IN_PROGRESS',
+          m: 'should be true (1)',
+          e: true
+        },
+        {
+          upgradeState: 'HOLDING',
+          m: 'should be true (2)',
+          e: true
+        },
+        {
+          upgradeState: 'FAKE',
+          m: 'should be false',
+          e: false
+        }
+      ]).forEach(function (test) {
+        it(test.m, function () {
+          App.set('upgradeState', test.upgradeState);
+          expect(App.get('upgradeIsRunning')).to.equal(test.e);
+        });
+      });
+
+  });
+
+  describe('#upgradeAborted', function () {
+
+    var cases = [
+      {
+        upgradeState: 'INIT',
+        upgradeAborted: false
+      },
+      {
+        upgradeState: 'ABORTED',
+        upgradeAborted: true
+      }
+    ];
+
+    cases.forEach(function (item) {
+      it(item.upgradeState, function () {
+        App.set('upgradeState', item.upgradeState);
+        expect(App.get('upgradeAborted')).to.equal(item.upgradeAborted);
+      });
+    });
+
+  });
+
+  describe('#wizardIsNotFinished', function () {
+
+    var cases = [
+      {
+        upgradeState: 'INIT',
+        wizardIsNotFinished: false
+      },
+      {
+        upgradeState: 'IN_PROGRESS',
+        wizardIsNotFinished: true
+      },
+      {
+        upgradeState: 'HOLDING',
+        wizardIsNotFinished: true
+      },
+      {
+        upgradeState: 'HOLDING_TIMEDOUT',
+        wizardIsNotFinished: true
+      },
+      {
+        upgradeState: 'ABORTED',
+        wizardIsNotFinished: true
+      }
+    ];
+
+    cases.forEach(function (item) {
+      it(item.upgradeState, function () {
+        App.set('upgradeState', item.upgradeState);
+        expect(App.get('wizardIsNotFinished')).to.equal(item.wizardIsNotFinished);
+      });
+    });
+
+  });
+
 });

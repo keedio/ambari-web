@@ -27,7 +27,9 @@ App.alwaysGoToInstaller = false;
 App.testEnableSecurity = true; // By default enable security is tested; turning it false tests disable security
 App.testNameNodeHA = true;
 App.apiPrefix = '/api/v1';
-App.defaultStackVersion = 'HDP-2.2';
+App.defaultStackVersion = 'HDP-2.3';
+App.defaultWindowsStackVersion = 'HDPWIN-2.1';
+
 App.defaultJavaHome = '/usr/jdk/jdk1.6.0_31';
 App.timeout = 180000; // default AJAX timeout
 App.maxRetries = 3; // max number of retries for certain AJAX calls
@@ -35,56 +37,43 @@ App.sessionKeepAliveInterval  = 60000;
 App.bgOperationsUpdateInterval = 6000;
 App.componentsUpdateInterval = 6000;
 App.contentUpdateInterval = 15000;
-App.maxRunsForAppBrowser = 500;
+App.hostStatusCountersUpdateInterval = 10000;
+App.alertDefinitionsUpdateInterval = 10000;
+App.alertInstancesUpdateInterval = 10000;
+App.alertGroupsUpdateInterval = 10000;
 App.pageReloadTime=3600000;
 App.singleNodeInstall = false;
 App.singleNodeAlias = document.location.hostname;
 App.minDiskSpace = 2.0; // minimum disk space required for '/' for each host before install, unit GB
 App.minDiskSpaceUsrLib = 1.0; // minimum disk space for '/usr/lib' for each host before install, unit GB
-App.mirroringDatasetNamePrefix = 'ambari-mirroring-'; // special prefix to be added for each Falcon feed name created with Ambari
 App.healthIconClassGreen = 'icon-ok-sign'; // bootstrap icon class for healthy/started service/host/host-component
 App.healthIconClassRed = 'icon-warning-sign'; // bootstrap icon class for master down/stopped service/host/host-component
 App.healthIconClassOrange = 'icon-minus-sign'; // bootstrap icon class for slave down/decommissioned host/host-component
 App.healthIconClassYellow = 'icon-question-sign'; // bootstrap icon class for heartbeat lost service/host/host-component
 App.isManagedMySQLForHiveEnabled = false;
+App.isStormMetricsSupported = true;
+App.healthStatusRed = '#ff0000';
+App.healthStatusGreen = '#5AB400';
+App.healthStatusOrange = '#FF8E00';
+
+App.stackVersionsAvailable = true;
 
 // experimental features are automatically enabled if running on brunch server
 App.enableExperimental = false;
 
 App.supports = {
-  addServices: true,
-  hostOverrides: true,
-  hostOverridesInstaller: true,
-  hostOverridesHost: true,
-  mirroring: false,
-  secureCluster: true,
-  secureClusterProceedPopup: false,
-  reassignMaster: true,
-  stackUpgrade: false,
-  capacitySchedulerUi: false,
-  startStopAllServices: true,
-  hiveOozieExtraDatabases: true,
-  multipleHBaseMasters: true,
-  addMasters: false,
-  customizeSmokeTestUser: true,
-  hue: false,
-  falcon: true,
-  ldapGroupMapping: false,
-  localRepositories: true,
-  highAvailability: true,
-  resourceManagerHighAvailability: true,
-  deleteHost: true,
+  preUpgradeCheck: true,
+  stackUpgrade: true,
+  displayOlderVersions: false,
   autoRollbackHA: false,
-  appTimelineServer: true,
-  ubuntu: true,
-  views: true,
-  flume: true,
-  databaseConnection: true,
-  configHistory: true,
-  serverRecommendValidate: true,
-  downloadClientConfigs: true,
-  abortRequests: true,
-  alwaysEnableManagedMySQLForHive: false
+  alwaysEnableManagedMySQLForHive: false,
+  preKerberizeCheck: false,
+  customizeAgentUserAccount: false,
+  installGanglia: false,
+  opsDuringRollingUpgrade: false,
+  customizedWidgetLayout: false,
+  enhancedConfigs: true,
+  showPageLoadTime: false
 };
 
 if (App.enableExperimental) {

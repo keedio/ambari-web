@@ -21,18 +21,18 @@
   <div align="center">
     <img src="/img/keedio/logo-green-title.png" width="140px" height="180px" alt="Keedio Ambari" title="Keedio Ambari">
   </div>
-  <h2>{{t login.header}}</h2>
+  <h2><span class="title-text">{{t login.header}}</span></h2>
   {{#if errorMessage}}
   <div class="alert alert-error">
     {{errorMessage}}
   </div>
   {{/if}}
   <span class="pantone5285C"><label>{{t login.username}}</label></span>
-  {{view view.loginTextField valueBinding="loginName" class="span4"}}
+  {{view view.loginTextField valueBinding="loginName" class="span4" disabledBinding="isSubmitDisabled"}}
   <span class="pantone5285C"><label>{{t common.password}}</label></span>
-  {{view view.passTextField type="password" valueBinding="password" class="span4"}}
-  <div align="right">
-    <button class="btn btn-success" {{action "submit" target="controller"}}>{{t login.loginButton}}</button>
-  </div>
+  {{view view.passTextField type="password" valueBinding="password" class="span4" disabledBinding="isSubmitDisabled"}}
+    <div align="right">
+      <button class="btn btn-success login-btn" {{bindAttr disabled="isSubmitDisabled"}} {{action "submit" target="controller"}}>{{t login.loginButton}}</button>
+    </div>
 </div>
 {{/unless}}

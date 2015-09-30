@@ -21,7 +21,7 @@ var App = require('app');
 App.FlumeAgentUpView = App.TextDashboardWidgetView.extend({
 
   title: Em.I18n.t('dashboard.widgets.FlumeAgentUp'),
-  id: '29',
+  id: '22',
 
   isPieChart: false,
   isText: true,
@@ -44,14 +44,15 @@ App.FlumeAgentUpView = App.TextDashboardWidgetView.extend({
     return this.get('model.hostComponents').filterProperty('componentName', 'FLUME_HANDLER');
   }.property('model.hostComponents.length'),
 
-  flumeAgentsLive: function () {
-    return this.get('flumeAgentComponents').filterProperty("workStatus", "STARTED");
-  }.property('flumeAgentComponents.@each.workStatus'),
+  /**
+   * @type {Array}
+   */
+  flumeAgentsLive: [],
 
-  flumeAgentsDead: function () {
-    return this.get('flumeAgentComponents').filterProperty("workStatus", "INSTALLED");
-  }.property('flumeAgentComponents.@each.workStatus'),
-
+  /**
+   * @type {Array}
+   */
+  flumeAgentsDead: [],
 
   data: function () {
     if ( !this.get('flumeAgentComponents.length')) {
@@ -64,6 +65,15 @@ App.FlumeAgentUpView = App.TextDashboardWidgetView.extend({
   content: function () {
     return this.get('flumeAgentsLive').length + "/" + this.get('flumeAgentComponents').length;
   }.property('flumeAgentComponents.length', 'flumeAgentsLive'),
+
+  statusObserver: function() {
+    Em.run.once(this, 'filterStatusOnce');
+  }.observes('flumeAgentComponents.@each.workStatus'),
+
+  filterStatusOnce: function() {
+    this.set('flumeAgentsLive', this.get('flumeAgentComponents').filterProperty("workStatus", "STARTED"));
+    this.set('flumeAgentsDead', this.get('flumeAgentComponents').filterProperty("workStatus", "INSTALLED"));
+  },
 
   editWidget: function (event) {
     var parent = this;
@@ -145,7 +155,7 @@ App.FlumeAgentUpView = App.TextDashboardWidgetView.extend({
 
       didInsertElement: function () {
         var handlers = [configObj.get('thresh1'), configObj.get('thresh2')];
-        var colors = ['#B80000', '#FF8E00', '#95A800']; //color red, orange, green
+        var colors = [App.healthStatusRed, App.healthStatusOrange, App.healthStatusGreen]; //color red, orange, green
 
         if (browserVerion == -1 || browserVerion > 9) {
           configObj.set('isIE9', false);

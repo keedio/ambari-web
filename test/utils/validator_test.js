@@ -283,8 +283,10 @@ describe('validator', function () {
   describe('#isValidDir(value)', function() {
     var tests = [
       {m:'"dir" - invalid',i:'dir',e:false},
+      {m:'" /dir" - invalid',i:' /dir',e:false},
       {m:'"/dir" - valid',i:'/dir',e:true},
       {m:'"/dir1,dir2" - invalid',i:'/dir1,dir2',e:false},
+      {m:'"/dir1, /dir2" - invalid',i:'/dir1,dir2',e:false},
       {m:'"/dir1,/dir2" - valid',i:'/dir1,/dir2',e:true},
       {m:'"/123" - valid',i:'/111',e:true},
       {m:'"/abc" - valid',i:'/abc',e:true},
@@ -296,12 +298,29 @@ describe('validator', function () {
       })
     });
   });
+
+  describe('#isConfigValueLink', function() {
+    var tests = [
+      {m:'link valid',i:'${asd}',e:true},
+      {m:'empty link ${} -invalid',i:'${}',e:false},
+      {m:'${ just wrong',i:'${',e:false},
+      {m:'anything  just wrong',i:'anything',e:false}
+    ];
+    tests.forEach(function(test) {
+      it(test.m + ' ', function () {
+        expect(validator.isConfigValueLink(test.i)).to.equal(test.e);
+      })
+    });
+  });
+
   describe('#isValidDataNodeDir(value)', function() {
     var tests = [
       {m:'"dir" - invalid',i:'dir',e:false},
       {m:'"/dir" - valid',i:'/dir',e:true},
       {m:'"/dir1,dir2" - invalid',i:'/dir1,dir2',e:false},
       {m:'"/dir1,/dir2" - valid',i:'/dir1,/dir2',e:true},
+      {m:'" /dir1,/dir2" - valid',i:' /dir1,/dir2',e:false},
+      {m:'"/dir1, /dir2" - valid',i:' /dir1,/dir2',e:false},
       {m:'"/123" - valid',i:'/111',e:true},
       {m:'"/abc" - valid',i:'/abc',e:true},
       {m:'"/1a2b3c" - valid',i:'/1a2b3c',e:true},
@@ -310,9 +329,8 @@ describe('validator', function () {
       {m:'"[] /1a2b3c" - invalid',i:'[] /1a2b3c',e:false},
       {m:'"[ssd] /1a2b3c" - invalid',i:'[ssd] /1a2b3c',e:false},
       {m:'"[/1a2b3c]" - invalid',i:'[/1a2b3c]',e:false},
-      {m:'"[s]ss /sd" - invalid',i:'[s]ss /sd',e:false}
-
-
+      {m:'"[s]ss /sd" - invalid',i:'[s]ss /sd',e:false},
+      {m:'" [s]ss/sd" - invalid',i:' [s]ss/sd',e:false}
     ];
     tests.forEach(function(test) {
       it(test.m + ' ', function () {
@@ -356,6 +374,24 @@ describe('validator', function () {
       })
     });
   });
+  describe('#isValidConfigGroupName(value)', function() {
+    var tests = [
+      {m:'"123" - valid',i:'123',e:true},
+      {m:'"abc" - valid',i:'abc',e:true},
+      {m:'"abc123" - valid',i:'abc123',e:true},
+      {m:'".abc." - invalid',i:'.abc.',e:false},
+      {m:'"_abc_" - valid',i:'_abc_',e:true},
+      {m:'"-abc-" - valid',i:'-abc-',e:true},
+      {m:'" abc  123 " - valid',i:' abc  123 ',e:true},
+      {m:'"a"b" - invalid',i:'a"b',e:false},
+      {m:'"a\'b" - invalid',i:'a\'b',e:false}
+    ];
+    tests.forEach(function(test) {
+      it(test.m + ' ', function () {
+        expect(validator.isValidConfigGroupName(test.i)).to.equal(test.e);
+      })
+    });
+  });
 
   describe('#isValidMatchesRegexp()', function() {
     var message = '`{0}` should be {1}',
@@ -375,6 +411,7 @@ describe('validator', function () {
         { value: 'a1[1]asd[1]', expected: true },
         { value: 'a1[1]asd[1][', expected: false },
         { value: 'a1[1|1]asd[1]', expected: true },
+        { value: '/a1[1|1]asd[1]', expected: true },
         { value: 'a1-2!', expected: true },
         { value: '|a1-2', expected: false },
         { value: '[a1', expected: false },
@@ -385,6 +422,56 @@ describe('validator', function () {
     tests.forEach(function(test) {
       it(message.format(test.value, (test.expected) ? 'valid' : 'not valid'), function() {
         expect(validator.isValidMatchesRegexp(test.value)).to.equal(test.expected);
+      })
+    });
+  });
+
+  describe('#isValidURL', function() {
+    var tests = [
+      {m:'"http://apache.org" - valid',i:'http://apache.org',e:true},
+      {m:'"http://ambari.apache.org" - valid',i:'http://ambari.apache.org',e:true},
+      {m:'"https://ambari.apache.org" - valid',i:'https://ambari.apache.org',e:true},
+      {m:'"htp://ambari.apache.org." - invalid',i:'.htp://ambari.apache.org.',e:false},
+      {m:'"ambari.apache.org" - invalid',i:'ambari.apache.org',e:false},
+      {m:'"www.ambari.apache.org" - invalid',i:'www.ambari.apache.org',e:false},
+      {m:'"" - invalid',i:'',e:false}
+    ];
+    tests.forEach(function(test) {
+      it(test.m + ' ', function () {
+        expect(validator.isValidURL(test.i)).to.equal(test.e);
+      })
+    });
+  });
+
+  describe('#isHostname()', function() {
+    var tests = [
+      {m:'"localhost" - valid',i:'localhost',e:true},
+      {m:'"c6401.apache.ambari.org" - valid',i:'c6401.apache.ambari.org',e:true},
+      {m:'"c6401.org" - valid',i:'c6401.org',e:true},
+      {m:'"c6401" - invalid',i:'c6401',e:false},
+      {m:'"c6401." - invalid',i:'c6401.',e:false}
+    ];
+    tests.forEach(function(test) {
+      it(test.m + ' ', function () {
+        expect(validator.isHostname(test.i)).to.equal(test.e);
+      })
+    });
+  });
+
+  describe('#isValidBaseUrl()', function() {
+    var tests = [
+      {m: '"" - invalid', i: '', e: false},
+      {m: '"http://" - valid', i: 'http://', e: true},
+      {m: '"https://" - valid', i: 'https://', e: true},
+      {m: '"ftp://" - valid', i: 'ftp://', e: true},
+      {m: '"file:///" - valid', i: 'file:///', e: true},
+      {m: '"file3" - invalid', i: 'file3', e: false},
+      {m: '"3" - invalid', i: '3', e: false},
+      {m: '"a" - invalid', i: 'a', e: false}
+    ];
+    tests.forEach(function(test) {
+      it(test.m + ' ', function () {
+        expect(validator.isValidBaseUrl(test.i)).to.equal(test.e);
       })
     });
   });

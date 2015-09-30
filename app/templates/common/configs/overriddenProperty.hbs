@@ -21,7 +21,7 @@
     {{view overriddenSCP.viewClass serviceConfigBinding="overriddenSCP" categoryConfigsBinding="view.categoryConfigs"}}
     {{#if overriddenSCP.supportsFinal}}
       <a href="#" data-toggle="tooltip"
-        {{bindAttr class=":btn :btn-small :btn-final overriddenSCP.isFinal:active overriddenSCP.hideFinalIcon:hidden" disabled="overriddenSCP.isNotEditable"}}
+        {{bindAttr class=":btn-small :btn-final overriddenSCP.isFinal:active overriddenSCP.hideFinalIcon:hidden" disabled="overriddenSCP.isNotEditable"}}
         {{action "toggleFinalFlag" overriddenSCP target="view"}}
         {{translateAttr data-original-title="services.service.config.final"}}>
         <i class="icon-lock"></i>
@@ -36,19 +36,19 @@
     {{else}}
       {{#if overriddenSCP.isEditable}}
         {{#if isNotDefaultValue}}
-          <a class="btn btn-small" href="#" data-toggle="tooltip"
+          <a class="btn-small" href="#" data-toggle="tooltip"
             {{action "doRestoreDefaultValue" overriddenSCP target="view"}}
             {{translateAttr data-original-title="common.undo"}}>
             <i class="icon-undo"></i>
           </a>
         {{/if}}
-        {{#if App.isAdmin}}
-          <a class="btn btn-small" href="#" data-toggle="tooltip"
+        {{#isAccessible ADMIN}}
+          <a class="btn-small" href="#" data-toggle="tooltip"
             {{action "removeOverride" overriddenSCP target="view"}}
             {{translateAttr data-original-title="common.remove"}}>
             <i class="icon-minus-sign"></i>
           </a>
-        {{/if}}
+        {{/isAccessible}}
           <span class="help-inline">{{overriddenSCP.errorMessage}}</span>
       {{else}}
         <a class="action">{{overriddenSCP.group.switchGroupTextShort}}</a> <i class="icon-spinner"></i>

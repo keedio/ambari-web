@@ -21,32 +21,15 @@ var App = require('app');
 App.RegionServerComponentView = App.HostComponentView.extend(App.Decommissionable, {
 
   componentForCheckDecommission: 'HBASE_MASTER',
-  /**
-   * load Recommission/Decommission status of RegionServer
-   */
-  loadComponentDecommissionStatus: function () {
-    var hostName = this.get('content.hostName');
-    var slaveType = 'HBASE_REGIONSERVER';
-    var self = this;
-    var deferred = $.Deferred();
-    self.getDesiredAdminState().done( function () {
-      var desired_admin_state = self.get('desiredAdminState');
-      self.set('desiredAdminState', null);
-      switch(desired_admin_state) {
-        case "INSERVICE":
-          self.set('isComponentRecommissionAvailable', false);
-          self.set('isComponentDecommissioning', false);
-          self.set('isComponentDecommissionAvailable', self.get('isStart'));
-          break;
-        case "DECOMMISSIONED":
-          self.set('isComponentRecommissionAvailable', true);
-          self.set('isComponentDecommissioning', self.get('isStart'));
-          self.set('isComponentDecommissionAvailable', false);
-          break;
-      }
-      deferred.resolve(desired_admin_state);
-    });
-    return deferred.promise();
-  }
 
+  setDesiredAdminState: function (desiredAdminState) {
+    switch (desiredAdminState) {
+      case "INSERVICE":
+        this.setStatusAs(desiredAdminState);
+        break;
+      case "DECOMMISSIONED":
+        this.setStatusAs("RS_DECOMMISSIONED");
+        break;
+    }
+  }
 });

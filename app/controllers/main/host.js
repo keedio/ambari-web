@@ -19,14 +19,21 @@
 var App = require('app');
 var validator = require('utils/validator');
 var batchUtils = require('utils/batch_scheduled_requests');
+var hostsManagement = require('utils/hosts');
 
-App.MainHostController = Em.ArrayController.extend({
+App.MainHostController = Em.ArrayController.extend(App.TableServerMixin, {
   name: 'mainHostController',
 
   dataSource: App.Host.find(),
   clearFilters: null,
 
   filteredCount: 0,
+  /**
+   * total number of installed hosts
+   */
+  totalCount: function () {
+    return this.get('hostsCountMap')['TOTAL'] || 0;
+  }.property('hostsCountMap'),
   resetStartIndex: false,
   /**
    * flag responsible for updating status counters of hosts
@@ -38,19 +45,18 @@ App.MainHostController = Em.ArrayController.extend({
   startIndex: 1,
 
   /**
-   * Components which will be shown in component filter
-   * @returns {Array}
+   * true if any host page filter changed
    */
-  componentsForFilter: function () {
-    var installedComponents = App.StackServiceComponent.find().toArray();
-    installedComponents.setEach('checkedForHostFilter', false);
-    return installedComponents;
-  }.property('App.router.clusterController.isLoaded'),
+  filterChangeHappened: false,
 
-  content: function () {
-    return this.get('dataSource').filterProperty('isRequested');
-  }.property('dataSource.@each.isRequested'),
+  /**
+   * if true, do not clean stored filter before hosts page rendering.
+   */
+  showFilterConditionsFirstLoad: false,
 
+  content: App.Host.find(),
+
+  allHostStackVersions: App.HostStackVersion.find(),
   /**
    * filterProperties support follow types of filter:
    * MATCH - match of RegExp
@@ -62,128 +68,101 @@ App.MainHostController = Em.ArrayController.extend({
    */
   filterProperties: [
     {
-      key: 'publicHostName',
-      alias: 'Hosts/public_host_name',
+      name: 'hostName',
+      key: 'Hosts/host_name',
       type: 'MATCH'
     },
     {
-      key: 'ip',
-      alias: 'Hosts/ip',
+      name: 'ip',
+      key: 'Hosts/ip',
       type: 'MATCH'
     },
     {
-      key: 'cpu',
-      alias: 'Hosts/cpu_count',
+      name: 'cpu',
+      key: 'Hosts/cpu_count',
       type: 'EQUAL'
     },
     {
-      key: 'memoryFormatted',
-      alias: 'Hosts/total_mem',
+      name: 'memoryFormatted',
+      key: 'Hosts/total_mem',
       type: 'EQUAL'
     },
     {
-      key: 'loadAvg',
-      alias: 'metrics/load/load_one',
+      name: 'loadAvg',
+      key: 'metrics/load/load_one',
       type: 'EQUAL'
     },
     {
-      key: 'hostComponents',
-      alias: 'host_components/HostRoles/component_name',
+      name: 'rack',
+      key: 'Hosts/rack_info',
+      type: 'MATCH'
+    },
+    {
+      name: 'hostComponents',
+      key: 'host_components/HostRoles/component_name',
       type: 'MULTIPLE'
     },
     {
-      key: 'healthClass',
-      alias: 'Hosts/host_status',
+      name: 'healthClass',
+      key: 'Hosts/host_status',
       type: 'EQUAL'
     },
     {
-      key: 'criticalAlertsCount',
-      alias: 'alerts/summary/CRITICAL{0}|alerts/summary/WARNING{1}',
+      name: 'criticalWarningAlertsCount',
+      key: 'alerts_summary/CRITICAL{0}|alerts_summary/WARNING{1}',
       type: 'CUSTOM'
     },
     {
-      key: 'componentsWithStaleConfigsCount',
-      alias: 'host_components/HostRoles/stale_configs',
+      name: 'componentsWithStaleConfigsCount',
+      key: 'host_components/HostRoles/stale_configs',
       type: 'EQUAL'
     },
     {
-      key: 'componentsInPassiveStateCount',
-      alias: 'host_components/HostRoles/maintenance_state',
+      name: 'componentsInPassiveStateCount',
+      key: 'host_components/HostRoles/maintenance_state',
       type: 'MULTIPLE'
     },
     {
-      key: 'selected',
-      alias: 'Hosts/host_name',
+      name: 'selected',
+      key: 'Hosts/host_name',
       type: 'MULTIPLE'
+    },
+    {
+      name: 'hostStackVersion',
+      key: 'stack_versions',
+      type: 'EQUAL'
     }
-  ],
-
-  viewProperties: [
-    Em.Object.create({
-      key: 'displayLength',
-      getValue: function (controller) {
-        var name = controller.get('name');
-        var dbValue = App.db.getDisplayLength(name);
-        if (Em.isNone(this.get('viewValue'))) {
-          if (dbValue) {
-            this.set('viewValue', dbValue);
-          } else {
-            this.set('viewValue', '25'); //25 is default displayLength value for hosts page
-            App.db.setDisplayLength(name, '25');
-          }
-        }
-        return this.get('viewValue');
-      },
-      viewValue: null,
-      alias: 'page_size'
-    }),
-    Em.Object.create({
-      key: 'startIndex',
-      getValue: function (controller) {
-        var name = controller.get('name');
-        var startIndex = App.db.getStartIndex(name);
-        var value = this.get('viewValue');
-
-        if (Em.isNone(value)) {
-          if (Em.isNone(startIndex)) {
-            value = 0;
-          } else {
-            value = startIndex;
-            App.db.setStartIndex(name, startIndex);
-          }
-        }
-        return (value > 0) ? value - 1 : value;
-      },
-      viewValue: null,
-      alias: 'from'
-    })
   ],
 
   sortProps: [
     {
-      key: 'publicHostName',
-      alias: 'Hosts/public_host_name'
+      name: 'hostName',
+      key: 'Hosts/host_name'
     },
     {
-      key: 'ip',
-      alias: 'Hosts/ip'
+      name: 'ip',
+      key: 'Hosts/ip'
     },
     {
-      key: 'cpu',
-      alias: 'Hosts/cpu_count'
+      name: 'cpu',
+      key: 'Hosts/cpu_count'
     },
     {
-      key: 'memoryFormatted',
-      alias: 'Hosts/total_mem'
+      name: 'memoryFormatted',
+      key: 'Hosts/total_mem'
     },
     {
-      key: 'diskUsage',
+      name: 'diskUsage',
       //TODO disk_usage is relative property and need support from API, metrics/disk/disk_free used temporarily
-      alias: 'metrics/disk/disk_free'
+      key: 'metrics/disk/disk_free'
     },
     {
-      key: 'loadAvg',
-      alias: 'metrics/load/load_one'
+      name: 'rack',
+      key: 'Hosts/rack_info'
+    },
+    {
+      name: 'loadAvg',
+      key: 'metrics/load/load_one'
     }
   ],
 
@@ -202,45 +181,25 @@ App.MainHostController = Em.ArrayController.extend({
   },
 
   /**
-   * Transform <code>viewProperties</code> to queryParameters
-   * @returns {Object[]}
-   * @method getViewProperties
+   * Sort by host_name by default
+   * @method getSortProps
+   * @returns {{value: 'asc|desc', name: string, type: 'SORT'}[]}
    */
-  getViewProperties: function() {
-    return this.get('viewProperties').map(function (property) {
-      return {
-        key: property.get('alias'),
-        value: property.getValue(this),
-        type: 'EQUAL'
-      };
-    }, this);
-  },
-
-  /**
-   * Transform <code>sortProps</code> to queryParameters
-   * @returns {Object[]}
-   * @method getSortProperties
-   */
-  getSortProperties: function() {
-    var savedSortConditions = App.db.getSortingStatuses(this.get('name')) || [],
-      sortProperties = this.get('sortProps'),
-      queryParams = [];
-    savedSortConditions.forEach(function (sort) {
-      var property = sortProperties.findProperty('key', sort.name);
-
-      if (property && (sort.status === 'sorting_asc' || sort.status === 'sorting_desc')) {
-        queryParams.push({
-          key: property.alias,
-          value: sort.status.replace('sorting_', ''),
-          type: 'SORT'
-        });
-      }
-    });
-    return queryParams;
+  getSortProps: function () {
+    var controllerName = this.get('name'),
+      db = App.db.getSortingStatuses(controllerName);
+    if (db && db.everyProperty('status', 'sorting')) {
+      App.db.setSortingStatuses(controllerName, {
+        name: 'hostName',
+        status: 'sorting_asc'
+      });
+    }
+    return this._super();
   },
 
   /**
    * get query parameters computed from filter properties, sort properties and custom properties of view
+   * @param {boolean} [skipNonFilterProperties]
    * @return {Array}
    * @method getQueryParameters
    */
@@ -248,7 +207,6 @@ App.MainHostController = Em.ArrayController.extend({
     skipNonFilterProperties = skipNonFilterProperties || false;
     var queryParams = [],
       savedFilterConditions = App.db.getFilterConditions(this.get('name')) || [],
-      savedSortConditions = App.db.getSortingStatuses(this.get('name')) || [],
       colPropAssoc = this.get('colPropAssoc'),
       filterProperties = this.get('filterProperties'),
       sortProperties = this.get('sortProps'),
@@ -256,18 +214,18 @@ App.MainHostController = Em.ArrayController.extend({
 
     this.set('resetStartIndex', false);
 
-    queryParams.pushObjects(this.getViewProperties());
+    queryParams.pushObjects(this.getPaginationProps());
 
     savedFilterConditions.forEach(function (filter) {
-      var property = filterProperties.findProperty('key', colPropAssoc[filter.iColumn]);
+      var property = filterProperties.findProperty('name', colPropAssoc[filter.iColumn]);
       if (property && filter.value.length > 0 && !filter.skipFilter) {
         var result = {
-          key: property.alias,
+          key: property.key,
           value: filter.value,
           type: property.type,
           isFilter: true
         };
-        if (filter.type === 'string' && sortProperties.someProperty('key', colPropAssoc[filter.iColumn])) {
+        if (filter.type === 'string' && sortProperties.someProperty('name', colPropAssoc[filter.iColumn])) {
           result.value = this.getRegExp(filter.value);
         }
         if (filter.type === 'number' || filter.type === 'ambari-bandwidth') {
@@ -291,7 +249,15 @@ App.MainHostController = Em.ArrayController.extend({
           // enter a comparison type, eg > 1, just do regular match
           result.value = this.convertMemory(filter.value);
           queryParams.push(result);
-        } else if (result.value) {
+        } else if (filter.type === 'sub-resource') {
+          filter.value.forEach(function (item) {
+            queryParams.push({
+              key: result.key + "/" + item.property,
+              value: item.value,
+              type: 'EQUAL'
+            });
+          }, this);
+        } else {
           queryParams.push(result);
         }
 
@@ -312,7 +278,7 @@ App.MainHostController = Em.ArrayController.extend({
     }
 
     if (!skipNonFilterProperties) {
-      queryParams.pushObjects(this.getSortProperties());
+      queryParams.pushObjects(this.getSortProps());
     }
 
     return queryParams;
@@ -330,12 +296,13 @@ App.MainHostController = Em.ArrayController.extend({
         sender: this,
         data: {},
         success: 'updateStatusCountersSuccessCallback',
-        error: 'updateStatusCountersErrorCallback'
+        error: 'updateStatusCountersErrorCallback',
+        callback: function() {
+          setTimeout(function () {
+            self.updateStatusCounters();
+          }, App.get('hostStatusCountersUpdateInterval'));
+        }
       });
-
-      setTimeout(function () {
-        self.updateStatusCounters();
-      }, App.get('componentsUpdateInterval'));
     }
   },
 
@@ -350,7 +317,8 @@ App.MainHostController = Em.ArrayController.extend({
       'UNHEALTHY': data.Clusters.health_report['Host/host_status/UNHEALTHY'],
       'ALERT': data.Clusters.health_report['Host/host_status/ALERT'],
       'UNKNOWN': data.Clusters.health_report['Host/host_status/UNKNOWN'],
-      'health-status-WITH-ALERTS': (data.alerts) ? data.alerts.summary.CRITICAL + data.alerts.summary.WARNING : 0,
+      'health-status-WITH-ALERTS': (data.alerts_summary_hosts) ? data.alerts_summary_hosts.CRITICAL + data.alerts_summary_hosts.WARNING : 0,
+      'health-status-CRITICAL': (data.alerts_summary_hosts) ? data.alerts_summary_hosts.CRITICAL : 0,
       'health-status-RESTART': data.Clusters.health_report['Host/stale_config'],
       'health-status-PASSIVE_STATE': data.Clusters.health_report['Host/maintenance_state'],
       'TOTAL': data.Clusters.total_hosts
@@ -498,7 +466,6 @@ App.MainHostController = Em.ArrayController.extend({
       return;
     var id = component.get('componentName');
     var column = 6;
-    this.get('componentsForFilter').setEach('checkedForHostFilter', false);
 
     var filterForComponent = {
       iColumn: column,
@@ -508,30 +475,38 @@ App.MainHostController = Em.ArrayController.extend({
     App.db.setFilterConditions(this.get('name'), [filterForComponent]);
   },
 
-  showAlertsPopup: function (event) {
-    var host = event.context;
-    App.router.get('mainAlertsController').loadAlerts(host.get('hostName'), "HOST");
-    App.ModalPopup.show({
-      header: this.t('services.alerts.headingOfList'),
-      bodyClass: Ember.View.extend({
-        templateName: require('templates/main/host/alerts_popup'),
-        controllerBinding: 'App.router.mainAlertsController',
-        alerts: function () {
-          return this.get('controller.alerts');
-        }.property('controller.alerts'),
+  /**
+   * Filter hosts by stack version and state
+   * @param {String} displayName
+   * @param {String} state
+   */
+  filterByStack: function (displayName, state) {
+    if (!displayName || !state)
+      return;
+    var column = 11;
 
-        closePopup: function () {
-          this.get('parentView').hide();
+    var filterForStack = {
+      iColumn: column,
+      value: [
+        {
+          property: 'repository_versions/RepositoryVersions/display_name',
+          value: displayName
+        },
+        {
+          property: 'HostStackVersions/state',
+          value: state.toUpperCase()
         }
-      }),
-      primary: Em.I18n.t('common.close'),
-      secondary: null,
-      didInsertElement: function () {
-        this.$().find('.modal-footer').addClass('align-center');
-        this.$().children('.modal').css({'margin-top': '-350px'});
-      }
-    });
-    event.stopPropagation();
+      ],
+      type: 'sub-resource'
+    };
+    App.db.setFilterConditions(this.get('name'), [filterForStack]);
+  },
+
+  goToHostAlerts: function (event) {
+    var host = event && event.context;
+    if (host) {
+      App.router.transitionTo('main.hosts.hostDetails.alerts', host);
+    }
   },
 
   /**
@@ -576,7 +551,9 @@ App.MainHostController = Em.ArrayController.extend({
       }
     }
     else {
-      if (operationData.action === 'RESTART') {
+      if (operationData.action === 'SET_RACK_INFO') {
+        this.bulkOperationForHostsSetRackInfo(operationData, hosts);
+      } else if (operationData.action === 'RESTART') {
         this.bulkOperationForHostsRestart(operationData, hosts);
       }
       else {
@@ -629,31 +606,76 @@ App.MainHostController = Em.ArrayController.extend({
       });
     });
 
+    var nn_hosts = [];
     for (var hostName in hostsMap) {
       var subQuery = '(HostRoles/component_name.in(%@)&HostRoles/host_name=' + hostName + ')';
       var components = hostsMap[hostName];
+
       if (components.length) {
+        if (components.indexOf('NAMENODE') >= 0) {
+          nn_hosts.push(hostName);
+        }
         query.push(subQuery.fmt(components.join(',')));
       }
       hostNames.push(hostName);
     }
-
     hostNames = hostNames.join(",");
     if (query.length) {
       query = query.join('|');
-      App.ajax.send({
-        name: 'common.host_components.update',
-        sender: this,
-        data: {
-          query: query,
-          HostRoles: {
-            state: operationData.action
+      var self = this;
+      // if NameNode included, check HDFS NameNode checkpoint before stop NN
+      if (nn_hosts.length == 1 && operationData.action === 'INSTALLED' && App.Service.find().filterProperty('serviceName', 'HDFS').someProperty('workStatus', App.HostComponentStatus.started)) {
+        var hostName = nn_hosts[0];
+        App.router.get('mainHostDetailsController').checkNnLastCheckpointTime(function () {
+          App.ajax.send({
+            name: 'common.host_components.update',
+            sender: self,
+            data: {
+              query: query,
+              HostRoles: {
+                state: operationData.action
+              },
+              context: operationData.message,
+              hostName: hostNames,
+              noOpsMessage: Em.I18n.t('hosts.host.maintainance.allComponents.context')
+            },
+            success: 'bulkOperationForHostComponentsSuccessCallback'
+          });
+        }, hostName);
+      } else if (nn_hosts.length == 2 && operationData.action === 'INSTALLED' && App.Service.find().filterProperty('serviceName', 'HDFS').someProperty('workStatus', App.HostComponentStatus.started)) {
+        // HA enabled
+        App.router.get('mainServiceItemController').checkNnLastCheckpointTime(function () {
+          App.ajax.send({
+            name: 'common.host_components.update',
+            sender: self,
+            data: {
+              query: query,
+              HostRoles: {
+                state: operationData.action
+              },
+              context: operationData.message,
+              hostName: hostNames,
+              noOpsMessage: Em.I18n.t('hosts.host.maintainance.allComponents.context')
+            },
+            success: 'bulkOperationForHostComponentsSuccessCallback'
+          });
+        });
+      } else {
+        App.ajax.send({
+          name: 'common.host_components.update',
+          sender: self,
+          data: {
+            query: query,
+            HostRoles: {
+              state: operationData.action
+            },
+            context: operationData.message,
+            hostName: hostNames,
+            noOpsMessage: Em.I18n.t('hosts.host.maintainance.allComponents.context')
           },
-          context: operationData.message,
-          hostName: hostNames
-        },
-        success: 'bulkOperationForHostComponentsSuccessCallback'
-      });
+          success: 'bulkOperationForHostComponentsSuccessCallback'
+        });
+      }
     }
     else {
       App.ModalPopup.show({
@@ -664,7 +686,11 @@ App.MainHostController = Em.ArrayController.extend({
     }
   },
 
-  /**
+  bulkOperationForHostsSetRackInfo: function (operationData, hosts) {
+    hostsManagement.setRackInfo(operationData, hosts);
+  },
+
+   /**
    * Bulk restart for selected hosts
    * @param {Object} operationData - data about bulk operation (action, hostComponents etc)
    * @param {Ember.Enumerable} hosts - list of affected hosts
@@ -684,7 +710,21 @@ App.MainHostController = Em.ArrayController.extend({
           }));
         })
       });
-      batchUtils.restartHostComponents(hostComponents, Em.I18n.t('rollingrestart.context.allOnSelectedHosts'), "HOST");
+      // if NameNode included, check HDFS NameNode checkpoint before restart NN
+      var nn_count = hostComponents.filterProperty('componentName', 'NAMENODE').get('length');
+      if (nn_count == 1 && App.Service.find().filterProperty('serviceName', 'HDFS').someProperty('workStatus', App.HostComponentStatus.started)) {
+        var hostName = hostComponents.findProperty('componentName', 'NAMENODE').get('hostName');
+        App.router.get('mainHostDetailsController').checkNnLastCheckpointTime(function () {
+          batchUtils.restartHostComponents(hostComponents, Em.I18n.t('rollingrestart.context.allOnSelectedHosts'), "HOST");
+        }, hostName);
+      } else if (nn_count == 2 && App.Service.find().filterProperty('serviceName', 'HDFS').someProperty('workStatus', App.HostComponentStatus.started)) {
+        // HA enabled
+        App.router.get('mainServiceItemController').checkNnLastCheckpointTime(function () {
+          batchUtils.restartHostComponents(hostComponents, Em.I18n.t('rollingrestart.context.allOnSelectedHosts'), "HOST");
+        });
+      } else {
+        batchUtils.restartHostComponents(hostComponents, Em.I18n.t('rollingrestart.context.allOnSelectedHosts'), "HOST");
+      }
     });
   },
 
@@ -754,7 +794,9 @@ App.MainHostController = Em.ArrayController.extend({
               state: operationData.action
             },
             query: 'HostRoles/component_name=' + operationData.componentName + '&HostRoles/host_name.in(' + hostsWithComponentInProperState.join(',') + ')&HostRoles/maintenance_state=OFF',
-            context: operationData.message + ' ' + operationData.componentNameFormatted
+            context: operationData.message + ' ' + operationData.componentNameFormatted,
+            level: 'SERVICE',
+            noOpsMessage: operationData.componentNameFormatted
           },
           success: 'bulkOperationForHostComponentsSuccessCallback'
         });
@@ -819,9 +861,6 @@ App.MainHostController = Em.ArrayController.extend({
         if (svcName === "YARN" || svcName === "HBASE" || svcName === "HDFS") {
           App.router.get('mainHostDetailsController').doRecommissionAndStart(hostNames, svcName, masterName, slaveName);
         }
-        else if (svcName === "MAPREDUCE") {
-          App.router.get('mainHostDetailsController').doRecommissionAndRestart(hostNames, svcName, masterName, slaveName);
-        }
       } else {
         hostsWithComponentInProperState = components.filterProperty('workStatus', 'STARTED').mapProperty('hostName');
         //For decommession
@@ -847,7 +886,8 @@ App.MainHostController = Em.ArrayController.extend({
               context: Em.I18n.t(contextString),
               serviceName: service.get('serviceName'),
               componentName: operationData.componentName,
-              parameters: parameters
+              parameters: parameters,
+              noOpsMessage: operationData.componentNameFormatted
             },
             success: 'bulkOperationForHostComponentsSuccessCallback'
           });
@@ -943,13 +983,22 @@ App.MainHostController = Em.ArrayController.extend({
   /**
    * Show BO popup after bulk request
    */
-  bulkOperationForHostComponentsSuccessCallback: function () {
-    App.router.get('applicationController').dataLoading().done(function (initValue) {
-      if (initValue) {
-        App.router.get('backgroundOperationsController').showPopup();
-      }
-    });
+  bulkOperationForHostComponentsSuccessCallback: function (data, opt, params, req) {
+    if (!data && req.status == 200) {
+      App.ModalPopup.show({
+        header: Em.I18n.t('rolling.nothingToDo.header'),
+        body: Em.I18n.t('rolling.nothingToDo.body').format(params.noOpsMessage || Em.I18n.t('hosts.host.maintainance.allComponents.context')),
+        secondary: false
+      });
+    } else {
+      App.router.get('applicationController').dataLoading().done(function (initValue) {
+        if (initValue) {
+          App.router.get('backgroundOperationsController').showPopup();
+        }
+      });
+    }
   },
+
   /**
    * associations between host property and column index
    * @type {Array}
@@ -957,16 +1006,18 @@ App.MainHostController = Em.ArrayController.extend({
   colPropAssoc: function () {
     var associations = [];
     associations[0] = 'healthClass';
-    associations[1] = 'publicHostName';
+    associations[1] = 'hostName';
     associations[2] = 'ip';
     associations[3] = 'cpu';
     associations[4] = 'memoryFormatted';
     associations[5] = 'loadAvg';
     associations[6] = 'hostComponents';
-    associations[7] = 'criticalAlertsCount';
+    associations[7] = 'criticalWarningAlertsCount';
     associations[8] = 'componentsWithStaleConfigsCount';
     associations[9] = 'componentsInPassiveStateCount';
     associations[10] = 'selected';
+    associations[11] = 'hostStackVersion';
+    associations[12] = 'rack';
     return associations;
   }.property()
 

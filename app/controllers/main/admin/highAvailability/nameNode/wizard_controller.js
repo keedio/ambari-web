@@ -26,6 +26,11 @@ App.HighAvailabilityWizardController = App.WizardController.extend({
   totalSteps: 9,
 
   /**
+   * @type {string}
+   */
+  displayName: Em.I18n.t('admin.highAvailability.wizard.header'),
+
+  /**
    * Used for hiding back button in wizard
    */
   hideBackButton: true,
@@ -41,7 +46,8 @@ App.HighAvailabilityWizardController = App.WizardController.extend({
     serviceName: 'MISC',
     hdfsUser:"hdfs",
     nameServiceId: '',
-    failedTask : null
+    failedTask : null,
+    requestIds: null
   }),
 
   setCurrentStep: function (currentStep, completed) {
@@ -78,28 +84,6 @@ App.HighAvailabilityWizardController = App.WizardController.extend({
     }
     this.set('content.cluster', clusterStatus);
     this.save('cluster');
-  },
-
-  /**
-   * Save Master Component Hosts data to Main Controller
-   * @param stepController App.WizardStep5Controller
-   */
-  saveMasterComponentHosts: function (stepController) {
-    var obj = stepController.get('selectedServicesMasters');
-    var masterComponentHosts = [];
-    obj.forEach(function (_component) {
-      masterComponentHosts.push({
-        display_name: _component.get('display_name'),
-        component: _component.get('component_name'),
-        hostName: _component.get('selectedHost'),
-        serviceId: _component.get('serviceId'),
-        isCurNameNode: _component.get('isCurNameNode'),
-        isAddNameNode: _component.get('isAddNameNode'),
-        isInstalled: true
-      });
-    });
-    this.setDBProperty('masterComponentHosts', masterComponentHosts);
-    this.set('content.masterComponentHosts', masterComponentHosts);
   },
 
   saveHdfsUser: function () {
@@ -202,32 +186,50 @@ App.HighAvailabilityWizardController = App.WizardController.extend({
     this.set('content.tasksRequestIds', requestIds);
   },
 
-  /**
-   * Load data for all steps until <code>current step</code>
-   */
-  loadAllPriorSteps: function () {
-    var step = this.get('currentStep');
-    switch (step) {
-      case '9':
-      case '8':
-      case '7':
-      case '6':
-      case '5':
-        this.loadTasksStatuses();
-        this.loadTasksRequestIds();
-        this.loadRequestIds();
-      case '4':
-      case '3':
-        this.loadNameServiceId();
-        this.loadServiceConfigProperties();
-      case '2':
-        this.loadServicesFromServer();
-        this.loadMasterComponentHosts();
-        this.loadConfirmedHosts();
-        this.loadHdfsUser();
-      case '1':
-        this.load('cluster');
-    }
+  loadMap: {
+    '1': [
+      {
+        type: 'sync',
+        callback: function () {
+          this.load('cluster');
+        }
+      }
+    ],
+    '2': [
+      {
+        type: 'async',
+        callback: function () {
+          var dfd = $.Deferred();
+          var self = this;
+          this.loadHosts().done(function () {
+            self.loadServicesFromServer();
+            self.loadMasterComponentHosts();
+            self.loadHdfsUser();
+            dfd.resolve();
+          });
+          return dfd.promise();
+        }
+      }
+    ],
+    '3': [
+      {
+        type: 'sync',
+        callback: function () {
+          this.loadNameServiceId();
+          this.loadServiceConfigProperties();
+        }
+      }
+    ],
+    '5': [
+      {
+        type: 'sync',
+        callback: function () {
+          this.loadTasksStatuses();
+          this.loadTasksRequestIds();
+          this.loadRequestIds();
+        }
+      }
+    ]
   },
 
   /**

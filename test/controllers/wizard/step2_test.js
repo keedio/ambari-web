@@ -25,6 +25,30 @@ require('messages');
 var c;
 describe('App.WizardStep2Controller', function () {
 
+  var userErrorTests = Em.A([
+    {
+      manualInstall: false,
+      user: '',
+      e: ''
+    },
+    {
+      manualInstall: true,
+      user: '',
+      e: null
+    },
+    {
+      manualInstall: true,
+      user: 'nobody',
+      e: null
+    },
+    {
+      manualInstall: false,
+      user: 'nobody',
+      e: null
+    }
+  ]);
+
+
   beforeEach(function() {
     c = App.WizardStep2Controller.create();
   });
@@ -73,6 +97,15 @@ describe('App.WizardStep2Controller', function () {
       expect(controller.get('sshUser')).to.equal('123');
       controller.set('content.installOptions.sshUser', '321');
       expect(controller.get('sshUser')).to.equal('321');
+    });
+  });
+
+  describe('#agentUser', function() {
+    it('should be equal to content.installOptions.agentUser', function() {
+      var controller = App.WizardStep2Controller.create({content: {installOptions: {agentUser: '123'}}});
+      expect(controller.get('agentUser')).to.equal('123');
+      controller.set('content.installOptions.agentUser', '321');
+      expect(controller.get('agentUser')).to.equal('321');
     });
   });
 
@@ -238,38 +271,44 @@ describe('App.WizardStep2Controller', function () {
 
   describe('#sshUserError', function () {
 
-    var tests = Em.A([
-      {
-        manualInstall: false,
-        sshUser: '',
-        e: ''
-      },
-      {
-        manualInstall: true,
-        sshUser: '',
-        e: null
-      },
-      {
-        manualInstall: true,
-        sshUser: 'nobody',
-        e: null
-      },
-      {
-        manualInstall: false,
-        sshUser: 'nobody',
-        e: null
-      }
-    ]);
-
-    tests.forEach(function(test) {
+    userErrorTests.forEach(function(test) {
       it('', function() {
-        var controller = App.WizardStep2Controller.create({content: {installOptions: {manualInstall: test.manualInstall, sshUser: test.sshUser}}});
+        var controller = App.WizardStep2Controller.create({content: {installOptions: {manualInstall: test.manualInstall, sshUser: test.user}}});
         if(Em.isNone(test.e)) {
           expect(controller.get('sshUserError')).to.equal(null);
         }
         else {
           expect(controller.get('sshUserError').length).to.be.above(2);
         }
+      });
+    });
+
+  });
+
+  describe('#agentUserError', function () {
+
+    afterEach(function () {
+      App.get.restore();
+    });
+
+    userErrorTests.forEach(function(test) {
+      it('Ambari Agent user account customize enabled', function() {
+        sinon.stub(App, 'get').withArgs('supports.customizeAgentUserAccount').returns(true);
+        var controller = App.WizardStep2Controller.create({content: {installOptions: {manualInstall: test.manualInstall, agentUser: test.user}}});
+        if(Em.isNone(test.e)) {
+          expect(controller.get('agentUserError')).to.be.null;
+        }
+        else {
+          expect(controller.get('agentUserError').length).to.be.above(2);
+        }
+      });
+    });
+
+    userErrorTests.forEach(function(test) {
+      it('Ambari Agent user account customize disabled', function() {
+        sinon.stub(App, 'get').withArgs('supports.customizeAgentUserAccount').returns(false);
+        var controller = App.WizardStep2Controller.create({content: {installOptions: {manualInstall: test.manualInstall, agentUser: test.user}}});
+        expect(controller.get('agentUserError')).to.be.null;
       });
     });
 
@@ -331,6 +370,24 @@ describe('App.WizardStep2Controller', function () {
       expect(controller.evaluateStep()).to.equal(false);
     });
 
+    it('should return false if sshUserError is not empty', function () {
+      var controller = App.WizardStep2Controller.create({
+        hostNames: 'apache.ambari',
+        parseHostNamesAsPatternExpression: Em.K
+      });
+      controller.reopen({sshUserError: 'error'});
+      expect(controller.evaluateStep()).to.equal(false);
+    });
+
+    it('should return false if agentUserError is not empty', function () {
+      var controller = App.WizardStep2Controller.create({
+        hostNames: 'apache.ambari',
+        parseHostNamesAsPatternExpression: Em.K
+      });
+      controller.reopen({agentUserError: 'error'});
+      expect(controller.evaluateStep()).to.equal(false);
+    });
+
     it('should return false if hostNameArr is empty', function () {
       var controller = App.WizardStep2Controller.create({
         hostNames: '',
@@ -365,7 +422,16 @@ describe('App.WizardStep2Controller', function () {
         }
       }
       expect(result).to.equal(true);
-    })
+    });
+
+    it('should skip duplicates', function () {
+      var controller = App.WizardStep2Controller.create({
+        hostNameArr: ['host[1-3]', 'host2']
+      });
+      controller.parseHostNamesAsPatternExpression();
+      expect(controller.get('hostNameArr')).to.eql(['host1', 'host2', 'host3']);
+    });
+
   });
 
   describe('#proceedNext()', function () {
@@ -395,16 +461,11 @@ describe('App.WizardStep2Controller', function () {
       expect(c.manualInstallPopup.calledOnce).to.equal(true);
     });
 
-    it ('should save hosts and proceed next if skipBootstrap is true', function() {
-      sinon.stub(App, 'get', function(k) {
-        if ('skipBootstrap' === k) {
-          return true;
-        }
-        return Em.get(App, k);
-      });
+    it ('should save hosts and proceed next if manualInstall is false', function() {
       sinon.stub(App.router, 'send', Em.K);
       c.reopen({
         hostNameArr: ['h1'],
+        manualInstall: false,
         isAllHostNamesValid: function() {return true;},
         content: {
           installOptions: {},
@@ -415,31 +476,7 @@ describe('App.WizardStep2Controller', function () {
       expect(r).to.equal(true);
       expect(Em.keys(c.get('content.hosts'))).to.eql(['h1']);
       expect(App.router.send.calledWith('next')).to.equal(true);
-      App.get.restore();
       App.router.send.restore();
-    });
-
-    it('should call setupBootStrap', function() {
-      sinon.stub(App, 'get', function(k) {
-        if ('skipBootstrap' === k) {
-          return false;
-        }
-        return Em.get(App, k);
-      });
-      c.reopen({
-        hostNameArr: ['h1'],
-        isAllHostNamesValid: function() {return true;},
-        content: {
-          installOptions: {},
-          hosts: null
-        }
-      });
-      sinon.stub(c, 'setupBootStrap', Em.K);
-      var r = c.proceedNext();
-      expect(r).to.equal(true);
-      expect(c.setupBootStrap.calledOnce).to.eql(true);
-      App.get.restore();
-      c.setupBootStrap.restore();
     });
 
   });
@@ -448,7 +485,9 @@ describe('App.WizardStep2Controller', function () {
 
     var controller = App.WizardStep2Controller.create({
       hostsError: '',
-      sshKeyError: ''
+      sshKeyError: '',
+      sshUserError: '',
+      agentUserError: ''
     });
 
     it('should return value if hostsError is not empty', function () {
@@ -460,7 +499,19 @@ describe('App.WizardStep2Controller', function () {
       controller.set('sshKeyError', 'error');
       controller.set('hostsError', '');
       expect(controller.get('isSubmitDisabled').length).to.above(0);
-    })
+    });
+
+    it('should return value if sshUserError is not empty', function () {
+      controller.set('sshUserError', 'error');
+      controller.set('sshKeyError', '');
+      expect(controller.get('isSubmitDisabled').length).to.above(0);
+    });
+
+    it('should return value if agentUserError is not empty', function () {
+      controller.set('agentUserError', 'error');
+      controller.set('sshUserError', '');
+      expect(controller.get('isSubmitDisabled').length).to.above(0);
+    });
   });
 
   describe('#installedHostsPopup', function() {

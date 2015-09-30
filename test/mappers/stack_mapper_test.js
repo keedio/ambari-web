@@ -36,7 +36,7 @@ describe('App.stackMapper', function () {
             "stack_name" : "HDP",
             "stack_version" : "1.3"
           },
-          "operatingSystems" : [
+          "operating_systems" : [
             {
               "OperatingSystems" : {
                 "os_type" : "redhat5",
@@ -111,7 +111,7 @@ describe('App.stackMapper', function () {
           "stack_name" : "HDP",
           "stack_version" : "2.0.6"
         },
-        "operatingSystems" : [
+        "operating_systems" : [
           {
             "OperatingSystems" : {
               "os_type" : "redhat5",
@@ -186,7 +186,7 @@ describe('App.stackMapper', function () {
           "stack_name" : "HDP",
           "stack_version" : "2.1"
         },
-        "operatingSystems" : [
+        "operating_systems" : [
           {
             "OperatingSystems" : {
               "os_type" : "redhat5",
@@ -284,6 +284,7 @@ describe('App.stackMapper', function () {
     it ('should map Repository data', function() {
       App.stackMapper.map(test_data);
       expect(App.Repository.find().get('length')).to.equal(8);
+      expect(App.Repository.find().mapProperty('id')).to.eql(["HDP-2.1-redhat5-HDP-2.1", "HDP-2.1-redhat5-HDP-UTILS-1.1.0.17", "HDP-2.1-redhat6-HDP-2.1", "HDP-2.1-redhat6-HDP-UTILS-1.1.0.17", "HDP-1.3-redhat5-HDP-1.3", "HDP-1.3-redhat5-HDP-UTILS-1.1.0.16", "HDP-1.3-redhat6-HDP-1.3", "HDP-1.3-redhat6-HDP-UTILS-1.1.0.16"]);
     });
   });
 });

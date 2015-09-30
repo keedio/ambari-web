@@ -28,13 +28,15 @@
 
 var App = require('app');
 
+var validator = require('utils/validator');
+
 var wrapperView = Ember.View.extend({
   classNames: ['view-wrapper'],
   layout: Ember.Handlebars.compile('<a href="#" {{action "clearFilter" target="view"}} class="ui-icon ui-icon-circle-close"></a> {{yield}}'),
   template: Ember.Handlebars.compile(
     '{{#if view.fieldId}}<input type="hidden" id="{{unbound view.fieldId}}" value="" />{{/if}}' +
     '{{view view.filterView}}' +
-    '{{#if view.showApply}}<button {{action "setValueOnApply" target="view"}} class="apply-btn btn"><span>Apply</span></button>{{/if}} '
+    '{{#if view.showApply}}<button {{action "setValueOnApply" target="view"}} class="apply-btn btn"><span>{{t common.apply}}</span></button>{{/if}} '
   ),
 
   value: null,
@@ -66,11 +68,12 @@ var wrapperView = Ember.View.extend({
    * @type {Array}
    *
    **/
+  //TODO delete if will not be used
   triggeredOnSameValue: null,
 
-  clearFilter: function(){
+  clearFilter: function () {
     this.set('value', this.get('emptyValue'));
-    if(this.get('setPropertyOnApply')){
+    if (this.get('setPropertyOnApply')) {
       this.setValueOnApply();
     }
     return false;
@@ -96,21 +99,18 @@ var wrapperView = Ember.View.extend({
   appliedEmptyValue: "",
 
   /**
-   * reset value to empty string if emptyValue selected
-   */
-  actualValue: function () {
-    return this.get('value') === this.get('emptyValue') ? "" : this.get('value');
-  }.property('value'),
-
-  /**
    * Whether our <code>value</code> is empty or not
    * @return {Boolean}
    */
-  isEmpty: function(){
+  isEmpty: function () {
     if (Em.isNone(this.get('value'))) {
       return true;
     }
     return this.get('value').toString() === this.get('emptyValue').toString();
+  },
+
+  setValue: function (value) {
+    this.set('value', value);
   },
 
   /**
@@ -118,13 +118,13 @@ var wrapperView = Ember.View.extend({
    * Also this method updates computed field related to <code>fieldId</code> if it exists.
    * Call <code>onChangeValue</code> callback when everything is done.
    */
-  showClearFilter: function(){
-    if(!this.get('parentNode')){
+  showClearFilter: function () {
+    if (!this.get('parentNode')) {
       return;
     }
     // get the sort view element in the same column to current filter view to highlight them together
     var relatedSort = $(this.get('element')).parents('thead').find('.sort-view-' + this.get('column'));
-    if(this.isEmpty()){
+    if (this.isEmpty()) {
       this.get('parentNode').removeClass('active-filter');
       this.get('parentNode').addClass('notActive');
       relatedSort.removeClass('active-sort');
@@ -134,7 +134,7 @@ var wrapperView = Ember.View.extend({
       relatedSort.addClass('active-sort');
     }
 
-    if(this.get('fieldId')){
+    if (this.get('fieldId')) {
       this.$('> input').eq(0).val(this.get('value'));
     }
 
@@ -144,9 +144,7 @@ var wrapperView = Ember.View.extend({
   /**
    * Callback for value changes
    */
-  onChangeValue: function(){
-
-  },
+  onChangeValue: Em.K,
 
   /**
    * Filter components is located here. Should be redefined
@@ -156,29 +154,31 @@ var wrapperView = Ember.View.extend({
   /**
    * Update class of parentNode(hide clear filter button) on page load
    */
-  didInsertElement: function(){
+  didInsertElement: function () {
     var parent = this.$().parent();
     this.set('parentNode', parent);
     parent.addClass('notActive');
-    this.checkSelectSpecialOptions();
+    //TODO delete if will not be used
+    //this.checkSelectSpecialOptions();
   },
 
   /**
    * Check for Em.Select that should use dispatching event when option with same value selected more than one time.
    **/
-  checkSelectSpecialOptions: function() {
+    //TODO delete if will not be used
+  checkSelectSpecialOptions: function () {
     // check predefined property
     if (!this.get('triggeredOnSameValue') || !this.get('triggeredOnSameValue').length) return;
     // add custom additional observer that will handle property changes
     this.addObserver('value', this, 'valueCustomObserver');
     // get the full class attribute to find our select
     var classInlineAttr = this.get('fieldType').split(',')
-      .map(function(className) {
+      .map(function (className) {
         return '.' + className.trim();
       }).join('');
     this.set('classInlineAttr', classInlineAttr);
-    this.get('triggeredOnSameValue').forEach(function(triggeredValue) {
-      triggeredValue.values.forEach(function(value, index) {
+    this.get('triggeredOnSameValue').forEach(function (triggeredValue) {
+      triggeredValue.values.forEach(function (value, index) {
         // option with property `value`
         var $optionEl = $(this.get('element')).find(classInlineAttr)
           .find('option[value="' + value + '"]');
@@ -198,9 +198,10 @@ var wrapperView = Ember.View.extend({
    * when option with same value selected more than one time.
    *
    **/
-  valueCustomObserver: function() {
+  //TODO delete if will not be used
+  valueCustomObserver: function () {
     var hiddenValue;
-    this.get('triggeredOnSameValue').forEach(function(triggeredValue) {
+    this.get('triggeredOnSameValue').forEach(function (triggeredValue) {
       var values = triggeredValue.values;
       // find current selected value from `values` list
       var currentValueIndex = values.indexOf(this.get('value'));
@@ -214,7 +215,7 @@ var wrapperView = Ember.View.extend({
       // now hide option with current value
       $select.find('option[value="{0}"]'.format(this.get('value'))).css('display', 'none');
       // and show option that was hidden
-      $select.find('option[value="{0}"'.format(hiddenValue)).css('display', 'block');
+      $select.find('option[value="{0}"]'.format(hiddenValue)).css('display', 'block');
     }
   }
 });
@@ -223,7 +224,7 @@ var wrapperView = Ember.View.extend({
  * Simple input control for wrapperView
  */
 var textFieldView = Ember.TextField.extend({
-  type:'text',
+  type: 'text',
   placeholder: Em.I18n.t('any'),
   valueBinding: "parentView.value"
 });
@@ -250,14 +251,14 @@ var componentFieldView = Ember.View.extend({
   /**
    * Clear filter to initial state
    */
-  clearFilter: function(){
+  clearFilter: function () {
     this.set('value', '');
   },
 
   /**
    * Onclick handler for <code>cancel filter</code> button
    */
-  closeFilter:function () {
+  closeFilter: function () {
     $(document).unbind('click');
     this.set('isFilterOpen', false);
   },
@@ -265,7 +266,7 @@ var componentFieldView = Ember.View.extend({
   /**
    * Onclick handler for <code>apply filter</code> button
    */
-  applyFilter:function() {
+  applyFilter: function () {
     this.closeFilter();
   },
 
@@ -273,9 +274,9 @@ var componentFieldView = Ember.View.extend({
    * Onclick handler for <code>show component filter</code> button.
    * Also this function is used in some other places
    */
-  clickFilterButton:function () {
+  clickFilterButton: function () {
     var self = this;
-    this.set('isFilterOpen', !this.get('isFilterOpen'));
+    this.toggleProperty('isFilterOpen');
     if (this.get('isFilterOpen')) {
 
       var dropDown = this.$('.filter-components');
@@ -295,8 +296,10 @@ var componentFieldView = Ember.View.extend({
  * Simple select control for wrapperView
  */
 var selectFieldView = Ember.Select.extend({
-  selectionBinding: 'parentView.value',
-  contentBinding: 'parentView.content'
+  selectionBinding: 'parentView.selected',
+  contentBinding: 'parentView.content',
+  optionValuePath: "content.value",
+  optionLabelPath: "content.label"
 });
 
 /**
@@ -307,12 +310,12 @@ module.exports = {
   /**
    * You can access wrapperView outside
    */
-  wrapperView : wrapperView,
+  wrapperView: wrapperView,
 
   /**
    * And also controls views if need it
    */
-  textFieldView : textFieldView,
+  textFieldView: textFieldView,
   selectFieldView: selectFieldView,
   componentFieldView: componentFieldView,
 
@@ -320,10 +323,10 @@ module.exports = {
    * Quick create input filters
    * @param config parameters of <code>wrapperView</code>
    */
-  createTextView : function(config){
+  createTextView: function (config) {
     config.fieldType = config.fieldType || 'input-medium';
     config.filterView = textFieldView.extend({
-      classNames : [ config.fieldType ]
+      classNames: [ config.fieldType ]
     });
 
     return wrapperView.extend(config);
@@ -333,10 +336,10 @@ module.exports = {
    * Quick create multiSelect filters
    * @param config parameters of <code>wrapperView</code>
    */
-  createComponentView : function(config){
-    config.clearFilter = function(){
-      this.forEachChildView(function(item){
-        if(item.clearFilter){
+  createComponentView: function (config) {
+    config.clearFilter = function () {
+      this.forEachChildView(function (item) {
+        if (item.clearFilter) {
           item.clearFilter();
         }
       });
@@ -350,16 +353,21 @@ module.exports = {
    * Quick create select filters
    * @param config parameters of <code>wrapperView</code>
    */
-  createSelectView: function(config){
-
+  createSelectView: function (config) {
     config.fieldType = config.fieldType || 'input-medium';
     config.filterView = selectFieldView.extend({
-      classNames : config.fieldType.split(','),
-      attributeBindings: ['disabled','multiple'],
+      classNames: config.fieldType.split(','),
+      attributeBindings: ['disabled', 'multiple'],
       disabled: false
     });
-    config.emptyValue = config.emptyValue || 'Any';
 
+    config.valueBinding = 'selected.value';
+    config.clearFilter = function () {
+      this.set('selected', this.get('content').findProperty('value', this.get('emptyValue')));
+    };
+    config.setValue = function (value) {
+      this.set('selected', this.get('content').findProperty('value', value));
+    };
     return wrapperView.extend(config);
   },
   /**
@@ -368,10 +376,10 @@ module.exports = {
    * @param isGlobal check is search global
    * @return {Function}
    */
-  getFilterByType: function(type, isGlobal){
-    switch (type){
+  getFilterByType: function (type, isGlobal) {
+    switch (type) {
       case 'ambari-bandwidth':
-        return function(rowValue, rangeExp){
+        return function (rowValue, rangeExp) {
           var compareChar = isNaN(rangeExp.charAt(0)) ? rangeExp.charAt(0) : false;
           var compareScale = rangeExp.charAt(rangeExp.length - 1);
           var compareValue = compareChar ? parseFloat(rangeExp.substr(1, rangeExp.length)) : parseFloat(rangeExp.substr(0, rangeExp.length));
@@ -404,13 +412,13 @@ module.exports = {
             var rowValueScale = rowValue.substr(rowValue.length - 2, 2);
             switch (rowValueScale) {
               case 'KB':
-                convertedRowValue = parseFloat(rowValue)*1024;
+                convertedRowValue = parseFloat(rowValue) * 1024;
                 break;
               case 'MB':
-                convertedRowValue = parseFloat(rowValue)*1048576;
+                convertedRowValue = parseFloat(rowValue) * 1048576;
                 break;
               case 'GB':
-                convertedRowValue = parseFloat(rowValue)*1073741824;
+                convertedRowValue = parseFloat(rowValue) * 1073741824;
                 break;
             }
           }
@@ -502,7 +510,7 @@ module.exports = {
         };
         break;
       case 'number':
-        return function(rowValue, rangeExp){
+        return function (rowValue, rangeExp) {
           var compareChar = rangeExp.charAt(0);
           var compareValue;
           var match = false;
@@ -542,17 +550,29 @@ module.exports = {
           return match;
         };
         break;
+      case 'sub-resource':
+        return function (origin, compareValue) {
+          if (!Array.isArray(compareValue) || compareValue.length === 0) return true;
+
+          return origin.some(function (item) {
+            for (var i = 0, l = compareValue.length; i < l; i++) {
+              if(item.get(compareValue[i].property) !== compareValue[i].value) return false
+            }
+            return true;
+          });
+        };
+        break;
       case 'multiple':
-        return function(origin, compareValue){
+        return function (origin, compareValue) {
           var options = compareValue.split(',');
-          if(typeof (origin) === "string"){
+          if (typeof (origin) === "string") {
             var rowValue = origin;
-          }else{
+          } else {
             var rowValue = origin.mapProperty('componentName').join(" ");
           }
           var str = new RegExp(compareValue, "i");
           for (var i = 0; i < options.length; i++) {
-            if(!isGlobal) {
+            if (!isGlobal) {
               str = new RegExp('(\\W|^)' + options[i] + '(\\W|$)');
             }
             if (rowValue.search(str) !== -1) {
@@ -563,21 +583,25 @@ module.exports = {
         };
         break;
       case 'boolean':
-        return function (origin, compareValue){
+        return function (origin, compareValue) {
           return origin === compareValue;
         };
         break;
       case 'select':
-        return function (origin, compareValue){
-          //TODO add filter by select value
-          return true;
+        return function (origin, compareValue) {
+          return origin == compareValue;
+        };
+        break;
+      case 'os':
+        return function (origin, compareValue) {
+          return origin.getEach('osType').contains(compareValue)
         };
         break;
       case 'range':
-        return function (origin, compareValue){
+        return function (origin, compareValue) {
           if (compareValue[1] && compareValue[0]) {
             return origin >= compareValue[0] && origin <= compareValue[1];
-          } else if (compareValue[0]){
+          } else if (compareValue[0]) {
             return origin >= compareValue[0];
           } else if (compareValue[1]) {
             return origin <= compareValue[1]
@@ -585,11 +609,44 @@ module.exports = {
           return true;
         };
         break;
+      case 'alert_status':
+        /**
+         * origin - alertDefinition.summary
+         * compareValue - "OK|WARNING|CRITICAL|UNKNOWN|PENDING"
+         * PENDING means that OK is 0, WARNING is 0, CRITICAL is 0 and UNKNOWN is 0
+         */
+        return function (origin, compareValue) {
+          if ('PENDING' === compareValue) {
+            var isPending = true;
+            Em.keys(origin).forEach(function(state) {
+              if (origin[state] && (origin[state].count > 0 || origin[state].maintenanceCount > 0)) {
+                isPending = false;
+              }
+            });
+            return isPending;
+          }
+          return !!origin[compareValue] && (origin[compareValue].count > 0 || origin[compareValue].maintenanceCount > 0);
+        };
+        break;
+      case 'alert_group':
+        return function (origin, compareValue) {
+          return origin.mapProperty('id').contains(compareValue);
+        };
+        break;
+      case 'enable_disable':
+        return function (origin, compareValue) {
+          return origin == (compareValue == 'enabled');
+        };
+        break;
       case 'string':
       default:
-        return function(origin, compareValue){
-          var regex = new RegExp(compareValue,"i");
-          return regex.test(origin);
+        return function (origin, compareValue) {
+          if (validator.isValidMatchesRegexp(compareValue)) {
+            var regex = new RegExp(compareValue, "i");
+            return regex.test(origin);
+          } else {
+            return false;
+          }
         }
     }
   }

@@ -45,16 +45,13 @@ App.MainServiceItemController = Em.Controller.extend({
     }
   },
 
+  isServicesInfoLoaded: false,
+
   initHosts: function() {
     if (App.get('components.masters').length !== 0) {
-      var self = this;
-
-      var hostNames = App.Host.find().mapProperty('hostName');
-      this.set('allHosts', hostNames);
-
-      ['HBASE_MASTER', 'ZOOKEEPER_SERVER', 'FLUME_HANDLER'].forEach(function(componentName) {
-        self.loadHostsWithoutComponent(componentName);
-      });
+      ['HBASE_MASTER', 'HIVE_METASTORE', 'ZOOKEEPER_SERVER', 'FLUME_HANDLER', 'HIVE_SERVER', 'RANGER_KMS_SERVER', 'NIMBUS'].forEach(function(componentName) {
+        this.loadHostsWithoutComponent(componentName);
+      }, this);
     }
   }.observes('App.components.masters', 'content.hostComponents.length'),
 
@@ -62,12 +59,14 @@ App.MainServiceItemController = Em.Controller.extend({
     var self = this;
     var hostsWithComponent = App.HostComponent.find().filterProperty('componentName', componentName).mapProperty('hostName');
 
-    var hostsWithoutComponent = this.get('allHosts').filter(function(hostName) {
+    var hostsWithoutComponent = App.get('allHostNames').filter(function(hostName) {
       return !hostsWithComponent.contains(hostName);
     });
 
     self.set('add' + componentName, function() {
-      self.addComponent(componentName);
+      App.get('router.mainAdminKerberosController').getKDCSessionState(function() {
+        self.addComponent(componentName);
+      });
     });
 
     Em.defineProperty(self, 'addDisabledTooltip-' + componentName, Em.computed('isAddDisabled-' + componentName, 'addDisabledMsg-' + componentName, function() {
@@ -98,8 +97,6 @@ App.MainServiceItemController = Em.Controller.extend({
   isConfigurable: function () {
     return !App.get('services.noConfigTypes').contains(this.get('content.serviceName'));
   }.property('App.services.noConfigTypes','content.serviceName'),
-
-  allHosts: [],
 
   clientComponents: function () {
     var clientNames = [];
@@ -162,20 +159,182 @@ App.MainServiceItemController = Em.Controller.extend({
     var self = this;
     var serviceDisplayName = this.get('content.displayName');
     var isMaintenanceOFF = this.get('content.passiveState') === 'OFF';
+
+    var msg = isMaintenanceOFF && serviceHealth == 'INSTALLED'? Em.I18n.t('services.service.stop.warningMsg.turnOnMM').format(serviceDisplayName) : null;
+    msg = self.addAdditionalWarningMessage(serviceHealth, msg, serviceDisplayName);
+
     var bodyMessage = Em.Object.create({
       putInMaintenance: (serviceHealth == 'INSTALLED' && isMaintenanceOFF) || (serviceHealth == 'STARTED' && !isMaintenanceOFF),
       turnOnMmMsg: serviceHealth == 'INSTALLED' ? Em.I18n.t('passiveState.turnOnFor').format(serviceDisplayName) : Em.I18n.t('passiveState.turnOffFor').format(serviceDisplayName),
-      confirmMsg: serviceHealth == 'INSTALLED'? Em.I18n.t('services.service.stop.confirmMsg').format(serviceDisplayName) : Em.I18n.t('question.sure'),
-      confirmButton: serviceHealth == 'INSTALLED'? Em.I18n.t('services.service.stop.confirmButton') : Em.I18n.t('ok'),
-      additionalWarningMsg:  isMaintenanceOFF && serviceHealth == 'INSTALLED'? Em.I18n.t('services.service.stop.warningMsg.turnOnMM').format(serviceDisplayName) : null
+      confirmMsg: serviceHealth == 'INSTALLED'? Em.I18n.t('services.service.stop.confirmMsg').format(serviceDisplayName) : Em.I18n.t('services.service.start.confirmMsg').format(serviceDisplayName),
+      confirmButton: serviceHealth == 'INSTALLED'? Em.I18n.t('services.service.stop.confirmButton') : Em.I18n.t('services.service.start.confirmButton'),
+      additionalWarningMsg:  msg
     });
 
-    return App.showConfirmationFeedBackPopup(function(query, runMmOperation) {
-      self.set('isPending', true);
-      self.startStopWithMmode(serviceHealth, query, runMmOperation);
-    }, bodyMessage);
+    // check HDFS NameNode checkpoint before stop service
+    if (this.get('content.serviceName') == 'HDFS' && serviceHealth == 'INSTALLED' &&
+      this.get('content.hostComponents').filterProperty('componentName', 'NAMENODE').someProperty('workStatus', App.HostComponentStatus.started)) {
+      this.checkNnLastCheckpointTime(function () {
+        return App.showConfirmationFeedBackPopup(function(query, runMmOperation) {
+          self.set('isPending', true);
+          self.startStopWithMmode(serviceHealth, query, runMmOperation);
+        }, bodyMessage);
+      });
+    } else {
+      return App.showConfirmationFeedBackPopup(function(query, runMmOperation) {
+        self.set('isPending', true);
+        self.startStopWithMmode(serviceHealth, query, runMmOperation);
+      }, bodyMessage);
+    }
   },
 
+
+  /**
+   * this function will be called from :1) stop HDFS 2) restart all for HDFS 3) restart all affected for HDFS
+   * @param callback - callback function to continue next operation
+   */
+  checkNnLastCheckpointTime: function(callback) {
+    var self = this;
+    this.pullNnCheckPointTime().complete(function () {
+      var isNNCheckpointTooOld = self.get('isNNCheckpointTooOld');
+      self.set('isNNCheckpointTooOld', null);
+      if (isNNCheckpointTooOld) {
+        // too old
+        self.getHdfsUser().done(function() {
+          var msg = Em.Object.create({
+            confirmMsg: Em.I18n.t('services.service.stop.HDFS.warningMsg.checkPointTooOld') +
+              Em.I18n.t('services.service.stop.HDFS.warningMsg.checkPointTooOld.instructions').format(isNNCheckpointTooOld, self.get('content.hdfsUser')),
+            confirmButton: Em.I18n.t('common.next')
+          });
+          return App.showConfirmationFeedBackPopup(callback, msg);
+        });
+      } else if (isNNCheckpointTooOld == null) {
+        // not available
+        return App.showConfirmationPopup(
+          callback, Em.I18n.t('services.service.stop.HDFS.warningMsg.checkPointNA'), null,
+          Em.I18n.t('common.warning'), Em.I18n.t('common.proceedAnyway'), true
+        );
+      } else {
+        // still young
+        callback();
+      }
+    });
+  },
+
+  pullNnCheckPointTime: function () {
+    return App.ajax.send({
+      name: 'common.service.hdfs.getNnCheckPointTime',
+      sender: this,
+      success: 'parseNnCheckPointTime'
+    });
+  },
+
+  parseNnCheckPointTime: function (data) {
+    var nameNodesStatus = [];
+    var lastCheckpointTime, hostName;
+    if (data.host_components.length <= 1) {
+      lastCheckpointTime = Em.get(data.host_components[0], 'metrics.dfs.FSNamesystem.LastCheckpointTime');
+      hostName = Em.get(data.host_components[0], 'HostRoles.host_name');
+    } else {
+      // HA enabled
+      data.host_components.forEach(function(namenode) {
+        nameNodesStatus.pushObject( Em.Object.create({
+          LastCheckpointTime: Em.get(namenode, 'metrics.dfs.FSNamesystem.LastCheckpointTime'),
+          HAState: Em.get(namenode, 'metrics.dfs.FSNamesystem.HAState'),
+          hostName: Em.get(namenode, 'HostRoles.host_name')
+        }));
+      });
+      if (nameNodesStatus.someProperty('HAState', 'active')) {
+        if (nameNodesStatus.findProperty('HAState', 'active').get('LastCheckpointTime')) {
+          lastCheckpointTime = nameNodesStatus.findProperty('HAState', 'active').get('LastCheckpointTime');
+          hostName = nameNodesStatus.findProperty('HAState', 'active').get('hostName');
+        } else if (nameNodesStatus.someProperty('LastCheckpointTime')) {
+          lastCheckpointTime = nameNodesStatus.findProperty('LastCheckpointTime').get('LastCheckpointTime');
+          hostName = nameNodesStatus.findProperty('LastCheckpointTime').get('hostName');
+        }
+      } else if (nameNodesStatus.someProperty('HAState', 'standby')) {
+        lastCheckpointTime = nameNodesStatus.findProperty('HAState', 'standby').get('LastCheckpointTime');
+        hostName = nameNodesStatus.findProperty('HAState', 'standby').get('hostName')
+      }
+    }
+
+    if (!lastCheckpointTime) {
+      this.set("isNNCheckpointTooOld", null);
+    } else {
+      var time_criteria = 12; // time in hours to define how many hours ago is too old
+      var time_ago = (Math.round(App.dateTime() / 1000) - (time_criteria * 3600)) *1000;
+      if (lastCheckpointTime <= time_ago) {
+        // too old, set the effected hostName
+        this.set("isNNCheckpointTooOld", hostName);
+      } else {
+        // still young
+        this.set("isNNCheckpointTooOld", false);
+      }
+    }
+  },
+
+  /**
+   * Return true if hdfs user data is loaded via App.MainServiceInfoConfigsController
+   */
+  getHdfsUser: function () {
+    var self = this;
+    var dfd = $.Deferred();
+    var miscController = App.MainAdminServiceAccountsController.create();
+    miscController.loadUsers();
+    var interval = setInterval(function () {
+      if (miscController.get('dataIsLoaded') && miscController.get('users')) {
+        self.set('content.hdfsUser', miscController.get('users').findProperty('name', 'hdfs_user').get('value'));
+        dfd.resolve();
+        clearInterval(interval);
+      }
+    }, 10);
+    return dfd.promise();
+  },
+
+  addAdditionalWarningMessage: function(serviceHealth, msg, serviceDisplayName){
+    var servicesAffectedDisplayNames = [];
+    var servicesAffected = [];
+
+    if(serviceHealth == 'INSTALLED'){
+      //To stop a service, display dependencies message...
+      var currentService = this.get('content.serviceName');
+      console.debug("Service to be stopped:", currentService);
+
+      var stackServices = App.StackService.find();
+      stackServices.forEach(function(service){
+        if(service.get('isInstalled') || service.get('isSelected')){ //only care about services installed...
+          var stackServiceDisplayName = service.get("displayName");
+          console.debug("Checking service dependencies for " + stackServiceDisplayName);
+          var requiredServices = service.get('requiredServices'); //services required in order to have the current service be functional...
+          if (!!requiredServices && requiredServices.length) { //only care about services with a non-empty requiredServices list.
+            console.debug("Service dependencies for " + stackServiceDisplayName, requiredServices);
+
+            requiredServices.forEach(function(_requiredService){
+              if (currentService === _requiredService) { //the service to be stopped is a required service by some other services...
+                console.debug(currentService + " is a service dependency for " + stackServiceDisplayName);
+                if(servicesAffected.indexOf(service) == -1 ) {
+                  servicesAffected.push(service);
+                  servicesAffectedDisplayNames.push(stackServiceDisplayName);
+                }
+              }
+            },this);
+          }
+        }
+      },this);
+
+      var names = servicesAffectedDisplayNames.join();
+      if(names){
+        //only display this line with a non-empty dependency list
+        var dependenciesMsg = Em.I18n.t('services.service.stop.warningMsg.dependent.services').format(serviceDisplayName,names);
+        if(msg)
+          msg = msg + " " + dependenciesMsg;
+        else
+          msg = dependenciesMsg;
+      }
+    }
+
+    return msg;
+  },
 
   startStopWithMmode: function(serviceHealth, query, runMmOperation) {
     var self = this;
@@ -378,7 +537,7 @@ App.MainServiceItemController = Em.Controller.extend({
         this.hide();
       },
       bodyClass: Ember.View.extend({
-        templateName: require('templates/common/prompt_popup'),
+        templateName: require('templates/common/modal_popups/prompt_popup'),
         text: Em.I18n.t('services.service.actions.run.rebalanceHdfsNodes.prompt'),
         didInsertElement: function () {
           App.tooltip(this.$(".prompt-input"), {
@@ -449,9 +608,20 @@ App.MainServiceItemController = Em.Controller.extend({
       confirmButton: Em.I18n.t('services.service.restartAll.confirmButton'),
       additionalWarningMsg: this.get('content.passiveState') === 'OFF' ? Em.I18n.t('services.service.restartAll.warningMsg.turnOnMM').format(serviceDisplayName): null
      });
-    return App.showConfirmationFeedBackPopup(function(query, runMmOperation) {
-      batchUtils.restartAllServiceHostComponents(serviceName, false, query, runMmOperation);
-    }, bodyMessage);
+
+    // check HDFS NameNode checkpoint before stop service
+    if (this.get('content.serviceName') == 'HDFS' &&
+      this.get('content.hostComponents').filterProperty('componentName', 'NAMENODE').someProperty('workStatus', App.HostComponentStatus.started)) {
+      this.checkNnLastCheckpointTime(function () {
+        return App.showConfirmationFeedBackPopup(function(query, runMmOperation) {
+          batchUtils.restartAllServiceHostComponents(serviceName, false, query, runMmOperation);
+        }, bodyMessage);
+      });
+    } else {
+      return App.showConfirmationFeedBackPopup(function(query, runMmOperation) {
+        batchUtils.restartAllServiceHostComponents(serviceName, false, query, runMmOperation);
+      }, bodyMessage);
+    }
   },
 
   turnOnOffPassive: function(label) {
@@ -472,17 +642,25 @@ App.MainServiceItemController = Em.Controller.extend({
   },
 
   runSmokeTestPrimary: function(query) {
+    var clusterLevelRequired = ['KERBEROS'];
+    var requestData = {
+        'serviceName': this.get('content.serviceName'),
+        'displayName': this.get('content.displayName'),
+        'actionName': this.get('content.serviceName') === 'ZOOKEEPER' ? 'ZOOKEEPER_QUORUM_SERVICE_CHECK' : this.get('content.serviceName') + '_SERVICE_CHECK',
+        'query': query
+    };
+    if (clusterLevelRequired.contains(this.get('content.serviceName'))) {
+      requestData.operationLevel = {
+        "level": "CLUSTER",
+        "cluster_name": App.get('clusterName')
+      };
+    }
     App.ajax.send({
       'name': 'service.item.smoke',
       'sender': this,
       'success':'runSmokeTestSuccessCallBack',
       'error':'runSmokeTestErrorCallBack',
-      'data': {
-        'serviceName': this.get('content.serviceName'),
-        'displayName': this.get('content.displayName'),
-        'actionName': this.get('content.serviceName') === 'ZOOKEEPER' ? 'ZOOKEEPER_QUORUM_SERVICE_CHECK' : this.get('content.serviceName') + '_SERVICE_CHECK',
-        'query': query
-      }
+      'data': requestData
     });
   },
 
@@ -515,7 +693,6 @@ App.MainServiceItemController = Em.Controller.extend({
     if (component) {
       var reassignMasterController = App.router.get('reassignMasterController');
       reassignMasterController.saveComponentToReassign(component);
-      reassignMasterController.getSecurityStatus();
       reassignMasterController.setCurrentStep('1');
       App.router.transitionTo('reassign');
     }
@@ -569,7 +746,7 @@ App.MainServiceItemController = Em.Controller.extend({
    */
   addComponent: function (componentName) {
     var self = this;
-    var component = App.HostComponent.find().findProperty('componentName', componentName);
+    var component = App.StackServiceComponent.find().findProperty('componentName', componentName);
     var componentDisplayName = component.get('displayName');
 
     self.loadHostsWithoutComponent(componentName);
@@ -619,15 +796,20 @@ App.MainServiceItemController = Em.Controller.extend({
         templateName: require('templates/main/service/add_host_popup')
       }),
 
-      restartNagiosMsg: Em.View.extend({
-        template: Em.Handlebars.compile(Em.I18n.t('hosts.host.addComponent.note').format(componentDisplayName))
-      }),
-
       onPrimary: function () {
         var selectedHost = this.get('selectedHost');
 
         // Install
-        componentsUtils.installHostComponent(selectedHost, component);
+        if(['HIVE_METASTORE', 'RANGER_KMS_SERVER', 'NIMBUS'].contains(component.get('componentName')) && !!selectedHost){
+          App.router.get('mainHostDetailsController').addComponent(
+            {
+              context: component,
+              selectedHost: selectedHost
+            }
+          );
+        } else {
+          componentsUtils.installHostComponent(selectedHost, component);
+        }
 
         // Remove host from 'without' collection to immediate recalculate add menu item state
         var hostsWithoutComponent = this.get('hostsWithoutComponent');
@@ -675,7 +857,7 @@ App.MainServiceItemController = Em.Controller.extend({
       return false;
     }
     return (this.get('content.healthStatus') != 'green');
-  }.property('content.healthStatus','isPending'),
+  }.property('content.healthStatus','isPending', 'App.isHaEnabled'),
 
   /**
    * Determine if service has than one service client components
@@ -699,8 +881,13 @@ App.MainServiceItemController = Em.Controller.extend({
     ability_controller.enableRMHighAvailability();
   },
 
+  enableRAHighAvailability: function() {
+    var ability_controller = App.router.get('mainAdminHighAvailabilityController');
+    ability_controller.enableRAHighAvailability();
+  },
+
   downloadClientConfigs: function (event) {
-    var component = this.get('content.hostComponents').findProperty('isClient');
+    var component = this.get('content.clientComponents').rejectProperty('totalCount', 0)[0];
     componentsUtils.downloadClientConfigs.call(this, {
       serviceName: this.get('content.serviceName'),
       componentName: (event && event.name) || component.get('componentName'),
@@ -753,5 +940,4 @@ App.MainServiceItemController = Em.Controller.extend({
   },
 
   isPending:true
-
 });

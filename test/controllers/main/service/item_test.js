@@ -27,6 +27,7 @@ require('controllers/global/cluster_controller');
 require('controllers/main/service/reassign_controller');
 require('controllers/main/service/item');
 var batchUtils = require('utils/batch_scheduled_requests');
+var componentsUtils = require('utils/components');
 
 describe('App.MainServiceItemController', function () {
 
@@ -145,13 +146,11 @@ describe('App.MainServiceItemController', function () {
 
       beforeEach(function () {
         sinon.stub(reassignMasterController, 'saveComponentToReassign', Em.K);
-        sinon.stub(reassignMasterController, 'getSecurityStatus', Em.K);
         sinon.stub(reassignMasterController, 'setCurrentStep', Em.K);
       });
 
       afterEach(function () {
         reassignMasterController.saveComponentToReassign.restore();
-        reassignMasterController.getSecurityStatus.restore();
         reassignMasterController.setCurrentStep.restore();
       });
 
@@ -167,7 +166,6 @@ describe('App.MainServiceItemController', function () {
         });
         mainServiceItemController.reassignMaster(test.componentName);
         expect(reassignMasterController.saveComponentToReassign.calledOnce).to.equal(test.result);
-        expect(reassignMasterController.getSecurityStatus.calledOnce).to.equal(test.result);
         expect(reassignMasterController.setCurrentStep.calledOnce).to.equal(test.result);
         App.HostComponent.find.restore();
         App.router.transitionTo.restore();
@@ -391,39 +389,192 @@ describe('App.MainServiceItemController', function () {
     var event = {
       target: el
     };
-    var mainServiceItemController = App.MainServiceItemController.create({content: {serviceName: "HDFS"}});
+    var mainServiceItemController = App.MainServiceItemController.create({
+      content: {
+        serviceName: "HDFS",
+        hostComponents: [ {
+          componentName: 'NAMENODE',
+          workStatus: 'INSTALLED'
+        }]
+      }
+    });
+    var mainServiceItemControllerHdfsStarted = App.MainServiceItemController.create({
+      content: {
+        serviceName: "HDFS",
+        hostComponents: [ {
+          componentName: 'NAMENODE',
+          workStatus: 'STARTED'
+        }]
+      }
+    });
     beforeEach(function () {
       sinon.spy(mainServiceItemController, "startStopPopupPrimary");
+      sinon.spy(mainServiceItemControllerHdfsStarted, "startStopPopupPrimary");
+      sinon.spy(Em.I18n, "t");
+      sinon.stub(mainServiceItemControllerHdfsStarted, 'checkNnLastCheckpointTime', function(callback) {
+        return callback;
+      });
     });
     afterEach(function () {
       mainServiceItemController.startStopPopupPrimary.restore();
+      mainServiceItemControllerHdfsStarted.startStopPopupPrimary.restore();
+      mainServiceItemControllerHdfsStarted.checkNnLastCheckpointTime.restore();
+      Em.I18n.t.restore();
     });
     it("start start/stop service popup", function () {
       mainServiceItemController.startStopPopup(event, "").onPrimary();
       expect(mainServiceItemController.startStopPopupPrimary.calledOnce).to.equal(true);
     });
+
+    it ("should popup warning to check last checkpoint time if work status is STARTED", function() {
+      mainServiceItemControllerHdfsStarted.startStopPopup(event, "INSTALLED");
+      expect(mainServiceItemControllerHdfsStarted.checkNnLastCheckpointTime.calledOnce).to.equal(true);
+    });
+
+    describe("modal messages", function() {
+      
+      beforeEach(function () {
+        sinon.stub(App.StackService, 'find').returns([
+          Em.Object.create({
+            serviceName: 'HDFS',
+            displayName: 'HDFS',
+            isInstalled: true,
+            isSelected: true,
+            requiredServices:["ZOOKEEPER"] 
+          }),
+          Em.Object.create({
+            serviceName: 'HIVE',
+            displayName: 'Hive',
+            isInstalled: true,
+            isSelected: true
+          }),
+          Em.Object.create({
+            serviceName: 'HBASE',
+            displayName: 'HBase',
+            isInstalled: true,
+            isSelected: true,
+            requiredServices:["HDFS", "ZOOKEEPER"]
+          }),
+          Em.Object.create({
+            serviceName: 'YARN',
+            displayName: 'YARN',
+            isInstalled: true,
+            isSelected: true,
+            requiredServices:["HDFS"]
+          }),
+          Em.Object.create({
+            serviceName: 'SPARK',
+            displayName: 'Spark',
+            isInstalled: true,
+            isSelected: true,
+            requiredServices:["HIVE"]
+          })
+        ]);
+      });
+      
+      it ("should confirm stop if serviceHealth is INSTALLED", function() {
+        mainServiceItemController.startStopPopup(event, "INSTALLED");
+        expect(Em.I18n.t.calledWith('services.service.stop.confirmMsg')).to.be.ok;
+        expect(Em.I18n.t.calledWith('services.service.stop.confirmButton')).to.be.ok;
+      });
+
+      it ("should confirm start if serviceHealth is not INSTALLED", function() {
+        mainServiceItemController.startStopPopup(event, "");
+        expect(Em.I18n.t.calledWith('services.service.start.confirmMsg')).to.be.ok;
+        expect(Em.I18n.t.calledWith('services.service.start.confirmButton')).to.be.ok;
+      });
+      
+      it ("should not display a dependent list if it is to start a service", function() {
+        var mainServiceItemController = App.MainServiceItemController.create(
+            {content: {serviceName: "HDFS", passiveState:'OFF'}});
+        mainServiceItemController.startStopPopup(event, "");
+        expect(Em.I18n.t.calledWith('services.service.stop.warningMsg.dependent.services')).to.not.be.ok;
+      });
+      
+      it ("should display dependent list if other services depend on the one to be stopped", function() {
+        var mainServiceItemController = App.MainServiceItemController.create(
+          {content: {
+            serviceName: "HDFS",
+            passiveState:'OFF',
+            hostComponents: [{
+              componentName: 'NAMENODE',
+              workStatus: 'INSTALLED'
+            }]
+          }}
+        );
+        mainServiceItemController.startStopPopup(event, "INSTALLED");
+        expect(Em.I18n.t.calledWith('services.service.stop.warningMsg.turnOnMM')).to.be.ok;
+        expect(Em.I18n.t.calledWith('services.service.stop.warningMsg.dependent.services')).to.be.ok;
+        
+        var dependencies = Em.I18n.t('services.service.stop.warningMsg.dependent.services').format("HDFS", "HBase,YARN")
+        var msg = Em.I18n.t('services.service.stop.warningMsg.turnOnMM').format("HDFS");
+        var fullMsg = mainServiceItemController.addAdditionalWarningMessage("INSTALLED", msg, "HDFS");
+        expect(fullMsg).to.be.equal(msg + " " + dependencies);
+      });
+
+      it ("should display the dependent service if another service depends on the one to be stopped", function() {
+        var mainServiceItemController = App.MainServiceItemController.create(
+            {content: {serviceName: "HIVE", passiveState:'OFF'}});
+        mainServiceItemController.startStopPopup(event, "INSTALLED");
+        expect(Em.I18n.t.calledWith('services.service.stop.warningMsg.dependent.services')).to.be.ok;
+        
+        var dependencies = Em.I18n.t('services.service.stop.warningMsg.dependent.services').format("HIVE", "Spark")
+        var msg = Em.I18n.t('services.service.stop.warningMsg.turnOnMM').format("HIVE");
+        var fullMsg = mainServiceItemController.addAdditionalWarningMessage("INSTALLED", msg, "HIVE");
+        expect(fullMsg).to.be.equal(msg + " " + dependencies);
+      });
+      
+      afterEach(function () {
+        App.StackService.find.restore();
+      });
+    });
   });
 
   describe("#restartAllHostComponents", function () {
     var temp = batchUtils.restartAllServiceHostComponents;
+    var mainServiceItemController = App.MainServiceItemController.create({
+      content: {
+        serviceName: "HDFS",
+        hostComponents: [{
+          componentName: 'NAMENODE',
+          workStatus: 'STARTED'
+        }]
+      }
+    });
     beforeEach(function () {
       batchUtils.restartAllServiceHostComponents = Em.K;
       sinon.spy(batchUtils, "restartAllServiceHostComponents");
       sinon.stub(App.Service, 'find', function() {
         return Em.Object.create({serviceTypes: []});
       });
+      sinon.stub(mainServiceItemController, 'checkNnLastCheckpointTime', function() {
+        return true;
+      });
     });
     afterEach(function () {
       batchUtils.restartAllServiceHostComponents.restore();
       batchUtils.restartAllServiceHostComponents = temp;
       App.Service.find.restore();
+      mainServiceItemController.checkNnLastCheckpointTime.restore();
     });
 
-    var mainServiceItemController = App.MainServiceItemController.create({content: {displayName: "HDFS"}});
-
     it("start restartAllHostComponents for service", function () {
-      mainServiceItemController.restartAllHostComponents({}).onPrimary();
+      var controller = App.MainServiceItemController.create({
+        content: {
+          serviceName: "HDFS",
+          hostComponents: [{
+            componentName: 'NAMENODE',
+            workStatus: 'INSTALLED'
+          }]
+        }
+      });
+      controller.restartAllHostComponents({}).onPrimary();
       expect(batchUtils.restartAllServiceHostComponents.calledOnce).to.equal(true);
+    });
+
+    it("check last checkpoint time for NameNode before start restartAllHostComponents for service", function () {
+      mainServiceItemController.restartAllHostComponents({});
+      expect(mainServiceItemController.checkNnLastCheckpointTime.calledOnce).to.equal(true);
     });
   });
 
@@ -443,6 +594,297 @@ describe('App.MainServiceItemController', function () {
     it("start restartAllHostComponents for service", function () {
       mainServiceItemController.rollingRestart();
       expect(batchUtils.launchHostComponentRollingRestart.calledOnce).to.equal(true);
+    });
+  });
+
+  describe("#parseNnCheckPointTime", function () {
+    var tests = [
+      {
+        m: "NameNode has JMX data, the last checkpoint time is less than 12 hours ago",
+        data:
+        {"href" : "",
+          "ServiceComponentInfo" : {
+            "cluster_name" : "c123",
+            "component_name" : "NAMENODE",
+            "service_name" : "HDFS"
+          },
+          "host_components" : [
+            {
+              "href" : "",
+              "HostRoles" : {
+                "cluster_name" : "c123",
+                "component_name" : "NAMENODE",
+                "host_name" : "c6401.ambari.apache.org"
+              },
+              "metrics" : {
+                "dfs" : {
+                  "FSNamesystem" : {
+                    "HAState" : "active",
+                    "LastCheckpointTime" : 1435775648000
+                  }
+                }
+              }
+            }
+          ]
+        },
+        result: false
+      },
+      {
+        m: "NameNode has JMX data, the last checkpoint time is > 12 hours ago",
+        data:
+          {"href" : "",
+            "ServiceComponentInfo" : {
+              "cluster_name" : "c123",
+              "component_name" : "NAMENODE",
+              "service_name" : "HDFS"
+            },
+            "host_components" : [
+              {
+                "href" : "",
+                "HostRoles" : {
+                  "cluster_name" : "c123",
+                  "component_name" : "NAMENODE",
+                  "host_name" : "c6401.ambari.apache.org"
+                },
+                "metrics" : {
+                  "dfs" : {
+                    "FSNamesystem" : {
+                      "HAState" : "active",
+                      "LastCheckpointTime" : 1435617248000
+                    }
+                  }
+                }
+              }
+            ]
+          },
+        result: "c6401.ambari.apache.org"
+      },
+      {
+        m: "NameNode has no JMX data available",
+        data:
+        {"href" : "",
+          "ServiceComponentInfo" : {
+            "cluster_name" : "c123",
+            "component_name" : "NAMENODE",
+            "service_name" : "HDFS"
+          },
+          "host_components" : [
+            {
+              "href" : "",
+              "HostRoles" : {
+                "cluster_name" : "c123",
+                "component_name" : "NAMENODE",
+                "host_name" : "c6401.ambari.apache.org"
+              },
+              "metrics" : {
+                "dfs" : {
+                  "FSNamesystem" : {
+                    "HAState" : "active"
+                  }
+                }
+              }
+            }
+          ]
+        },
+        result: null
+      },
+      {
+        m: "HA enabled, both active and standby NN has JMX data normally.",
+        data:
+        {"href" : "",
+          "ServiceComponentInfo" : {
+            "cluster_name" : "c123",
+            "component_name" : "NAMENODE",
+            "service_name" : "HDFS"
+          },
+          "host_components" : [
+            {
+              "href" : "",
+              "HostRoles" : {
+                "cluster_name" : "c123",
+                "component_name" : "NAMENODE",
+                "host_name" : "c6401.ambari.apache.org"
+              },
+              "metrics" : {
+                "dfs" : {
+                  "FSNamesystem" : {
+                    "HAState" : "active",
+                    "LastCheckpointTime" : 1435775648000
+                  }
+                }
+              }
+            },
+            {
+              "href" : "",
+              "HostRoles" : {
+                "cluster_name" : "c123",
+                "component_name" : "NAMENODE",
+                "host_name" : "c6402.ambari.apache.org"
+              },
+              "metrics" : {
+                "dfs" : {
+                  "FSNamesystem" : {
+                    "HAState" : "standby",
+                    "LastCheckpointTime" : 1435775648000
+                  }
+                }
+              }
+            }
+          ]
+        },
+        result: false
+      },
+      {
+        m: "HA enabled, both NamoNodes are standby NN",
+        data:
+        {"href" : "",
+          "ServiceComponentInfo" : {
+            "cluster_name" : "c123",
+            "component_name" : "NAMENODE",
+            "service_name" : "HDFS"
+          },
+          "host_components" : [
+            {
+              "href" : "",
+              "HostRoles" : {
+                "cluster_name" : "c123",
+                "component_name" : "NAMENODE",
+                "host_name" : "c6401.ambari.apache.org"
+              },
+              "metrics" : {
+                "dfs" : {
+                  "FSNamesystem" : {
+                    "HAState" : "standby",
+                    "LastCheckpointTime" : 1435775648000
+                  }
+                }
+              }
+            },
+            {
+              "href" : "",
+              "HostRoles" : {
+                "cluster_name" : "c123",
+                "component_name" : "NAMENODE",
+                "host_name" : "c6402.ambari.apache.org"
+              },
+              "metrics" : {
+                "dfs" : {
+                  "FSNamesystem" : {
+                    "HAState" : "standby",
+                    "LastCheckpointTime" : 1435775648000
+                  }
+                }
+              }
+            }
+          ]
+        },
+        result: false
+      },
+      {
+        m: "HA enabled, active NN has no JMX data, use the standby's data",
+        data:
+        {"href" : "",
+          "ServiceComponentInfo" : {
+            "cluster_name" : "c123",
+            "component_name" : "NAMENODE",
+            "service_name" : "HDFS"
+          },
+          "host_components" : [
+            {
+              "href" : "",
+              "HostRoles" : {
+                "cluster_name" : "c123",
+                "component_name" : "NAMENODE",
+                "host_name" : "c6401.ambari.apache.org"
+              },
+              "metrics" : {
+                "dfs" : {
+                  "FSNamesystem" : {
+                    "HAState" : "active"
+                  }
+                }
+              }
+            },
+            {
+              "href" : "",
+              "HostRoles" : {
+                "cluster_name" : "c123",
+                "component_name" : "NAMENODE",
+                "host_name" : "c6402.ambari.apache.org"
+              },
+              "metrics" : {
+                "dfs" : {
+                  "FSNamesystem" : {
+                    "HAState" : "standby",
+                    "LastCheckpointTime" : 1435775648000
+                  }
+                }
+              }
+            }
+          ]
+        },
+        result: false
+      },
+      {
+        m: "HA enabled, both NamoNodes no JMX data",
+        data:
+        {"href" : "",
+          "ServiceComponentInfo" : {
+            "cluster_name" : "c123",
+            "component_name" : "NAMENODE",
+            "service_name" : "HDFS"
+          },
+          "host_components" : [
+            {
+              "href" : "",
+              "HostRoles" : {
+                "cluster_name" : "c123",
+                "component_name" : "NAMENODE",
+                "host_name" : "c6401.ambari.apache.org"
+              },
+              "metrics" : {
+                "dfs" : {
+                  "FSNamesystem" : {
+                    "HAState" : "active"
+                  }
+                }
+              }
+            },
+            {
+              "href" : "",
+              "HostRoles" : {
+                "cluster_name" : "c123",
+                "component_name" : "NAMENODE",
+                "host_name" : "c6402.ambari.apache.org"
+              },
+              "metrics" : {
+                "dfs" : {
+                  "FSNamesystem" : {
+                    "HAState" : "standby"
+                  }
+                }
+              }
+            }
+          ]
+        },
+        result: null
+      }
+    ];
+
+    beforeEach(function () {
+      sinon.stub(App, 'dateTime').returns(1435790048000);
+    });
+
+    afterEach(function () {
+      App.dateTime.restore();
+    });
+
+    tests.forEach(function (test) {
+      it(test.m, function () {
+        var mainServiceItemController = App.MainServiceItemController.create({isNNCheckpointTooOld: null});
+        mainServiceItemController.parseNnCheckPointTime(test.data);
+        expect(mainServiceItemController.get('isNNCheckpointTooOld')).to.equal(test.result);
+      });
     });
   });
 
@@ -481,7 +923,7 @@ describe('App.MainServiceItemController', function () {
     });
   });
 
-  describe("#isSopDisabled", function () {
+  describe("#isStopDisabled", function () {
     var tests = [
       {
         content: {
@@ -555,6 +997,16 @@ describe('App.MainServiceItemController', function () {
   });
 
   describe("#runSmokeTestPrimary", function () {
+    beforeEach(function () {
+      sinon.stub(App, 'get').withArgs('clusterName').returns('myCluster');
+      sinon.spy($, 'ajax');
+    });
+
+    afterEach(function () {
+      App.get.restore();
+      $.ajax.restore();
+    });
+
     var tests = [
       {
         data: {
@@ -567,8 +1019,25 @@ describe('App.MainServiceItemController', function () {
           "command" : "HDFS_SERVICE_CHECK"
         },
         "Requests/resource_filters": [{"service_name" : "HDFS"}]
+      },
+      {
+        data: {
+          'serviceName': "KERBEROS",
+          'displayName': "Kerberos",
+          'query': "test"
+        },
+        "RequestInfo": {
+          "context": "Kerberos Service Check",
+          "command" : "KERBEROS_SERVICE_CHECK",
+          "operation_level": {
+            "level": "CLUSTER",
+            "cluster_name": "myCluster"
+          }
+        },
+        "Requests/resource_filters": [{"service_name" : "KERBEROS"}]
       }
     ];
+
     tests.forEach(function (test) {
 
       var mainServiceItemController = App.MainServiceItemController.create({content: {serviceName: test.data.serviceName,
@@ -576,21 +1045,16 @@ describe('App.MainServiceItemController', function () {
       beforeEach(function () {
         mainServiceItemController.set("runSmokeTestErrorCallBack", Em.K);
         mainServiceItemController.set("runSmokeTestSuccessCallBack", Em.K);
-        sinon.spy($, 'ajax');
       });
 
-      afterEach(function () {
-        $.ajax.restore();
-      });
-
-      it('send request to run smoke test', function () {
-
+      it('send request to run smoke test for ' + test.data.serviceName, function () {
         mainServiceItemController.runSmokeTestPrimary(test.data.query);
         expect($.ajax.calledOnce).to.equal(true);
 
         expect(JSON.parse($.ajax.args[0][0].data).RequestInfo.context).to.equal(test.RequestInfo.context);
         expect(JSON.parse($.ajax.args[0][0].data).RequestInfo.command).to.equal(test.RequestInfo.command);
         expect(JSON.parse($.ajax.args[0][0].data)["Requests/resource_filters"][0].serviceName).to.equal(test["Requests/resource_filters"][0].serviceName);
+        expect(JSON.parse($.ajax.args[0][0].data).RequestInfo.operation_level).to.be.deep.equal(test.RequestInfo.operation_level);
       });
     });
   });
@@ -600,28 +1064,43 @@ describe('App.MainServiceItemController', function () {
 
     var mainServiceItemController = App.MainServiceItemController.create({
       content: {
-        hostComponents: [
+        clientComponents: [
           Em.Object.create({
-            isClient: true
+            totalCount: 1,
+            componentName: 'C1',
+            displayName: 'd1'
           })
-        ]
+        ],
+        serviceName: 'S1'
       }
     });
 
     beforeEach(function () {
-      sinon.stub($, 'fileDownload', function() {
-        return {
-          fail: function() { return false; }
-        }
-      });
+      sinon.stub(componentsUtils, 'downloadClientConfigs', Em.K);
     });
     afterEach(function () {
-      $.fileDownload.restore();
+      componentsUtils.downloadClientConfigs.restore();
     });
 
     it('should launch $.fileDownload method', function () {
       mainServiceItemController.downloadClientConfigs();
-      expect($.fileDownload.calledOnce).to.be.true;
+      expect(componentsUtils.downloadClientConfigs.calledWith({
+        serviceName: 'S1',
+        componentName: 'C1',
+        displayName: 'd1'
+      })).to.be.true;
+    });
+    it('should launch $.fileDownload method, event passed', function () {
+      var event = {
+        label: 'label1',
+        name: 'name1'
+      };
+      mainServiceItemController.downloadClientConfigs(event);
+      expect(componentsUtils.downloadClientConfigs.calledWith({
+        serviceName: 'S1',
+        componentName: 'name1',
+        displayName: 'label1'
+      })).to.be.true;
     });
   });
 

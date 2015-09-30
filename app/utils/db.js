@@ -34,12 +34,20 @@ var InitialData =  {
   'Installer' : {},
   'AddHost' : {},
   'AddService' : {},
+  'WidgetWizard' : {},
+  'KerberosWizard': {},
   'StackUpgrade' : {},
   'ReassignMaster' : {},
   'AddSecurity': {},
+  'AddAlertDefinition': {
+    content: {}
+  },
   'HighAvailabilityWizard': {},
   'RMHighAvailabilityWizard': {},
+  'RAHighAvailabilityWizard': {},
   'RollbackHighAvailabilityWizard': {},
+  'MainAdminStackAndUpgrade': {},
+  'KerberosDisable': {},
   'tmp': {}
 
 };
@@ -125,6 +133,24 @@ App.db.get = function (namespace, key) {
   return App.db.data[namespace][key];
 };
 
+/**
+ *
+ * @param {string} namespace
+ * @param {string[]} listOfProperties
+ * @returns {object}
+ */
+App.db.getProperties = function (namespace, listOfProperties) {
+  App.db.data = localStorage.getObject('ambari');
+  if (!App.db.data[namespace]) {
+    App.db.data[namespace] = {};
+  }
+  var ret = {};
+  listOfProperties.forEach(function (k) {
+    ret[k] = App.db.data[namespace][k];
+  });
+  return ret;
+};
+
 App.db.set = function (namespace, key, value) {
   console.log('TRACE: Entering db:set' + key + ';value: ', value);
   App.db.data = localStorage.getObject('ambari');
@@ -132,6 +158,24 @@ App.db.set = function (namespace, key, value) {
     App.db.data[namespace] = {};
   }
   App.db.data[namespace][key] = value;
+  localStorage.setObject('ambari', App.db.data);
+};
+
+/**
+ *
+ * @param {string} namespace
+ * @param {{key: value}} hash
+ */
+App.db.setProperties = function (namespace, hash) {
+  App.db.data = localStorage.getObject('ambari');
+  if (!App.db.data[namespace]) {
+    App.db.data[namespace] = {};
+  }
+  for (var k in hash) {
+    if (hash.hasOwnProperty(k)) {
+      App.db.data[namespace][k] = hash[k];
+    }
+  }
   localStorage.setObject('ambari', App.db.data);
 };
 /*
@@ -289,12 +333,6 @@ App.db.setServiceConfigs = function (serviceConfigs) {
   localStorage.setObject('ambari', App.db.data);
 };
 
-App.db.setAdvancedServiceConfig = function (serviceConfigs) {
-  App.db.data = localStorage.getObject('ambari');
-  App.db.data.Installer.advanceServiceConfigs = serviceConfigs;
-  localStorage.setObject('ambari', App.db.data);
-};
-
 App.db.setServiceConfigProperties = function (configProperties) {
   App.db.data = localStorage.getObject('ambari');
   App.db.data.Installer.configProperties = configProperties;
@@ -358,6 +396,7 @@ App.db.setConfigs = function (configs) {
  */
 App.db.setWizardCurrentStep = function (wizardType, currentStep) {
   console.log('TRACE: Entering db:setWizardCurrentStep function');
+  App.db.data = localStorage.getObject('ambari');
   App.db.data[wizardType.capitalize()].currentStep = currentStep;
   localStorage.setObject('ambari', App.db.data);
 };
@@ -526,6 +565,12 @@ App.db.setReassignMasterWizardReassignHosts = function (reassignHosts) {
   localStorage.setObject('ambari', App.db.data);
 };
 
+App.db.setKerberosWizardConfigTag = function (tag) {
+  App.db.data = localStorage.getObject('ambari');
+  App.db.data.KerberosWizard[tag.name] = tag.value;
+  localStorage.setObject('ambari', App.db.data);
+};
+
 /*
  *  getter methods
  */
@@ -672,11 +717,6 @@ App.db.getSlaveComponentHosts = function () {
 App.db.getServiceConfigs = function () {
   App.db.data = localStorage.getObject('ambari');
   return App.db.data.Installer.serviceConfigs;
-};
-
-App.db.getAdvancedServiceConfig = function () {
-  App.db.data = localStorage.getObject('ambari');
-  return App.db.data.Installer.advanceServiceConfigs;
 };
 
 App.db.getServiceConfigProperties = function () {
@@ -840,6 +880,11 @@ App.db.getConfigs = function () {
 App.db.getReassignMasterWizardReassignHosts = function () {
   App.db.data = localStorage.getObject('ambari');
   return App.db.data.ReassignMaster.reassignHosts;
+};
+
+App.db.getKerberosWizardConfigTag = function (tag) {
+  App.db.data = localStorage.getObject('ambari');
+  return App.db.data.KerberosWizard[tag];
 };
 
 module.exports = App.db;

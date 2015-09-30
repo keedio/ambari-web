@@ -52,19 +52,21 @@ App.MainHostDetailsView = Em.View.extend({
       {action: 'stopAllComponents', liClass: (this.get('controller.content.isNotHeartBeating')?'disabled':'enabled'), cssClass: 'icon-stop', 'label': this.t('hosts.host.details.stopAllComponents')},
       {action: 'restartAllComponents', liClass: (this.get('controller.content.isNotHeartBeating')?'disabled':'enabled'), cssClass: 'icon-repeat', 'label': this.t('hosts.host.details.restartAllComponents')},
       {action: 'onOffPassiveModeForHost', liClass:'', cssClass: 'icon-medkit', active:this.get('isActive'), 'label': this.t('passiveState.turn' + onOff)},
-      {action: 'deleteHost', liClass:'', cssClass: 'icon-remove', 'label': this.t('hosts.host.details.deleteHost')}];
+      {action: 'deleteHost', liClass:'', cssClass: 'icon-remove', 'label': this.t('hosts.host.details.deleteHost')},
+      {action: 'setRackId', liClass:'', cssClass: 'icon-gear', 'label': this.t('hosts.host.details.setRackId')}
+    ];
   }.property('controller.content','isActive', 'controller.content.isNotHeartBeating'),
   didInsertElement: function() {
     var self = this;
 
-    this.set('isLoaded', false);
+    this.set('isLoaded', App.Host.find(this.get('content.id')).get('isLoaded'));
     App.router.get('updateController').updateHost(function () {
       self.set('isLoaded', true);
+      App.tooltip($("[rel='HealthTooltip']"));
       if (!self.get('content.isLoaded')) {
         //if host is not existed then route to list of hosts
         App.router.transitionTo('main.hosts.index');
       }
     });
-    App.tooltip($("[rel='HealthTooltip']"));
   }
 });

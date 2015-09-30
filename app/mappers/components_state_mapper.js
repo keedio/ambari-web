@@ -31,10 +31,12 @@ App.componentsStateMapper = App.QuickDataMapper.create({
     service_name: 'ServiceComponentInfo.service_name',
     installed_count: 'ServiceComponentInfo.installed_count',
     started_count: 'ServiceComponentInfo.started_count',
-    total_count: 'ServiceComponentInfo.total_count'
+    total_count: 'ServiceComponentInfo.total_count',
+    host_names: 'host_names'
   },
 
   slaveModel: App.SlaveComponent,
+  masterModel: App.MasterComponent,
 
   paths: {
     INSTALLED_PATH: 'ServiceComponentInfo.installed_count',
@@ -47,20 +49,25 @@ App.componentsStateMapper = App.QuickDataMapper.create({
       data_nodes_installed: 'INSTALLED_PATH',
       data_nodes_total: 'TOTAL_PATH'
     },
+    'NFS_GATEWAY': {
+      nfs_gateways_started: 'STARTED_PATH',
+      nfs_gateways_installed: 'INSTALLED_PATH',
+      nfs_gateways_total: 'TOTAL_PATH'
+    },
     'NODEMANAGER': {
       node_managers_started: 'STARTED_PATH',
       node_managers_installed: 'INSTALLED_PATH',
       node_managers_total: 'TOTAL_PATH'
     },
-    'TASKTRACKER': {
-      task_trackers_started: 'STARTED_PATH',
-      task_trackers_installed: 'INSTALLED_PATH',
-      task_trackers_total: 'TOTAL_PATH'
-    },
     'HBASE_REGIONSERVER': {
       region_servers_started: 'STARTED_PATH',
       region_servers_installed: 'INSTALLED_PATH',
       region_servers_total: 'TOTAL_PATH'
+    },
+    'PHOENIX_QUERY_SERVER': {
+      phoenix_servers_started: 'STARTED_PATH',
+      phoenix_servers_installed: 'INSTALLED_PATH',
+      phoenix_servers_total: 'TOTAL_PATH'
     },
     'GANGLIA_MONITOR': {
       ganglia_monitors_started: 'STARTED_PATH',
@@ -140,6 +147,7 @@ App.componentsStateMapper = App.QuickDataMapper.create({
 
     var clients = [];
     var slaves = [];
+    var masters = [];
 
     if (json.items) {
       json.items.forEach(function (item) {
@@ -150,22 +158,27 @@ App.componentsStateMapper = App.QuickDataMapper.create({
         var cacheService = App.cache['services'].findProperty('ServiceInfo.service_name', item.ServiceComponentInfo.service_name);
 
         if (item.ServiceComponentInfo.category === 'CLIENT') {
+          item.host_names = item.host_components.mapProperty('HostRoles.host_name');
           clients.push(this.parseIt(item, this.clientMap));
-        }
-        if (item.ServiceComponentInfo.category === 'SLAVE') {
+        } else if (item.ServiceComponentInfo.category === 'SLAVE') {
           // for now map for slaves and clients are equal but it may vary in future.
+          item.host_names = item.host_components.mapProperty('HostRoles.host_name');
           slaves.push(this.parseIt(item, this.clientMap));
+        } else if (item.ServiceComponentInfo.category === 'MASTER') {
+          item.host_names = item.host_components.mapProperty('HostRoles.host_name');
+          masters.push(this.parseIt(item, this.clientMap));
         }
-
-        cacheService.client_components = clients.filterProperty('service_name', cacheService.ServiceInfo.service_name).mapProperty('component_name');
-        cacheService.slave_components = slaves.filterProperty('service_name', cacheService.ServiceInfo.service_name).mapProperty('component_name');
-
-        for (var i in parsedItem) {
-          if (service.get('isLoaded')) {
-            cacheService[i] = parsedItem[i];
-            service.set(stringUtils.underScoreToCamelCase(i), parsedItem[i]);
-            if (extendedModel) {
-              extendedModel.set(stringUtils.underScoreToCamelCase(i), parsedItem[i]);
+        if (cacheService) {
+          cacheService.client_components = clients.filterProperty('service_name', cacheService.ServiceInfo.service_name).mapProperty('component_name');
+          cacheService.slave_components = slaves.filterProperty('service_name', cacheService.ServiceInfo.service_name).mapProperty('component_name');
+          cacheService.master_components = masters.filterProperty('service_name', cacheService.ServiceInfo.service_name).mapProperty('component_name');
+          for (var i in parsedItem) {
+            if (service.get('isLoaded')) {
+              cacheService[i] = parsedItem[i];
+              service.set(stringUtils.underScoreToCamelCase(i), parsedItem[i]);
+              if (extendedModel && extendedModel.get('isLoaded')) {
+                extendedModel.set(stringUtils.underScoreToCamelCase(i), parsedItem[i]);
+              }
             }
           }
         }
@@ -173,6 +186,7 @@ App.componentsStateMapper = App.QuickDataMapper.create({
     }
     App.store.loadMany(this.clientModel, clients);
     App.store.loadMany(this.slaveModel, slaves);
+    App.store.loadMany(this.masterModel, masters);
 
     console.timeEnd('App.componentsStateMapper execution time');
   }

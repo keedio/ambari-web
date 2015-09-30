@@ -19,85 +19,8 @@
 
 var App = require('app');
 
-App.AddServiceView = Em.View.extend({
+App.AddServiceView = Em.View.extend(App.WizardMenuMixin, {
 
-  templateName: require('templates/main/service/add'),
+  templateName: require('templates/main/service/add')
 
-  isLoaded: false,
-
-  isStep1Disabled: function () {
-    return this.isStepDisabled(1);
-  }.property('controller.isStepDisabled.@each.value').cacheable(),
-
-  isStep2Disabled: function () {
-    return this.isStepDisabled(2);
-  }.property('controller.isStepDisabled.@each.value').cacheable(),
-
-  isStep3Disabled: function () {
-    return this.isStepDisabled(3);
-  }.property('controller.isStepDisabled.@each.value').cacheable(),
-
-  isStep4Disabled: function () {
-    return this.isStepDisabled(4);
-  }.property('controller.isStepDisabled.@each.value').cacheable(),
-
-  isStep5Disabled: function () {
-    return this.isStepDisabled(5);
-  }.property('controller.isStepDisabled.@each.value').cacheable(),
-
-  isStep6Disabled: function () {
-    return this.isStepDisabled(6);
-  }.property('controller.isStepDisabled.@each.value').cacheable(),
-
-  isStep7Disabled: function () {
-    return this.isStepDisabled(7);
-  }.property('controller.isStepDisabled.@each.value').cacheable(),
-
-  isStepDisabled: function (index) {
-    return this.get('controller.isStepDisabled').findProperty('step', index).get('value');
-  },
-
-  willInsertElement: function () {
-    this.loadHosts();
-  },
-
-  /**
-   * send request to fetch all hosts information
-   */
-  loadHosts: function () {
-    App.ajax.send({
-      name: 'hosts.confirmed',
-      sender: this,
-      data: {},
-      success: 'loadHostsSuccessCallback',
-      error: 'loadHostsErrorCallback'
-    });
-  },
-
-  loadHostsSuccessCallback: function (response) {
-    var installedHosts = {};
-
-    response.items.forEach(function (item, indx) {
-      installedHosts[item.Hosts.host_name] = {
-        name: item.Hosts.host_name,
-        cpu: item.Hosts.cpu_count,
-        memory: item.Hosts.total_mem,
-        disk_info: item.Hosts.disk_info,
-        osType: item.Hosts.os_type,
-        osArch: item.Hosts.os_arch,
-        ip: item.Hosts.ip,
-        bootStatus: "REGISTERED",
-        isInstalled: true,
-        hostComponents: item.host_components,
-        id: indx++
-      };
-    });
-    this.get('controller').setDBProperty('hosts', installedHosts);
-    this.set('controller.content.hosts', installedHosts);
-    this.set('isLoaded', true);
-  },
-
-  loadHostsErrorCallback: function(){
-    this.set('isLoaded', true);
-  }
 });

@@ -36,6 +36,15 @@ describe('App.TableView', function () {
     App.db.cleanUp();
   });
 
+  describe('#init', function() {
+
+    it('should set filterConditions on instance', function() {
+      var tableView = App.TableView.create();
+      expect(tableView.get('filterConditions') === App.TableView.prototype.filterConditions).to.be.false;
+    });
+
+  });
+
   describe('#updatePaging', function() {
 
     beforeEach(function() {
@@ -252,6 +261,124 @@ describe('App.TableView', function () {
       view.set('displayLength', displayLength);
       view.previousPage();
       expect(view.get('startIndex')).to.equal(40);
+    });
+
+  });
+
+  describe("#showFilteredContent", function() {
+    beforeEach(function() {
+      view = App.TableView.create({});
+    });
+
+    it('hide clear filters link', function () {
+      view.set('filterConditions', []);
+      expect(view.get('showFilteredContent')).to.be.false;
+    });
+
+    it('shows clear filters link', function () {
+      view.set('filterConditions', [{value: "1"}]);
+      expect(view.get('showFilteredContent')).to.be.true;
+    });
+
+    it('shows clear filters link for array filter', function () {
+      view.set('filterConditions', [{value: ["1", "2"]}]);
+      expect(view.get('showFilteredContent')).to.be.true;
+    });
+  });
+
+  describe('#filter', function () {
+
+    var cases = [
+      {
+        filterConditions: [
+          {
+            iColumn: 1,
+            type: 'string',
+            value: 'v0'
+          }
+        ],
+        content: [
+          Em.Object.create({
+            c0: 'v0'
+          }),
+          Em.Object.create({
+            c1: 'v1'
+          })
+        ],
+        filteredContent: [],
+        title: 'no matches'
+      },
+      {
+        filterConditions: [
+          {
+            iColumn: 0,
+            type: 'string',
+            value: 'v1'
+          }
+        ],
+        content: [
+          Em.Object.create({
+            c0: 'v1'
+          }),
+          Em.Object.create({
+            c0: 'v11'
+          }),
+          Em.Object.create({
+            c1: 'v01'
+          })
+        ],
+        filteredContent: [
+          Em.Object.create({
+            c0: 'v1'
+          }),
+          Em.Object.create({
+            c0: 'v11'
+          })
+        ],
+        title: 'matches present'
+      },
+      {
+        filterConditions: [],
+        content: [
+          Em.Object.create({
+            c0: 'v0'
+          }),
+          Em.Object.create({
+            c1: 'v1'
+          })
+        ],
+        filteredContent: [
+          Em.Object.create({
+            c0: 'v0'
+          }),
+          Em.Object.create({
+            c1: 'v1'
+          })
+        ],
+        title: 'no filter conditions'
+      },
+      {
+        filterConditions: [],
+        filteredContent: [],
+        title: 'no filter conditions, no content'
+      }
+    ];
+
+    beforeEach(function () {
+      view = App.TableView.create({
+        colPropAssoc: ['c0', 'c1']
+      });
+    });
+
+    cases.forEach(function (item) {
+      it(item.title, function () {
+        view.setProperties({
+          filterConditions: item.filterConditions,
+          content: item.content
+        });
+        view.filter();
+        expect(view.get('filteredContent')).to.eql(item.filteredContent);
+      });
     });
 
   });

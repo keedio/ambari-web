@@ -51,12 +51,6 @@ App.HostTableMenuView = Em.View.extend({
       componentNameFormatted: Em.I18n.t('dashboard.services.hbase.regionServers')
     }),
     Em.Object.create({
-      serviceName: 'MAPREDUCE',
-      componentName: 'TASKTRACKER',
-      masterComponentName: 'JOBTRACKER',
-      componentNameFormatted: Em.I18n.t('dashboard.services.mapreduce.taskTrackers')
-    }),
-    Em.Object.create({
       serviceName: 'STORM',
       componentName: 'SUPERVISOR',
       masterComponentName: 'SUPERVISOR',
@@ -243,7 +237,7 @@ App.HostTableMenuView = Em.View.extend({
      * @returns {Array}
      */
     operationsInfo: function () {
-      return Em.A([
+      return [
         Em.Object.create({
           label: Em.I18n.t('hosts.host.details.startAllComponents'),
           operationData: Em.Object.create({
@@ -282,8 +276,15 @@ App.HostTableMenuView = Em.View.extend({
             action: 'PASSIVE_STATE',
             message: Em.I18n.t('passiveState.turnOffFor').format('hosts')
           })
+        }),
+        Em.Object.create({
+          label: Em.I18n.t('hosts.host.details.setRackId'),
+          operationData: Em.Object.create({
+            action: 'SET_RACK_INFO',
+            message: Em.I18n.t('hosts.host.details.setRackId').format('hosts')
+          })
         })
-      ]);
+      ];
     }.property(),
 
     /**

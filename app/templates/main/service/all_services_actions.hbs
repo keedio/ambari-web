@@ -16,14 +16,13 @@
 * limitations under the License.
 }}
 
-{{#if App.isAdmin}}
+{{#isAccessible ADMIN}}
   <div class="service-button" style="margin-top: 10px;">
     <div class="btn-group display-inline-block span11 offset1">
       <a class="btn dropdown-toggle span10" data-toggle="dropdown" href="#">{{t common.actions}}
         <span class="caret"></span>
       </a>
       <ul class="pull-left dropdown-menu">
-        {{#if App.supports.addServices}}
           <li {{bindAttr class="controller.isAllServicesInstalled:disabled"}}>
             <a href="#"
               {{bindAttr class="controller.isAllServicesInstalled:disabled"}}
@@ -31,8 +30,6 @@
               <i class="icon-plus icon-white"></i> {{t services.service.add}}</a>
           </li>
           <li class="divider"></li>
-        {{/if}}
-        {{#if App.supports.startStopAllServices}}
           <li {{bindAttr class="controller.isStartAllDisabled:disabled" }}>
             <a href="#" data-toggle="modal"
               {{bindAttr class="controller.isStartAllDisabled:disabled" }}
@@ -49,8 +46,7 @@
               {{t services.service.stopAll}}
             </a>
           </li>
-        {{/if}}
       </ul>
     </div>
   </div>
-{{/if}}
+{{/isAccessible}}

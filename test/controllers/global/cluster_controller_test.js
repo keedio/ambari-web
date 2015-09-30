@@ -24,13 +24,14 @@ require('utils/http_client');
 require('models/service');
 require('models/host');
 require('utils/ajax/ajax');
+require('utils/string_utils');
 
 var modelSetup = require('test/init_model_test');
 
 describe('App.clusterController', function () {
   var controller = App.ClusterController.create();
   App.Service.FIXTURES = [
-    {service_name: 'NAGIOS'}
+    {service_name: 'GANGLIA'}
   ];
 
   describe('#updateLoadStatus()', function () {
@@ -68,10 +69,10 @@ describe('App.clusterController', function () {
       modelSetup.setupStackVersion(this, 'HDP-2.0.5');
       sinon.stub(App.ajax, 'send', function () {
         return {
-          complete: function (callback) {
+          then: function (successCallback) {
             App.set('clusterName', 'clusterNameFromServer');
             App.set('currentStackVersion', 'HDP-2.0.5');
-            callback();
+            successCallback();
           }
         }
       });
@@ -106,7 +107,7 @@ describe('App.clusterController', function () {
 
   });
 
-  describe('#loadClusterNameSuccessCallback', function () {
+  describe('#reloadSuccessCallback', function () {
     var test_data = {
       "items": [
         {
@@ -118,16 +119,9 @@ describe('App.clusterController', function () {
       ]
     };
     it('Check cluster', function () {
-      controller.loadClusterNameSuccessCallback(test_data);
+      controller.reloadSuccessCallback(test_data);
       expect(App.get('clusterName')).to.equal('tdk');
       expect(App.get('currentStackVersion')).to.equal('HDP-1.3.0');
-    });
-  });
-
-  describe('#loadClusterNameErrorCallback', function () {
-    controller.loadClusterNameErrorCallback();
-    it('', function () {
-      expect(controller.get('isLoaded')).to.equal(true);
     });
   });
 
@@ -200,235 +194,208 @@ describe('App.clusterController', function () {
     });
   });
 
-  describe('#setGangliaUrl()', function () {
-    beforeEach(function () {
-      controller.set('gangliaUrl', null);
-    });
-
-    it('testMode = true', function () {
-      App.testMode = true;
-      controller.setGangliaUrl();
-      expect(controller.get('gangliaUrl')).to.equal('http://gangliaserver/ganglia/?t=yes');
-      expect(controller.get('isGangliaUrlLoaded')).to.be.true;
-    });
-    it('Cluster is not loaded', function () {
-      App.testMode = false;
-      controller.set('isLoaded', false);
-      controller.setGangliaUrl();
-      expect(controller.get('gangliaUrl')).to.equal(null);
-    });
-    it('GANGLIA_SERVER component is absent', function () {
-      controller.set('isLoaded', true);
-      App.testMode = false;
-      sinon.stub(App.HostComponent, 'find', function(){
-        return [];
+  describe("#createKerberosAdminSession()", function() {
+    before(function () {
+      sinon.stub(App.ajax, 'send', function() {
+        return {success: Em.K}
       });
-      controller.setGangliaUrl();
-      expect(controller.get('gangliaUrl')).to.equal(null);
-      App.HostComponent.find.restore();
     });
-    it('Ganglia Server host is "GANGLIA_host"', function () {
-      controller.set('isLoaded', true);
-      App.testMode = false;
-      sinon.stub(App.HostComponent, 'find', function(){
-        return [Em.Object.create({
-          componentName: 'GANGLIA_SERVER',
-          hostName: 'GANGLIA_host'
-        })];
-      });
-      sinon.spy(App.ajax, 'send');
-
-      controller.setGangliaUrl();
-      expect(App.ajax.send.calledOnce).to.be.true;
-      expect(controller.get('isGangliaUrlLoaded')).to.be.false;
-
-      App.HostComponent.find.restore();
+    after(function () {
       App.ajax.send.restore();
+    });
+    it("make ajax call", function() {
+      controller.createKerberosAdminSession("admin", "pass", {});
+      expect(App.ajax.send.getCall(0).args[0]).to.eql({
+        name: 'common.cluster.update',
+        sender: controller,
+        data: {
+          clusterName: App.get('clusterName'),
+          data: [{
+            session_attributes: {
+              kerberos_admin: {principal: "admin", password: "pass"}
+            }
+          }]
+        }
+      });
     });
   });
 
-  describe('#setNagiosUrl()', function () {
-    beforeEach(function () {
-      controller.set('nagiosUrl', null);
-    });
+  describe('#checkDetailedRepoVersion()', function () {
 
-    it('testMode = true', function () {
-      App.testMode = true;
-      controller.setNagiosUrl();
-      expect(controller.get('nagiosUrl')).to.equal('http://nagiosserver/nagios');
-      expect(controller.get('isNagiosUrlLoaded')).to.be.true;
-
-    });
-    it('Cluster is not loaded', function () {
-      App.testMode = false;
-      controller.set('isLoaded', false);
-      controller.setNagiosUrl();
-      expect(controller.get('nagiosUrl')).to.equal(null);
-    });
-    it('GANGLIA_SERVER component is absent', function () {
-      controller.set('isLoaded', true);
-      App.testMode = false;
-      sinon.stub(App.HostComponent, 'find', function(){
-        return [];
-      });
-      controller.setNagiosUrl();
-      expect(controller.get('nagiosUrl')).to.equal(null);
-      App.HostComponent.find.restore();
-    });
-    it('Ganglia Server host is "NAGIOS_host"', function () {
-      controller.set('isLoaded', true);
-      App.testMode = false;
-      sinon.stub(App.HostComponent, 'find', function(){
-        return [Em.Object.create({
-          componentName: 'NAGIOS_SERVER',
-          hostName: 'NAGIOS_host'
-        })];
-      });
-      sinon.spy(App.ajax, 'send');
-      controller.setNagiosUrl();
-      expect(App.ajax.send.calledOnce).to.be.true;
-      expect(controller.get('isNagiosUrlLoaded')).to.be.false;
-      App.ajax.send.restore();
-      App.HostComponent.find.restore();
-    });
-  });
-
-  describe('#nagiosWebProtocol', function () {
-    var testCases = [
+    var cases = [
       {
-        title: 'if ambariProperties is null then nagiosWebProtocol should be "http"',
-        data: null,
-        result: 'http'
+        currentStackName: 'HDP',
+        currentStackVersionNumber: '2.1',
+        isStormMetricsSupported: false,
+        title: 'HDP < 2.2'
       },
       {
-        title: 'if ambariProperties is empty object then nagiosWebProtocol should be "http"',
-        data: {},
-        result: 'http'
+        currentStackName: 'HDP',
+        currentStackVersionNumber: '2.3',
+        isStormMetricsSupported: true,
+        title: 'HDP > 2.2'
       },
       {
-        title: 'if nagios.https is false then nagiosWebProtocol should be "http"',
-        data: {'nagios.https': false},
-        result: 'http'
-      },
-      {
-        title: 'if nagios.https is true then nagiosWebProtocol should be "http"',
-        data: {'nagios.https': true},
-        result: 'https'
+        currentStackName: 'BIGTOP',
+        currentStackVersionNumber: '0.8',
+        isStormMetricsSupported: true,
+        title: 'not HDP'
       }
     ];
 
-    testCases.forEach(function (test) {
-      it(test.title, function () {
-        controller.set('ambariProperties', test.data);
-        expect(controller.get('nagiosWebProtocol')).to.equal(test.result);
+    beforeEach(function () {
+      sinon.stub(App.ajax, 'send').returns({
+        promise: Em.K
       });
     });
+
+    afterEach(function () {
+      App.ajax.send.restore();
+      App.get.restore();
+    });
+
+    it('should check detailed repo version for HDP 2.2', function () {
+      sinon.stub(App, 'get').withArgs('currentStackName').returns('HDP').withArgs('currentStackVersionNumber').returns('2.2');
+      controller.checkDetailedRepoVersion();
+      expect(App.ajax.send.calledOnce).to.be.true;
+    });
+
+    cases.forEach(function (item) {
+      it(item.title, function () {
+        sinon.stub(App, 'get', function (key) {
+          return item[key] || Em.get(App, key);
+        });
+        controller.checkDetailedRepoVersion();
+        expect(App.ajax.send.called).to.be.false;
+        expect(App.get('isStormMetricsSupported')).to.equal(item.isStormMetricsSupported);
+      });
+    });
+
   });
 
-  describe('#gangliaWebProtocol', function () {
-    var testCases = [
+  describe('#checkDetailedRepoVersionSuccessCallback()', function () {
+
+    var cases = [
       {
-        title: 'if ambariProperties is null then nagiosWebProtocol should be "http"',
-        data: null,
-        result: 'http'
+        items: [
+          {
+            repository_versions: [
+              {
+                RepositoryVersions: {
+                  repository_version: '2.1'
+                }
+              }
+            ]
+          }
+        ],
+        isStormMetricsSupported: false,
+        title: 'HDP < 2.2.2'
       },
       {
-        title: 'if ambariProperties is empty object then nagiosWebProtocol should be "http"',
-        data: {},
-        result: 'http'
+        items: [
+          {
+            repository_versions: [
+              {
+                RepositoryVersions: {
+                  repository_version: '2.2.2'
+                }
+              }
+            ]
+          }
+        ],
+        isStormMetricsSupported: true,
+        title: 'HDP 2.2.2'
       },
       {
-        title: 'if nagios.https is false then nagiosWebProtocol should be "http"',
-        data: {'ganglia.https': false},
-        result: 'http'
+        items: [
+          {
+            repository_versions: [
+              {
+                RepositoryVersions: {
+                  repository_version: '2.2.3'
+                }
+              }
+            ]
+          }
+        ],
+        isStormMetricsSupported: true,
+        title: 'HDP > 2.2.2'
       },
       {
-        title: 'if nagios.https is true then nagiosWebProtocol should be "http"',
-        data: {'ganglia.https': true},
-        result: 'https'
+        items: null,
+        isStormMetricsSupported: true,
+        title: 'empty response'
+      },
+      {
+        items: [],
+        isStormMetricsSupported: true,
+        title: 'no items'
+      },
+      {
+        items: [{}],
+        isStormMetricsSupported: true,
+        title: 'empty item'
+      },
+      {
+        items: [{
+          repository_versions: []
+        }],
+        isStormMetricsSupported: true,
+        title: 'no versions'
+      },
+      {
+        items: [{
+          repository_versions: [{}]
+        }],
+        isStormMetricsSupported: true,
+        title: 'no version info'
+      },
+      {
+        items: [{
+          repository_versions: [
+            {
+              RepositoryVersions: {}
+            }
+          ]
+        }],
+        isStormMetricsSupported: true,
+        title: 'empty version info'
       }
     ];
 
-    testCases.forEach(function (test) {
-      it(test.title, function () {
-        controller.set('ambariProperties', test.data);
-        expect(controller.get('gangliaWebProtocol')).to.equal(test.result);
+    cases.forEach(function (item) {
+      it(item.title, function () {
+        controller.checkDetailedRepoVersionSuccessCallback({
+          items: item.items
+        });
+        expect(App.get('isStormMetricsSupported')).to.equal(item.isStormMetricsSupported);
       });
+    });
+
+  });
+
+  describe('#checkDetailedRepoVersionErrorCallback()', function () {
+    it('should set isStormMetricsSupported to default value', function () {
+      controller.checkDetailedRepoVersionErrorCallback();
+      expect(App.get('isStormMetricsSupported')).to.be.true;
     });
   });
 
+  describe('#getAllUpgrades()', function () {
 
-  describe('#setGangliaUrlSuccessCallback()', function () {
+    beforeEach(function () {
+      sinon.stub(App.ajax, 'send', Em.K);
+    });
 
-    it('Query return no hosts', function () {
-      controller.setGangliaUrlSuccessCallback({items: []});
-      expect(controller.get('gangliaUrl')).to.equal(null);
-      expect(controller.get('isGangliaUrlLoaded')).to.be.true;
+    afterEach(function () {
+      App.ajax.send.restore();
     });
-    it('App.singleNodeInstall is true', function () {
-      controller.reopen({
-        gangliaWebProtocol: 'http'
-      });
-      App.set('singleNodeInstall', true);
-      App.set('singleNodeAlias', 'localhost');
-      controller.setGangliaUrlSuccessCallback({items: [{
-        Hosts: {
-          public_host_name: 'host1'
-        }
-      }]});
-      expect(controller.get('gangliaUrl')).to.equal('http://localhost:42080/ganglia');
-      expect(controller.get('isGangliaUrlLoaded')).to.be.true;
+
+    it('should send request to get upgrades data', function () {
+      controller.getAllUpgrades();
+      expect(App.ajax.send.calledOnce).to.be.true;
     });
-    it('App.singleNodeInstall is false', function () {
-      controller.reopen({
-        gangliaWebProtocol: 'http'
-      });
-      App.set('singleNodeInstall', false);
-      App.set('singleNodeAlias', 'localhost');
-      controller.setGangliaUrlSuccessCallback({items: [{
-        Hosts: {
-          public_host_name: 'host1'
-        }
-      }]});
-      expect(controller.get('gangliaUrl')).to.equal('http://host1/ganglia');
-      expect(controller.get('isGangliaUrlLoaded')).to.be.true;
-    });
+
   });
 
-  describe('#setNagiosUrlSuccessCallback()', function () {
-
-    it('Query return no hosts', function () {
-      controller.setNagiosUrlSuccessCallback({items: []});
-      expect(controller.get('nagiosUrl')).to.equal(null);
-      expect(controller.get('isNagiosUrlLoaded')).to.be.true;
-    });
-    it('App.singleNodeInstall is true', function () {
-      controller.reopen({
-        nagiosWebProtocol: 'http'
-      });
-      App.set('singleNodeInstall', true);
-      App.set('singleNodeAlias', 'localhost');
-      controller.setNagiosUrlSuccessCallback({items: [{
-        Hosts: {
-          public_host_name: 'host1'
-        }
-      }]});
-      expect(controller.get('nagiosUrl')).to.equal('http://localhost:42080/nagios');
-      expect(controller.get('isNagiosUrlLoaded')).to.be.true;
-    });
-    it('App.singleNodeInstall is false', function () {
-      controller.reopen({
-        nagiosWebProtocol: 'http'
-      });
-      App.set('singleNodeInstall', false);
-      App.set('singleNodeAlias', 'localhost');
-      controller.setNagiosUrlSuccessCallback({items: [{
-        Hosts: {
-          public_host_name: 'host1'
-        }
-      }]});
-      expect(controller.get('nagiosUrl')).to.equal('http://host1/nagios');
-      expect(controller.get('isNagiosUrlLoaded')).to.be.true;
-    });
-  });
 });

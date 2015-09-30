@@ -19,6 +19,7 @@
 
 var App = require('app');
 require('views/wizard/step5_view');
+var stringUtils = require('utils/string_utils');
 var view;
 
 describe('App.WizardStep5View', function() {
@@ -26,6 +27,64 @@ describe('App.WizardStep5View', function() {
   beforeEach(function() {
     view = App.WizardStep5View.create({
       controller: App.WizardStep5Controller.create({})
+    });
+  });
+
+  describe("#title", function() {
+    beforeEach(function () {
+      view.set('controller.content', Em.Object.create());
+    });
+
+    it("controller name is reassignMasterController", function() {
+      view.set('controller.content.controllerName', 'reassignMasterController');
+      view.propertyDidChange('title');
+      expect(view.get('title')).to.equal(Em.I18n.t('installer.step5.reassign.header'));
+    });
+    it("controller name is ''", function() {
+      view.set('controller.content.controllerName', '');
+      view.propertyDidChange('title');
+      expect(view.get('title')).to.equal(Em.I18n.t('installer.step5.header'));
+    });
+  });
+
+  describe("#setCoHostedComponentText()", function () {
+    beforeEach(function () {
+      sinon.stub(App.StackServiceComponent, 'find').returns([
+        Em.Object.create({
+          componentName: 'C1',
+          displayName: 'c1',
+          isOtherComponentCoHosted: true,
+          stackService: {
+            isSelected: true
+          },
+          coHostedComponents: ['C2']
+        }),
+        Em.Object.create({
+          componentName: 'C2',
+          displayName: 'c2',
+          isOtherComponentCoHosted: false,
+          stackService: {
+            isSelected: true
+          }
+        })
+      ]);
+      sinon.stub(stringUtils, 'getFormattedStringFromArray', function(str){
+        return str;
+      });
+    });
+    afterEach(function () {
+      App.StackServiceComponent.find.restore();
+      stringUtils.getFormattedStringFromArray.restore();
+    });
+    it("isReassignWizard - true", function () {
+      view.set('controller.isReassignWizard', true);
+      view.setCoHostedComponentText();
+      expect(view.get('coHostedComponentText')).to.be.empty;
+    });
+    it("isReassignWizard - false", function () {
+      view.set('controller.isReassignWizard', false);
+      view.setCoHostedComponentText();
+      expect(view.get('coHostedComponentText')).to.equal('<br/>' + Em.I18n.t('installer.step5.body.coHostedComponents').format(['c1', 'c2']));
     });
   });
 
@@ -62,20 +121,22 @@ describe('App.SelectHostView', function() {
     });
   });
 
-  describe('#click', function() {
+  describe('#change', function() {
 
     beforeEach(function() {
       sinon.stub(view, 'initContent', Em.K);
+      sinon.stub(view, 'changeHandler', Em.K);
       models.setupStackServiceComponent();
     });
 
     afterEach(function() {
       view.initContent.restore();
+      view.changeHandler.restore();
       models.cleanStackServiceComponent();
     });
 
     it('should call initContent', function() {
-      view.click();
+      view.change();
       expect(view.initContent.calledOnce).to.be.true;
     });
   });
@@ -163,10 +224,10 @@ describe('App.InputHostView', function() {
       expect(view.initContent.calledOnce).to.equal(true);
     });
 
-    it('should set selectedHost host_info to value', function() {
+    it('should set selectedHost host_name to value', function() {
       view.set('value', '');
       view.didInsertElement();
-      expect(view.get('value')).to.equal('h1 info');
+      expect(view.get('value')).to.equal('h1');
     });
 
   });
@@ -177,7 +238,7 @@ describe('App.InputHostView', function() {
       view.get('controller').reopen({multipleComponents: ['HBASE_MASTER', 'ZOOKEEPER_SERVER']});
       view.set('component', {component_name: 'ZOOKEEPER_SERVER', serviceComponentId: 1});
       view.set('controller.hosts', [Em.Object.create({host_info: 'h1 info', host_name: 'h1'})]);
-      view.set('value', 'h1 info');
+      view.set('value', 'h1');
       view.set('controller.rebalanceComponentHostsCounter', 0);
       view.set('controller.componentToRebalance', '');
       sinon.stub(view.get('controller'), 'assignHostToMaster', Em.K);

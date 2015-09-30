@@ -25,7 +25,6 @@ describe.skip('App.ConfigHistoryFlowView', function () {
   var view = App.ConfigHistoryFlowView.create({
     controller: Em.Object.create({
       loadSelectedVersion: Em.K,
-      onConfigGroupChange: Em.K,
       loadStep: Em.K
     }),
     displayedServiceVersion: Em.Object.create(),
@@ -509,12 +508,9 @@ describe.skip('App.ConfigHistoryFlowView', function () {
 
   describe('#compare()', function () {
     it('should set compareServiceVersion', function () {
-      sinon.spy(view.get('controller'), 'onConfigGroupChange');
       view.compare({context: Em.Object.create({version: 1})});
 
       expect(view.get('controller.compareServiceVersion')).to.eql(Em.Object.create({version: 1}));
-      expect(view.get('controller').onConfigGroupChange.calledOnce).to.be.true;
-      view.get('controller').onConfigGroupChange.restore();
     });
   });
 
@@ -573,22 +569,60 @@ describe.skip('App.ConfigHistoryFlowView', function () {
   });
 
   describe('#sendRevertCallSuccess()', function () {
-    it('', function () {
+    beforeEach(function () {
       sinon.spy(view.get('controller'), 'loadStep');
+      sinon.stub(App.router.get('updateController'), 'updateComponentConfig', Em.K);
+    });
+    afterEach(function () {
+      view.get('controller').loadStep.restore();
+      App.router.get('updateController').updateComponentConfig.restore();
+    });
+    it('', function () {
       view.sendRevertCallSuccess();
 
       expect(view.get('controller').loadStep.calledOnce).to.be.true;
-      view.get('controller').loadStep.restore();
+      expect(App.router.get('updateController').updateComponentConfig.calledOnce).to.be.true;
     });
   });
 
   describe('#save()', function () {
-    it('', function () {
+    it('modal popup should be displayed', function () {
       sinon.stub(App.ModalPopup, 'show', Em.K);
       view.save();
 
       expect(App.ModalPopup.show.calledOnce).to.be.true;
       App.ModalPopup.show.restore();
+    });
+
+    it('controller properties should be modified on save', function () {
+      sinon.stub(App.ServiceConfigVersion, 'find').returns([
+        {
+          serviceName: 'service'
+        }
+      ]);
+      view.setProperties({
+        'serviceName': 'service',
+        'controller.saveConfigsFlag': false,
+        'controller.serviceConfigVersionNote': '',
+        'controller.serviceConfigNote': '',
+        'controller.preSelectedConfigVersion': null,
+        'serviceConfigNote': 'note',
+        'displayedServiceVersion.serviceName': 'service',
+        'controller.selectedConfigGroup.name': 'group'
+      });
+      var popup = view.save();
+      popup.onSave();
+      expect(view.get('controller.saveConfigsFlag')).to.be.true;
+      expect(view.get('controller').getProperties(['saveConfigsFlag', 'serviceConfigVersionNote', 'serviceConfigNote', 'preSelectedConfigVersion'])).to.eql({
+        saveConfigsFlag: true,
+        serviceConfigVersionNote: 'note',
+        serviceConfigNote: this.get('serviceConfigNote'),
+        preSelectedConfigVersion: Em.Object.create({
+          version: 2,
+          serviceName: 'service',
+          groupName: 'group'
+        })
+      });
     });
   });
 

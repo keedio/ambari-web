@@ -29,6 +29,8 @@ App.stackMapper = App.QuickDataMapper.create({
     active: 'active',
     parent_stack_version: 'parent_stack_version',
     min_upgrade_version: 'min_upgrade_version',
+    min_jdk_version: 'min_jdk',
+    max_jdk_version: 'max_jdk',
     is_selected: 'is_selected',
     config_types: 'config_types',
     operating_systems_key: 'operating_systems',
@@ -70,7 +72,7 @@ App.stackMapper = App.QuickDataMapper.create({
     var modelOS = this.get('modelOS');
     var modelRepo = this.get('modelRepo');
     var resultStack = [];
-    var resulOS = [];
+    var resultOS = [];
     var resultRepo = [];
 
     var stackVersions = json.items.filterProperty('Versions.active');
@@ -80,13 +82,13 @@ App.stackMapper = App.QuickDataMapper.create({
 
       stack.id = stack.stack_name + "-" + stack.stack_version;
 
-      item.operatingSystems.forEach(function(ops) {
+      item.operating_systems.forEach(function(ops) {
         var operatingSystems = ops.OperatingSystems;
 
         var repositoriesArray = [];
         ops.repositories.forEach(function(repo) {
-          repo.Repositories.id = repo.Repositories.os_type + "-" + repo.Repositories.repo_id;
-          repo.Repositories.os_id = repo.Repositories.stack_name + "-" + repo.Repositories.stack_version + "-" + repo.Repositories.os_type;
+          repo.Repositories.id = [repo.Repositories.stack_name, repo.Repositories.stack_version, repo.Repositories.os_type, repo.Repositories.repo_id].join('-');
+          repo.Repositories.os_id = [repo.Repositories.stack_name, repo.Repositories.stack_version, repo.Repositories.os_type].join('-');
           resultRepo.push(this.parseIt(repo.Repositories, this.get('configRepository')));
           repositoriesArray.pushObject(repo.Repositories);
         }, this);
@@ -95,7 +97,7 @@ App.stackMapper = App.QuickDataMapper.create({
         operatingSystems.id = operatingSystems.stack_name + "-" + operatingSystems.stack_version + "-" + operatingSystems.os_type;
         operatingSystems.stack_id = operatingSystems.stack_name + "-" + operatingSystems.stack_version;
         operatingSystems.repositories = repositoriesArray;
-        resulOS.push(this.parseIt(operatingSystems, this.get('configOS')));
+        resultOS.push(this.parseIt(operatingSystems, this.get('configOS')));
         operatingSystemsArray.pushObject(operatingSystems);
         
       }, this);
@@ -108,7 +110,7 @@ App.stackMapper = App.QuickDataMapper.create({
 
     App.store.commit();
     App.store.loadMany(modelRepo, resultRepo);
-    App.store.loadMany(modelOS, resulOS);
+    App.store.loadMany(modelOS, resultOS);
     App.store.loadMany(modelStack, resultStack);
   }
 });

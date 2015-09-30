@@ -23,49 +23,41 @@ var App = require('app');
  * @type {*}
  */
 App.MainMenuView = Em.CollectionView.extend({
-  tagName:'ul',
-  classNames:['nav', 'top-nav-menu'],
+  tagName: 'ul',
+  classNames: ['nav', 'top-nav-menu'],
 
-  views: function() {
+  views: function () {
     return App.router.get('mainViewsController.ambariViews');
   }.property('App.router.mainViewsController.ambariViews'),
 
-  content: function(){
+  content: function () {
     var result = [];
     if (App.router.get('loggedIn')) {
 
       if (App.router.get('clusterController.isLoaded') && App.get('router.clusterInstallCompleted')) {
 
-          result.push(
-            { label:Em.I18n.t('menu.item.dashboard'), routing:'dashboard', active:'active'},
-            { label:Em.I18n.t('menu.item.services'), routing:'services'},
-            { label:Em.I18n.t('menu.item.hosts'), routing:'hosts', hasAlertsLabel: true}
-          );
-
-          if (App.supports.mirroring && App.Service.find().findProperty('serviceName', 'FALCON')) {
-            result.push({ label:Em.I18n.t('menu.item.mirroring'), routing:'mirroring'});
-          }
-
-          if (!App.get('isHadoop2Stack')) {
-            result.push({ label:Em.I18n.t('menu.item.jobs'), routing:'apps'});
-          }
-
-          if (App.get('isAdmin')) {
-            result.push({ label:Em.I18n.t('menu.item.admin'), routing:'admin'});
-          }
+        result.push(
+          { label: Em.I18n.t('menu.item.dashboard'), routing: 'dashboard', active: 'active'},
+          { label: Em.I18n.t('menu.item.services'), routing: 'services'},
+          { label: Em.I18n.t('menu.item.hosts'), routing: 'hosts', hasAlertsLabel: true},
+          { label: Em.I18n.t('menu.item.alerts'), routing: 'alerts'}
+        );
+        if (App.isAccessible('upgrade_ADMIN')) {
+          result.push({ label: Em.I18n.t('menu.item.admin'), routing: 'admin'});
+        }
       }
-
-      if (App.get('supports.views')) {
-        result.push({ label:Em.I18n.t('menu.item.views'), routing:'views.index', isView:true, views: this.get('views').filterProperty('visible')});
-      }
-
+      result.push({ label: Em.I18n.t('menu.item.views'), routing: 'views.index', isView: true, views: this.get('views').filterProperty('visible')});
     }
     return result;
-  }.property('App.router.loggedIn', 'App.supports.views', 'App.supports.mirroring',
-      'App.supports.secureCluster', 'App.supports.highAvailability', 'views.length',
-      'App.router.clusterController.isLoaded', 'App.router.clusterInstallCompleted'),
+  }.property(
+    'App.router.loggedIn',
+    'views.length',
+    'App.router.clusterController.isLoaded',
+    'App.router.clusterInstallCompleted',
+    'App.router.wizardWatcherController.isWizardRunning'
+  ),
 
-  itemViewClass:Em.View.extend({
+  itemViewClass: Em.View.extend({
 
     classNameBindings: ['active', ':top-nav-dropdown'],
 
@@ -86,6 +78,10 @@ App.MainMenuView = Em.CollectionView.extend({
     alertsCount: function () {
       return App.router.get('mainHostController.hostsCountMap.health-status-WITH-ALERTS');
     }.property('App.router.mainHostController.hostsCountMap'),
+
+    hasCriticalAlerts: function () {
+      return App.router.get('mainHostController.hostsCountMap.health-status-CRITICAL') > 0;
+    }.property('content.hasAlertsLabel', 'alertsCount'),
 
     hasAlertsLabel: function () {
       return this.get('content.hasAlertsLabel') && this.get('alertsCount') > 0;
@@ -113,16 +109,14 @@ App.MainMenuView = Em.CollectionView.extend({
       } else if (event.context === 'views') {
         App.router.route('views');
         return;
+      } else if (event.context === 'alerts') {
+        App.router.set('mainAlertDefinitionsController.showFilterConditionsFirstLoad', false);
       }
       App.router.route('main/' + event.context);
     },
-    goToCategory: function (event) {
-      var itemName = this.get('content').routing;
-      // route to correct category of current menu item
-      if (itemName == 'admin') {
-        App.router.route('main/admin/' + event.context);
-      }
-    },
+
+    selectedAdminItemBinding: 'App.router.mainAdminController.category',
+
     dropdownCategories: function () {
       var itemName = this.get('content').routing;
       var categories = [];
@@ -130,24 +124,41 @@ App.MainMenuView = Em.CollectionView.extend({
       if (itemName == 'admin') {
         categories = [];
         categories.push({
-          name: 'adminRepositories',
-          url: 'repositories',
-          label: Em.I18n.t('common.repositories')
+          name: 'stackAndUpgrade',
+          url: 'stack',
+          label: Em.I18n.t('admin.stackUpgrade.title')
         });
         categories.push({
           name: 'adminServiceAccounts',
           url: 'serviceAccounts',
           label: Em.I18n.t('common.serviceAccounts')
         });
-        if (App.supports.secureCluster) {
+        if (!App.get('isHadoopWindowsStack')) {
           categories.push({
-            name: 'security',
-            url: 'security/',
-            label: Em.I18n.t('common.security')
+            name: 'kerberos',
+            url: 'kerberos/',
+            label: Em.I18n.t('common.kerberos')
           });
         }
       }
       return categories;
-    }.property('')
+    }.property(''),
+
+    AdminDropdownItemView: Ember.View.extend({
+      tagName: 'li',
+      classNameBindings: 'isActive:active'.w(),
+      isActive: function () {
+        return this.get('item') === this.get('parentView.selectedAdminItem');
+      }.property('item', 'parentView.selectedAdminItem'),
+
+      goToCategory: function (event) {
+        var itemName = this.get('parentView').get('content').routing;
+        // route to correct category of current menu item
+        // skip routing to already selected category
+        if (itemName === 'admin' && !this.get('isActive')) {
+          App.router.route('main/admin/' + event.context);
+        }
+      }
+    })
   })
 });

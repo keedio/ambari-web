@@ -97,7 +97,8 @@ App.QuickDataMapper = App.ServerDataMapper.extend({
               result[i].push(this.parseIt(_data[index], config[i]));
             }
           }
-          if(_type == 'array'){
+          // As for 'widgets', just show the original order
+          if(_type == 'array' && i != 'widgets'){
             result[i] = result[i].sort();
           }
         }
@@ -109,7 +110,6 @@ App.QuickDataMapper = App.ServerDataMapper.extend({
   getJsonProperty: function (json, path) {
     var pathArr = path.split('.');
     var current = json;
-    pathArr = this.filterDotted(pathArr);
     while (pathArr.length && current) {
       if (pathArr[0].substr(-1) == ']') {
         var index = parseInt(pathArr[0].substr(-2, 1));
@@ -123,29 +123,6 @@ App.QuickDataMapper = App.ServerDataMapper.extend({
       pathArr.splice(0, 1);
     }
     return current;
-  },
-
-  filterDotted: function(arr) {
-    var buffer = [];
-    var dottedBuffer = [];
-    var dotted = false;
-    arr.forEach(function(item) {
-      if(/\['|\["/.test(item)) {
-        dottedBuffer.push(item.substr(2, item.length));
-        dotted = true;
-      } else if (dotted && !/\]'|"\]/.test(item)) {
-        dottedBuffer.push(item);
-      } else if (/']|"]/.test(item)) {
-        dottedBuffer.push(item.substr(0, item.length - 2));
-        buffer.push(dottedBuffer.join('.'));
-        dotted = false;
-        dottedBuffer = [];
-      } else {
-        buffer.push(item);
-      }
-    });
-
-    return buffer;
   },
 
   /**
@@ -184,15 +161,40 @@ App.QuickDataMapper = App.ServerDataMapper.extend({
     return current;
   },
 
-  calculateState: function (json) {
-//    var stateEqual = (json.desired_status != json.work_status);
-//    if (stateEqual) {
-//      if (json.desired_status == 'STARTED' && json.work_status == 'INSTALLED') {
-//        json.work_status = 'STARTING';
-//      } else if (json.desired_status == 'INSTALLED' && json.work_status == 'STARTED') {
-//        json.work_status = 'STOPPING';
-//      }
-//    }
-    return json;
+  /**
+   * Binary search <code>searchElement</code> in the array (should be sorted!)
+   * @param {number[]|string[]} array
+   * @param {number|string} searchElement
+   * @returns {number} position of the needed element or negative value, if value wasn't found
+   * @method binaryIndexOf
+   */
+  binaryIndexOf: function (array, searchElement) {
+    var minIndex = 0;
+    var maxIndex = array.length - 1;
+    var currentIndex;
+    var currentElement;
+    var resultIndex;
+
+    if (array[0] > searchElement || array[array.length - 1] < searchElement) {
+      return -1;
+    }
+    while (minIndex <= maxIndex) {
+      resultIndex = currentIndex = (minIndex + maxIndex) / 2 | 0;
+      currentElement = array[currentIndex];
+
+      if (currentElement < searchElement) {
+        minIndex = currentIndex + 1;
+      }
+      else
+      if (currentElement > searchElement) {
+        maxIndex = currentIndex - 1;
+      }
+      else {
+        return currentIndex;
+      }
+    }
+
+    return ~maxIndex;
   }
+
 });

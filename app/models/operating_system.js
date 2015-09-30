@@ -26,7 +26,8 @@ App.OperatingSystem = DS.Model.extend({
   stackVersion: DS.attr('string'),
   repositories: DS.hasMany('App.Repository'),
   stack: DS.belongsTo('App.Stack'),
-  isSelected: DS.attr('boolean', {defaultValue: true})
+  isSelected: DS.attr('boolean', {defaultValue: true}),
+  isDeselected: Em.computed.not('isSelected')
 });
 
 

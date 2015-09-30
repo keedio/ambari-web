@@ -18,122 +18,129 @@
 
 <div class="accordion-heading" {{action "onToggleBlock" category target="view"}}>
   <i {{bindAttr class=":pull-left :accordion-toggle view.category.isCollapsed:icon-caret-right:icon-caret-down"}}></i>
-  <a class="accordion-toggle">{{view.category.displayName}}</a>
+  <a class="accordion-toggle">
+    <span class="category-name">{{view.category.displayName}}</span>
+    {{#if view.category.errorCount}}
+      <span class="badge badge-important">{{view.category.errorCount}}</span>
+    {{/if}}
+  </a>
 </div>
 
 <div class="accordion-body collapse in" {{bindAttr style="view.isCategoryBodyVisible"}}>
   <div class="accordion-inner service-config-section">
     <form class="form-horizontal" autocomplete="off">
-
-      {{#each view.filteredCategoryConfigs}}
-        <div {{bindAttr class=":entry-row isOverridden:overridden-property hasCompareDiffs:overridden-property"}}>
-          {{#if showLabel}}
-            <span {{bindAttr class="errorMessage:error: :control-group :control-label-span"}}>
-              <label class="control-label">
-                {{formatWordBreak displayName}}
-                {{#if App.supports.secureCluster}}
+      {{#each view.categoryConfigs}}
+        {{#unless widget}} {{! configs with widgets should be shown only on the EnhancedConfigs tabs }}
+          <div {{bindAttr class=":entry-row isHiddenByFilter:hide isOverridden:overridden-property hasCompareDiffs:overridden-property"}}>
+            {{#if showLabel}}
+              <span {{bindAttr class="errorMessage:error: :control-group :control-label-span"}}>
+                <label class="control-label">
+                  {{formatWordBreak displayName}}
                   {{#if isSecureConfig}}
-                    <a href="javascript:void(null);"><i class="icon-lock" rel="tooltip" data-toggle="tooltip" title="security knob"></i></a>
+                    <a href="javascript:void(null);"><i class="icon-lock" rel="tooltip" data-toggle="tooltip"
+                                                        title="security knob"></i></a>
                   {{/if}}
-                {{/if}}
-                {{#if view.supportsHostOverrides}}
-                  {{#if isRestartRequired}}
-                    <i class="icon-refresh restart-required-property" rel="tooltip" {{bindAttr title="restartRequiredMessage"}}></i>
-                  {{/if}}
-                {{/if}}
-              </label>
-            </span>
-          {{/if}}
-          <div {{bindAttr class="showLabel:controls"}}>
-            {{! Here serviceConfigBinding should ideally be serviceConfigPropertyBinding }}
-            <div {{bindAttr class="errorMessage:error: warnMessage:warning: :control-group"}}>
-              {{view viewClass serviceConfigBinding="this" categoryConfigsAllBinding="view.categoryConfigsAll" }}
-              {{#if this.isComparison}}
-                {{#if controller.selectedConfigGroup.isDefault}}
-                  <span class="label label-info">{{t dashboard.configHistory.table.version.prefix}}{{controller.selectedVersion}}</span>
-                  {{#if controller.isCurrentSelected}}
-                    <span class="label label-success">{{t common.current}}</span>
-                  {{/if}}
-                {{else}}
-                  <span class="label label-info">{{t common.default}}&nbsp;{{t services.service.config.configHistory.configGroup}}</span>
-                {{/if}}
-              {{/if}}
-              {{#if supportsFinal}}
-                <a href="#" data-toggle="tooltip"
-                  {{bindAttr class=":btn :btn-small :btn-final isFinal:active hideFinalIcon:hidden" disabled="isNotEditable"}}
-                  {{action "toggleFinalFlag" this target="view"}}
-                  {{translateAttr data-original-title="services.service.config.final"}}>
-                  <i class="icon-lock"></i>
-                </a>
-              {{/if}}
-              {{#if view.canEdit}}
-                {{#if isPropertyOverridable}}
                   {{#if view.supportsHostOverrides}}
-                    {{#if App.isAdmin}}
-                      {{#unless this.isComparison}}
-                          <a class="btn btn-small" href="#" data-toggle="tooltip"
-                            {{action "createOverrideProperty" this target="view"}}
-                            {{translateAttr data-original-title="common.override"}}>
-                              <i class="icon-plus-sign"></i>
-                          </a>
-                      {{/unless}}
+                    {{#if isRestartRequired}}
+                      <i class="icon-refresh restart-required-property"
+                         rel="tooltip" {{bindAttr title="restartRequiredMessage"}}></i>
                     {{/if}}
                   {{/if}}
-                {{/if}}
-                {{#unless cantBeUndone}}
-                  {{#if isNotDefaultValue}}
-                    <a class="btn btn-small" href="#" data-toggle="tooltip"
-                      {{action "doRestoreDefaultValue" this target="view"}}
-                      {{translateAttr data-original-title="common.undo"}}>
-                      <i class="icon-undo"></i>
-                    </a>
-                  {{/if}}
-                {{/unless}}
-                {{#if isRemovable}}
-                  {{#if App.isAdmin}}
-                    {{#unless this.isComparison}}
-                        <a class="btn btn-small" href="#" data-toggle="tooltip"
-                          {{action "removeProperty" this target="view"}}
-                          {{translateAttr data-original-title="common.remove"}}>
-                            <i class="icon-minus-sign"></i>
-                        </a>
-                    {{/unless}}
+                </label>
+              </span>
+            {{/if}}
+            <div {{bindAttr class="showLabel:controls"}}>
+              {{! Here serviceConfigBinding should ideally be serviceConfigPropertyBinding }}
+              <div {{bindAttr class="errorMessage:error: warnMessage:warning: :control-group"}}>
+                {{view viewClass serviceConfigBinding="this" categoryConfigsAllBinding="view.categoryConfigsAll" }}
+                {{#if this.isComparison}}
+                  {{#if controller.selectedConfigGroup.isDefault}}
+                    <span
+                        class="label label-info">{{t dashboard.configHistory.table.version.prefix}}{{controller.selectedVersion}}</span>
+                    {{#if controller.isCurrentSelected}}
+                      <span class="label label-success">{{t common.current}}</span>
+                    {{/if}}
+                  {{else}}
+                    <span class="label label-info">{{t common.default}}
+                      &nbsp;{{t services.service.config.configHistory.configGroup}}</span>
                   {{/if}}
                 {{/if}}
-                {{#unless isEditable}}
-                  {{#if group}}
-                    <a rel='SwitchGroupTooltip' {{bindAttr data-original-title="this.group.switchGroupTextShort"}} class="action" {{action selectConfigGroup group target="controller"}}>
-                      {{group.switchGroupTextShort}}
-                    </a>
+                {{#if supportsFinal}}
+                  <a href="#" data-toggle="tooltip"
+                    {{bindAttr class=":btn-small :btn-final isFinal:active hideFinalIcon:hidden" disabled="isNotEditable"}}
+                    {{action "toggleFinalFlag" this target="view"}}
+                    {{translateAttr data-original-title="services.service.config.final"}}>
+                    <i class="icon-lock"></i>
+                  </a>
+                {{/if}}
+                {{#if view.canEdit}}
+                  {{#if view.supportsHostOverrides}}
+                    {{#isAccessible ADMIN}}
+                      <a href="#" data-toggle="tooltip"
+                        {{action "createOverrideProperty" this target="view"}}
+                        {{translateAttr data-original-title="common.override"}}
+                        {{bindAttr class="overrideAvailable::hide :btn-small"}}>
+                        <i class="icon-plus-sign"></i>
+                      </a>
+                    {{/isAccessible}}
                   {{/if}}
-                {{/unless}}
+                  <a href="#" data-toggle="tooltip"
+                    {{action "doRestoreDefaultValue" this target="view"}}
+                    {{translateAttr data-original-title="common.undo"}}
+                    {{bindAttr class="undoAvailable::hide :btn-small"}}>
+                    <i class="icon-undo"></i>
+                  </a>
+                  {{#isAccessible ADMIN}}
+                    <a href="#" data-toggle="tooltip"
+                      {{action "removeProperty" this target="view"}}
+                      {{translateAttr data-original-title="common.remove"}}
+                      {{bindAttr class="removeAvailable::hide :btn-small"}}>
+                      <i class="icon-minus-sign"></i>
+                    </a>
+                  {{/isAccessible}}
+                  <a rel='SwitchGroupTooltip' {{bindAttr data-original-title="this.group.switchGroupTextShort" class="switchGroupAvailable:show:hide :action"}}
+                    {{action selectConfigGroup group target="controller"}}>
+                    {{group.switchGroupTextShort}}
+                  </a>
+                  <a href="#" data-toggle="tooltip"
+                    {{action "setRecommendedValue" this target="view"}}
+                    {{translateAttr data-original-title="services.service.config.setRecommendedValue"}}
+                    {{bindAttr class="setRecommendedAvailable::hide :btn-small"}}>
+                    <i class="icon-repeat"></i>
+                  </a>
+                {{/if}}
+                <span class="help-inline">{{errorMessage}}</span>
+                <span class="help-inline">{{warnMessage}}</span>
+              </div>
+              {{#if this.isComparison}}
+                {{view App.ServiceConfigView.SCPComparisonRowsView serviceConfigPropertyBinding="this"}}
+              {{else}}
+                {{#if this.isOverridden}}
+                  {{view App.ServiceConfigView.SCPOverriddenRowsView
+                  serviceConfigPropertyBinding="this"
+                  isDefaultGroupSelectedBinding="controller.selectedConfigGroup.isDefault"
+                  }}
+                {{/if}}
               {{/if}}
-              <span class="help-inline">{{errorMessage}}</span>
-              <span class="help-inline">{{warnMessage}}</span>
             </div>
-            {{#if this.isOverridden}}
-              {{view App.ServiceConfigView.SCPOverriddenRowsView serviceConfigPropertyBinding="this" isDefaultGroupSelectedBinding="controller.selectedConfigGroup.isDefault"}}
-            {{/if}}
-            {{#if this.isComparison}}
-              {{view App.ServiceConfigView.SCPComparisonRowsView serviceConfigPropertyBinding="this"}}
-            {{/if}}
           </div>
-        </div>
-        {{#if this.additionalView}}
-          {{view additionalView}}
-        {{/if}}
+          {{#if this.additionalView}}
+            {{view additionalView}}
+          {{/if}}
+        {{/unless}}
       {{/each}}
 
       {{! For Advanced, Advanced Core Site, Advanced HDFS Site sections, show the 'Add Property' link.}}
-      {{#if App.isAdmin}}
+      {{#isAccessible ADMIN}}
         {{#if view.canEdit}}
-          {{#if view.category.customCanAddProperty }}
+          {{#if view.category.customCanAddProperty}}
             <div>
-              <a href="#" {{action "showAddPropertyWindow" this target="view" }} >{{t installer.step7.config.addProperty}}...</a>
+              <a href="#" {{action "showAddPropertyWindow" this target="view" }} >{{t installer.step7.config.addProperty}}
+                ...</a>
             </div>
           {{/if}}
         {{/if}}
-      {{/if}}
+      {{/isAccessible}}
     </form>
   </div>
 </div>

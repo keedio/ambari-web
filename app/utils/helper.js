@@ -191,6 +191,21 @@ Number.prototype.toDaysHoursMinutes = function () {
 
   return formatted;
 };
+
+
+/**
+ *
+ * @param bound1 {Number}
+ * @param bound2 {Number}
+ * @return {boolean}
+ */
+Number.prototype.isInRange = function (bound1, bound2) {
+  var upperBound, lowerBound;
+  upperBound = bound1 > bound2 ? bound1: bound2;
+  lowerBound = bound1 < bound2 ? bound1: bound2;
+  return this > lowerBound && this < upperBound;
+};
+
 /**
  Sort an array by the key specified in the argument.
  Handle only native js objects as element of array, not the Ember's object.
@@ -254,6 +269,19 @@ Em.Handlebars.registerHelper('highlight', function (property, words, fn) {
 
   return new Em.Handlebars.SafeString(property);
 });
+
+Em.Handlebars.registerHelper('isAccessible', function (property, options) {
+  var permission = Ember.Object.create({
+    isAccessible: function() {
+      return App.isAccessible(property);
+    }.property('App.router.wizardWatcherController.isWizardRunning')
+  });
+
+  // wipe out contexts so boundIf uses `this` (the permission) as the context
+  options.contexts = null;
+  return Ember.Handlebars.helpers.boundIf.call(permission, "isAccessible", options);
+});
+
 /**
  * @namespace App
  */
@@ -287,7 +315,7 @@ App.isEmptyObject = function(obj) {
   var empty = true;
   for (var prop in obj) { if (obj.hasOwnProperty(prop)) {empty = false; break;} }
   return empty;
-}
+};
 
 /**
  * Convert object under_score keys to camelCase
@@ -359,7 +387,6 @@ App.format = {
     'HISTORYSERVER': 'History Server',
     'HIVE_SERVER': 'HiveServer2',
     'JCE': 'JCE',
-    'MAPREDUCE': 'MapReduce',
     'MAPREDUCE2': 'MapReduce2',
     'MYSQL': 'MySQL',
     'REST': 'REST',
@@ -393,6 +420,12 @@ App.format = {
   },
 
   /**
+   * cached map of service and component names
+   * @type {object}
+   */
+  stackRolesMap: {},
+
+  /**
    * convert role to readable string
    *
    * @memberof App.format
@@ -400,19 +433,21 @@ App.format = {
    * @param {string} role
    * return {string}
    */
-  role:function (role) {
-    var result;
+  role: function (role) {
     var models = [App.StackService, App.StackServiceComponent];
-    models.forEach(function(model){
-      var instance =  model.find().findProperty('id',role);
-      if (instance) {
-        result = instance.get('displayName');
-      }
-    },this);
-    if (!result)  {
-      result =  this.normalizeName(role);
+
+    if (App.isEmptyObject(this.stackRolesMap)) {
+      models.forEach(function (model) {
+        model.find().forEach(function (item) {
+          this.stackRolesMap[item.get('id')] = item.get('displayName');
+        }, this);
+      }, this);
     }
-    return result;
+
+    if (this.stackRolesMap[role]) {
+      return this.stackRolesMap[role];
+    }
+    return this.normalizeName(role);
   },
 
   /**
@@ -475,11 +510,24 @@ App.format = {
       // for Decommission command, make sure the hostname is in lower case
        result = result.split(':')[0] + ': ' + result.split(':')[1].toLowerCase();
     }
+    //TODO check if UI use this
     if (result === ' Nagios Update Ignore Actionexecute') {
        result = Em.I18n.t('common.maintenance.task');
     }
+    if (result.indexOf('Install Packages Actionexecute') != -1) {
+      result = Em.I18n.t('common.installRepo.task');
+    }
     if (result === ' Rebalancehdfs NameNode') {
        result = Em.I18n.t('services.service.actions.run.rebalanceHdfsNodes.title');
+    }
+    if (result === " Startdemoldap Knox Gateway") {
+      result = Em.I18n.t('services.service.actions.run.startLdapKnox.title');
+    }
+    if (result === " Stopdemoldap Knox Gateway") {
+      result = Em.I18n.t('services.service.actions.run.stopLdapKnox.title');
+    }
+    if (result === ' Refreshqueues ResourceManager') {
+      result = Em.I18n.t('services.service.actions.run.yarnRefreshQueues.title');
     }
     return result;
   },
@@ -503,6 +551,32 @@ App.format = {
    */
   taskStatus:function (_taskStatus) {
     return _taskStatus.toLowerCase();
+  },
+
+  /**
+   * simplify kdc error msg
+   * @param {string} message
+   * @param {boolean} strict if this flag is true ignore not defined msgs return null
+   *  else return input msg as is;
+   * @returns {*}
+   */
+  kdcErrorMsg: function(message, strict) {
+    /**
+     * Error messages for KDC administrator credentials error
+     * is used for checking if error message is caused by bad KDC credentials
+     * @type {{missingKDC: string, invalidKDC: string}}
+     */
+    var specialMsg = {
+      "missingKDC": "Missing KDC administrator credentials.",
+      "invalidKDC": "Invalid KDC administrator credentials.",
+      "missingRDCForRealm": "Failed to find a KDC for the specified realm - kadmin"
+    };
+
+    for (var m in specialMsg) {
+      if (specialMsg.hasOwnProperty(m) && message.contains(specialMsg[m]))
+        return specialMsg[m];
+    }
+    return strict ? null : message;
   }
 };
 
@@ -516,9 +590,10 @@ App.format = {
  * @param {object} options
  */
 App.popover = function (self, options) {
+  if (!self) return;
   self.popover(options);
   self.on("remove", function () {
-    $(this).trigger('mouseleave');
+    $(this).trigger('mouseleave').off().removeData('popover');
   });
 };
 
@@ -531,10 +606,11 @@ App.popover = function (self, options) {
  * @param {object} options
  */
 App.tooltip = function (self, options) {
+  if (!self) return;
   self.tooltip(options);
   /* istanbul ignore next */
   self.on("remove", function () {
-    $(this).trigger('mouseleave');
+    $(this).trigger('mouseleave').off().removeData('tooltip');
   });
 };
 
@@ -596,10 +672,10 @@ App.registerBoundHelper('pluralize', Em.View.extend({
     if (!plural) plural = singular + 's';
     else plural = this.parseValue(plural);
     if (singular && plural) {
-      if (count > 1) {
-        return plural;
-      } else {
+      if (count == 1) {
         return singular;
+      } else {
+        return plural;
       }
     }
     return '';
@@ -651,7 +727,7 @@ App.registerBoundHelper('pluralize', Em.View.extend({
       case 'controller':
         return Em.get(this, value);
       case 'view':
-        return Em.get(this, value.replace(/^view/, 'parentView'))
+        return Em.get(this, value.replace(/^view/, 'parentView'));
       default:
         break;
     }
@@ -704,6 +780,7 @@ App.registerBoundHelper('formatNull', Em.View.extend({
  * {{formatWordBreak 'apple.banana.uranium'}}
  */
 App.registerBoundHelper('formatWordBreak', Em.View.extend({
+  attributeBindings: ["data-original-title"],
   tagName: 'span',
   template: Em.Handlebars.compile('{{{view.result}}}'),
 
@@ -712,6 +789,49 @@ App.registerBoundHelper('formatWordBreak', Em.View.extend({
    */
   result: function() {
     return this.get('content') && this.get('content').replace(/\./g, '.<wbr />');
+  }.property('content')
+}));
+
+/**
+ * Return <i></i> with class that correspond to status
+ *
+ * @param {string} content - status
+ *
+ * Examples:
+ *
+ * {{statusIcon view.status}}
+ * returns 'icon-cog'
+ *
+ */
+App.registerBoundHelper('statusIcon', Em.View.extend({
+  tagName: 'i',
+
+  /**
+   * relation map between status and icon class
+   * @type {object}
+   */
+  statusIconMap: {
+    'COMPLETED': 'icon-ok completed',
+    'WARNING': 'icon-warning-sign',
+    'FAILED': 'icon-exclamation-sign failed',
+    'HOLDING_FAILED': 'icon-exclamation-sign failed',
+    'SKIPPED_FAILED': 'icon-share-alt failed',
+    'PENDING': 'icon-cog pending',
+    'QUEUED': 'icon-cog queued',
+    'IN_PROGRESS': 'icon-cogs in_progress',
+    'HOLDING': 'icon-pause',
+    'ABORTED': 'icon-minus aborted',
+    'TIMEDOUT': 'icon-time timedout',
+    'HOLDING_TIMEDOUT': 'icon-time timedout',
+    'SUBITEM_FAILED': 'icon-remove failed'
+  },
+
+  classNameBindings: ['iconClass'],
+  /**
+   * @type {string}
+   */
+  iconClass: function () {
+    return this.get('statusIconMap')[this.get('content')] || 'icon-question-sign';
   }.property('content')
 }));
 

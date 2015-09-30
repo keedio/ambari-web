@@ -18,11 +18,16 @@
 
 var App = require('app');
 require('views/main/dashboard/config_history_view');
+require('utils/load_timer');
 
 describe('App.MainConfigHistoryView', function() {
   var view = App.MainConfigHistoryView.create({
+    totalCount: 0,
+    filteredCount: 0
+  });
+  view.reopen({
     controller: Em.Object.create({
-      name: 'mainConfigHistoryController',
+      name: 'mainConfigHistoryController11',
       paginationProps: [
         {
           name: 'displayLength'
@@ -34,111 +39,189 @@ describe('App.MainConfigHistoryView', function() {
       doPolling: Em.K,
       load: function () {
         return {done: Em.K};
-      }
-    }),
-    filteredCount: 0
+      },
+      colPropAssoc: []
+    })
   });
   view.removeObserver('controller.resetStartIndex', view, 'resetStartIndex');
 
-  describe('#pageContent', function() {
-    beforeEach(function(){
-      view.propertyDidChange('pageContent');
-    });
-    it('filtered content is empty', function() {
-      view.set('filteredContent', []);
-      expect(view.get('pageContent')).to.be.empty;
-    });
-    it('filtered content contain one item', function() {
+  describe("#filteredContentInfo", function () {
+    it("", function () {
       view.set('filteredCount', 1);
-      view.set('filteredContent', [Em.Object.create()]);
-
-      expect(view.get('pageContent')).to.eql([Em.Object.create()]);
-    });
-    it('filtered content contain two unsorted items', function() {
-      view.set('filteredCount', 2);
-      view.set('filteredContent', [
-        Em.Object.create({index:2}),
-        Em.Object.create({index:1})
-      ]);
-
-      expect(view.get('pageContent')).to.eql([
-        Em.Object.create({index:1}),
-        Em.Object.create({index:2})
-      ]);
-    });
-    it('filtered content contain three items, when two visible', function() {
-      view.set('filteredCount', 2);
-      view.set('filteredContent', [
-        Em.Object.create({index:1}),
-        Em.Object.create({index:2}),
-        Em.Object.create({index:3})
-      ]);
-
-      expect(view.get('pageContent')).to.eql([
-        Em.Object.create({index:1}),
-        Em.Object.create({index:2})
-      ]);
+      view.set('totalCount', 2);
+      view.propertyDidChange('filteredContentInfo');
+      expect(view.get('filteredContentInfo')).to.eql(Em.I18n.t('tableView.filters.filteredConfigVersionInfo').format(1, 2));
     });
   });
-  describe('#updatePagination', function() {
-    beforeEach(function () {
-      sinon.stub(view, 'refresh', Em.K);
-      sinon.stub(App.db, 'setDisplayLength', Em.K);
-      sinon.stub(App.db, 'setStartIndex', Em.K);
-    });
-    afterEach(function () {
-      view.refresh.restore();
-      App.db.setStartIndex.restore();
-      App.db.setDisplayLength.restore();
+
+  describe("#serviceFilterView", function () {
+    var subView = view.get('serviceFilterView').create({
+      parentView: view
     });
 
-    it('displayLength is correct', function() {
-      view.set('displayLength', '50');
-      view.set('startIndex', null);
-
-      view.updatePagination();
-
-      expect(view.refresh.calledOnce).to.be.true;
-      expect(App.db.setStartIndex.called).to.be.false;
-      expect(App.db.setDisplayLength.calledWith('mainConfigHistoryController', '50')).to.be.true;
-      expect(view.get('controller.paginationProps').findProperty('name', 'startIndex').value).to.equal(0);
-      expect(view.get('controller.paginationProps').findProperty('name', 'displayLength').value).to.equal('50');
+    before(function () {
+      sinon.stub(App.Service, 'find').returns([Em.Object.create({
+        serviceName: 'S1',
+        displayName: 's1'
+      })])
     });
-    it('startIndex is correct', function() {
-      view.set('displayLength', null);
-      view.set('startIndex', 10);
-
-      view.updatePagination();
-
-      expect(view.refresh.calledOnce).to.be.true;
-      expect(App.db.setStartIndex.calledWith('mainConfigHistoryController', 10)).to.be.true;
-      expect(App.db.setDisplayLength.called).to.be.false;
-      expect(view.get('controller.paginationProps').findProperty('name', 'startIndex').value).to.equal(10);
-      expect(view.get('controller.paginationProps').findProperty('name', 'displayLength').value).to.equal('50');
+    after(function () {
+      App.Service.find.restore();
     });
-    it('displayLength and startIndex are correct', function() {
-      view.set('displayLength', '100');
-      view.set('startIndex', 20);
-
-      view.updatePagination();
-
-      expect(view.refresh.calledOnce).to.be.true;
-      expect(App.db.setStartIndex.calledWith('mainConfigHistoryController', 20)).to.be.true;
-      expect(App.db.setDisplayLength.calledWith('mainConfigHistoryController', '100')).to.be.true;
-      expect(view.get('controller.paginationProps').findProperty('name', 'startIndex').value).to.equal(20);
-      expect(view.get('controller.paginationProps').findProperty('name', 'displayLength').value).to.equal('100');
+    it("content", function () {
+      expect(subView.get('content')).to.eql([
+        {
+          "value": "",
+          "label": Em.I18n.t('common.all')
+        },
+        {
+          "value": "S1",
+          "label": "s1"
+        }
+      ]);
     });
-    it('displayLength and startIndex are null', function() {
-      view.set('displayLength', null);
-      view.set('startIndex', null);
 
-      view.updatePagination();
+    before(function () {
+      sinon.stub(view, 'updateFilter', Em.K);
+    });
+    after(function () {
+      view.updateFilter.restore();
+    });
+    it("call onChangeValue()", function () {
+      subView.set('column', 1);
+      subView.set('value', 'value');
+      subView.onChangeValue();
+      expect(view.updateFilter.calledWith(1, 'value', 'select')).to.be.true;
+    });
+  });
 
-      expect(view.refresh.calledOnce).to.be.true;
-      expect(App.db.setStartIndex.called).to.be.false;
-      expect(App.db.setDisplayLength.called).to.be.false;
-      expect(view.get('controller.paginationProps').findProperty('name', 'startIndex').value).to.equal(20);
-      expect(view.get('controller.paginationProps').findProperty('name', 'displayLength').value).to.equal('100');
+  describe("#configGroupFilterView", function () {
+    var subView = view.get('configGroupFilterView').create({
+      parentView: view
+    });
+
+    before(function () {
+      sinon.stub(App.ServiceConfigVersion, 'find').returns([
+        Em.Object.create({groupName: 'G1'}),
+        Em.Object.create({groupName: 'G1'}),
+        Em.Object.create({groupName: null})
+      ]);
+    });
+    after(function () {
+      App.ServiceConfigVersion.find.restore();
+    });
+    it("content", function () {
+      expect(subView.get('content')).to.eql([
+        {
+          "value": "",
+          "label": Em.I18n.t('common.all')
+        },
+        {
+          "value": "G1",
+          "label": "G1"
+        }
+      ]);
+    });
+
+    before(function () {
+      sinon.stub(view, 'updateFilter', Em.K);
+    });
+    after(function () {
+      view.updateFilter.restore();
+    });
+    it("call onChangeValue()", function () {
+      subView.set('column', 1);
+      subView.set('value', 'value');
+      subView.onChangeValue();
+      expect(view.updateFilter.calledWith(1, 'value', 'select')).to.be.true;
+    });
+  });
+
+  /**
+   * for now we don't use this method
+  describe("#modifiedFilterView", function () {
+    var subView = view.get('modifiedFilterView').create({
+      parentView: view,
+      controller: {
+        modifiedFilter: {
+          actualValues: {
+            startTime: 0,
+            endTime: 1
+          }
+        }
+      }
+    });
+
+    before(function () {
+      sinon.stub(view, 'updateFilter', Em.K);
+    });
+    after(function () {
+      view.updateFilter.restore();
+    });
+    it("call onTimeChange()", function () {
+      subView.set('column', 1);
+      subView.onTimeChange();
+      expect(view.updateFilter.calledWith(1, [0, 1], 'range')).to.be.true;
+    });
+  });*/
+
+  describe("#authorFilterView", function () {
+    var subView = view.get('authorFilterView').create({
+      parentView: view
+    });
+
+    before(function () {
+      sinon.stub(view, 'updateFilter', Em.K);
+    });
+    after(function () {
+      view.updateFilter.restore();
+    });
+    it("call onChangeValue()", function () {
+      subView.set('column', 1);
+      subView.set('value', 'value');
+      subView.onChangeValue();
+      expect(view.updateFilter.calledWith(1, 'value', 'string')).to.be.true;
+    });
+  });
+
+  describe("#notesFilterView", function () {
+    var subView = view.get('notesFilterView').create({
+      parentView: view
+    });
+
+    before(function () {
+      sinon.stub(view, 'updateFilter', Em.K);
+    });
+    after(function () {
+      view.updateFilter.restore();
+    });
+    it("call onChangeValue()", function () {
+      subView.set('column', 1);
+      subView.set('value', 'value');
+      subView.onChangeValue();
+      expect(view.updateFilter.calledWith(1, 'value', 'string')).to.be.true;
+    });
+  });
+
+  describe("#ConfigVersionView", function () {
+    var subView = view.get('ConfigVersionView').create({
+      parentView: view
+    });
+
+    before(function () {
+      sinon.stub(App, 'tooltip', Em.K);
+    });
+    after(function () {
+      App.tooltip.restore();
+    });
+    it("call didInsertElement()", function () {
+      subView.didInsertElement();
+      expect(App.tooltip.calledOnce).to.be.true;
+    });
+    it("call toggleShowLessStatus()", function () {
+      subView.set('showLessNotes', true);
+      subView.toggleShowLessStatus();
+      expect(subView.get('showLessNotes')).to.be.false;
     });
   });
 
@@ -149,6 +232,7 @@ describe('App.MainConfigHistoryView', function() {
 
       view.didInsertElement();
       expect(view.addObserver.calledTwice).to.be.true;
+      expect(view.get('isInitialRendering')).to.be.true;
       expect(view.get('controller.isPolling')).to.be.true;
       expect(view.get('controller').doPolling.calledOnce).to.be.true;
 
@@ -157,42 +241,38 @@ describe('App.MainConfigHistoryView', function() {
     });
   });
 
+  describe('#updateFilter()', function () {
+    var cases = [
+      {
+        isInitialRendering: false,
+        updateFilterCalled: true,
+        title: 'updateFilter should be called'
+      },
+      {
+        isInitialRendering: true,
+        updateFilterCalled: false,
+        title: 'updateFilter should not be called'
+      }
+    ];
+    beforeEach(function () {
+      sinon.stub(view, 'saveFilterConditions', Em.K);
+    });
+    afterEach(function () {
+      view.saveFilterConditions.restore();
+    });
+    cases.forEach(function (item) {
+      it(item.title, function () {
+        view.set('isInitialRendering', item.isInitialRendering);
+        view.updateFilter(1, 'value', 'string');
+        expect(view.get('saveFilterConditions').calledWith(1, 'value', 'string')).to.equal(item.updateFilterCalled);
+      });
+    });
+  });
+
   describe('#willDestroyElement()', function() {
     it('', function() {
       view.willDestroyElement();
       expect(view.get('controller.isPolling')).to.be.false;
-    });
-  });
-
-  describe('#updateFilter()', function() {
-    beforeEach(function () {
-      sinon.stub(view, 'saveFilterConditions', Em.K);
-      sinon.stub(view, 'refresh', Em.K);
-      sinon.spy(view, 'updateFilter');
-    });
-    afterEach(function () {
-      view.saveFilterConditions.restore();
-      view.updateFilter.restore();
-      view.refresh.restore();
-    });
-    it('filteringComplete is false', function() {
-      this.clock = sinon.useFakeTimers();
-
-      view.set('filteringComplete', false);
-      view.updateFilter(1, '', 'string');
-      expect(view.get('controller.resetStartIndex')).to.be.false;
-      expect(view.saveFilterConditions.calledWith(1, '', 'string', false)).to.be.true;
-      view.set('filteringComplete', true);
-      this.clock.tick(view.get('filterWaitingTime'));
-      expect(view.updateFilter.calledWith(1, '', 'string')).to.be.true;
-      this.clock.restore();
-    });
-    it('filteringComplete is true', function() {
-      view.set('filteringComplete', true);
-
-      view.updateFilter(1, '', 'string');
-      expect(view.get('controller.resetStartIndex')).to.be.true;
-      expect(view.refresh.calledOnce).to.be.true;
     });
   });
 
@@ -206,35 +286,27 @@ describe('App.MainConfigHistoryView', function() {
     });
   });
 
-  describe('#resetStartIndex()', function() {
-    it('resetStartIndex is false and filteredCount is 0', function() {
-      view.set('filteredCount', 0);
-      view.set('controller.resetStartIndex', false);
-      view.set('startIndex', 0);
-      view.resetStartIndex();
-      expect(view.get('startIndex')).to.equal(0);
+  describe("#refreshDone()", function () {
+    before(function () {
+      sinon.stub(view, 'propertyDidChange', Em.K);
     });
-    it('resetStartIndex is true and filteredCount is 0', function() {
-      view.set('filteredCount', 0);
+    after(function () {
+      view.propertyDidChange.restore();
+    });
+    it("", function () {
+      view.set('filteringComplete', false);
       view.set('controller.resetStartIndex', true);
-      view.set('startIndex', 0);
-      view.resetStartIndex();
-      expect(view.get('startIndex')).to.equal(0);
-    });
-    it('resetStartIndex is false and filteredCount is 5', function() {
-      view.set('filteredCount', 5);
-      view.set('controller.resetStartIndex', false);
-      view.set('startIndex', 0);
-      view.resetStartIndex();
-      expect(view.get('startIndex')).to.equal(0);
-    });
-    it('resetStartIndex is true and filteredCount is 5', function() {
-      view.set('controller.resetStartIndex', true);
-      view.set('filteredCount', 5);
-      view.set('startIndex', 0);
-      view.resetStartIndex();
-      expect(view.get('startIndex')).to.equal(1);
+      view.refreshDone();
+      expect(view.get('filteringComplete')).to.be.true;
+      expect(view.get('controller.resetStartIndex')).to.be.false;
     });
   });
 
+  describe("#colPropAssoc", function () {
+    it("", function () {
+      view.set('controller.colPropAssoc', [1]);
+      view.propertyDidChange('colPropAssoc');
+      expect(view.get('colPropAssoc')).to.eql([1]);
+    });
+  });
 });

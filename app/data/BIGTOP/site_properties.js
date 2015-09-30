@@ -27,10 +27,10 @@ module.exports =
       "id": "site property",
       "name": "dfs.namenode.checkpoint.dir",
       "displayName": "SecondaryNameNode Checkpoint directories",
-      "defaultDirectory": "/hadoop/hdfs/namesecondary",
       "displayType": "directories",
       "isOverridable": false,
       "serviceName": "HDFS",
+      "filename": "hdfs-site.xml",
       "category": "SECONDARY_NAMENODE",
       "index": 1
     },
@@ -42,16 +42,17 @@ module.exports =
       "unit": "seconds",
       "category": "General",
       "serviceName": "HDFS",
+      "filename": "hdfs-site.xml",
       "index": 3
     },
     {
       "id": "site property",
       "name": "dfs.namenode.name.dir",
       "displayName": "NameNode directories",
-      "defaultDirectory": "/hadoop/hdfs/namenode",
       "displayType": "directories",
       "isOverridable": false,
       "serviceName": "HDFS",
+      "filename": "hdfs-site.xml",
       "category": "NAMENODE",
       "index": 1
     },
@@ -63,6 +64,7 @@ module.exports =
       "isOverridable": false,
       "category": "General",
       "serviceName": "HDFS",
+      "filename": "hdfs-site.xml",
       "index": 0
     },
     {
@@ -72,6 +74,7 @@ module.exports =
       "displayType": "int",
       "category": "DATANODE",
       "serviceName": "HDFS",
+      "filename": "hdfs-site.xml",
       "index": 3
     },
     {
@@ -79,7 +82,7 @@ module.exports =
       "name": "dfs.datanode.data.dir.mount.file",
       "displayName": "File that stores mount point for each data dir",
       "description": "File path that contains the last known mount point for each data dir. This file is used to avoid creating a DFS data dir on the root drive (and filling it up) if a path was previously mounted on a drive.",
-      "defaultValue": "/etc/hadoop/conf/dfs_data_dir_mount.hist",
+      "recommendedValue": "/etc/hadoop/conf/dfs_data_dir_mount.hist",
       "displayType": "directory",
       "isVisible": true,
       "category": "DATANODE",
@@ -91,10 +94,10 @@ module.exports =
       "id": "site property",
       "name": "dfs.datanode.data.dir",
       "displayName": "DataNode directories",
-      "defaultDirectory": "/hadoop/hdfs/data",
       "displayType": "directories",
       "category": "DATANODE",
       "serviceName": "HDFS",
+      "filename": "hdfs-site.xml",
       "index": 1
     },
     {
@@ -103,7 +106,8 @@ module.exports =
       "displayName": "DataNode directories permission",
       "displayType": "int",
       "category": "DATANODE",
-      "serviceName": "HDFS"
+      "serviceName": "HDFS",
+      "filename": "hdfs-site.xml"
     },
     {
       "id": "site property",
@@ -111,7 +115,8 @@ module.exports =
       "displayName": "Block replication",
       "displayType": "int",
       "category": "General",
-      "serviceName": "HDFS"
+      "serviceName": "HDFS",
+      "filename": "hdfs-site.xml"
     },
     {
       "id": "site property",
@@ -121,6 +126,7 @@ module.exports =
       "unit": "bytes",
       "category": "General",
       "serviceName": "HDFS",
+      "filename": "hdfs-site.xml",
       "index": 2
     },
     {
@@ -129,7 +135,8 @@ module.exports =
       "displayName": "HDFS Short-circuit read",
       "displayType": "checkbox",
       "category": "Advanced hdfs-site",
-      "serviceName": "HDFS"
+      "serviceName": "HDFS",
+      "filename": "hdfs-site.xml"
     },
     {
       "id": "site property",
@@ -150,6 +157,7 @@ module.exports =
       "displayName": "yarn.acl.enable",
       "displayType": "checkbox",
       "serviceName": "YARN",
+      "filename": "yarn-site.xml",
       "category": "RESOURCEMANAGER"
     },
     {
@@ -158,6 +166,7 @@ module.exports =
       "displayName": "yarn.admin.acl",
       "isRequired": false,
       "serviceName": "YARN",
+      "filename": "yarn-site.xml",
       "category": "RESOURCEMANAGER"
     },
     {
@@ -166,6 +175,7 @@ module.exports =
       "displayName": "yarn.log-aggregation-enable",
       "displayType": "checkbox",
       "serviceName": "YARN",
+      "filename": "yarn-site.xml",
       "category": "RESOURCEMANAGER"
     },
     {
@@ -173,7 +183,8 @@ module.exports =
       "name": "yarn.resourcemanager.scheduler.class",
       "displayName": "yarn.resourcemanager.scheduler.class",
       "serviceName": "YARN",
-      "category": "CapacityScheduler"
+      "category": "CapacityScheduler",
+      "filename": "yarn-site.xml"
     },
     {
       "id": "site property",
@@ -181,6 +192,7 @@ module.exports =
       "displayName": "yarn.scheduler.minimum-allocation-mb",
       "displayType": "int",
       "serviceName": "YARN",
+      "filename": "yarn-site.xml",
       "category": "CapacityScheduler"
     },
     {
@@ -189,6 +201,7 @@ module.exports =
       "displayName": "yarn.scheduler.maximum-allocation-mb",
       "displayType": "int",
       "serviceName": "YARN",
+      "filename": "yarn-site.xml",
       "category": "CapacityScheduler"
     },
     {
@@ -197,6 +210,7 @@ module.exports =
       "displayName": "yarn.nodemanager.resource.memory-mb",
       "displayType": "int",
       "serviceName": "YARN",
+      "filename": "yarn-site.xml",
       "category": "NODEMANAGER"
     },
     {
@@ -204,6 +218,7 @@ module.exports =
       "name": "yarn.nodemanager.vmem-pmem-ratio",
       "displayName": "yarn.nodemanager.vmem-pmem-ratio",
       "serviceName": "YARN",
+      "filename": "yarn-site.xml",
       "category": "NODEMANAGER"
     },
     {
@@ -211,24 +226,25 @@ module.exports =
       "name": "yarn.nodemanager.linux-container-executor.group",
       "displayName": "yarn.nodemanager.linux-container-executor.group",
       "serviceName": "YARN",
+      "filename": "yarn-site.xml",
       "category": "NODEMANAGER"
     },
     {
       "id": "site property",
       "name": "yarn.nodemanager.log-dirs",
       "displayName": "yarn.nodemanager.log-dirs",
-      "defaultDirectory": "/hadoop/yarn/log",
       "displayType": "directories",
       "serviceName": "YARN",
+      "filename": "yarn-site.xml",
       "category": "NODEMANAGER"
     },
     {
       "id": "site property",
       "name": "yarn.nodemanager.local-dirs",
       "displayName": "yarn.nodemanager.local-dirs",
-      "defaultDirectory": "/hadoop/yarn/local",
       "displayType": "directories",
       "serviceName": "YARN",
+      "filename": "yarn-site.xml",
       "category": "NODEMANAGER"
     },
     {
@@ -237,6 +253,7 @@ module.exports =
       "displayName": "yarn.nodemanager.remote-app-log-dir",
       "displayType": "directory",
       "serviceName": "YARN",
+      "filename": "yarn-site.xml",
       "category": "NODEMANAGER"
     },
     {
@@ -244,6 +261,7 @@ module.exports =
       "name": "yarn.nodemanager.remote-app-log-dir-suffix",
       "displayName": "yarn.nodemanager.remote-app-log-dir-suffix",
       "serviceName": "YARN",
+      "filename": "yarn-site.xml",
       "category": "NODEMANAGER"
     },
     {
@@ -251,6 +269,7 @@ module.exports =
       "name": "yarn.nodemanager.aux-services",
       "displayName": "yarn.nodemanager.aux-services",
       "serviceName": "YARN",
+      "filename": "yarn-site.xml",
       "category": "NODEMANAGER"
     },
     {
@@ -258,6 +277,7 @@ module.exports =
       "name": "yarn.nodemanager.log.retain-second",
       "displayName": "yarn.nodemanager.log.retain-second",
       "serviceName": "YARN",
+      "filename": "yarn-site.xml",
       "category": "NODEMANAGER"
     },
     {
@@ -265,7 +285,8 @@ module.exports =
       "name": "yarn.log.server.url",
       "displayName": "yarn.log.server.url",
       "category": "Advanced yarn-site",
-      "serviceName": "YARN"
+      "serviceName": "YARN",
+      "filename": "yarn-site.xml"
     },
     {
       "id": "site property",
@@ -273,16 +294,17 @@ module.exports =
       "displayName": "yarn.timeline-service.enabled",
       "category": "APP_TIMELINE_SERVER",
       "displayType": "checkbox",
-      "serviceName": "YARN"
+      "serviceName": "YARN",
+      "filename": "yarn-site.xml"
     },
     {
       "id": "site property",
       "name": "yarn.timeline-service.leveldb-timeline-store.path",
       "displayName": "yarn.timeline-service.leveldb-timeline-store.path",
-      "defaultDirectory": "/hadoop/yarn/timeline",
       "category": "APP_TIMELINE_SERVER",
       "displayType": "directory",
-      "serviceName": "YARN"
+      "serviceName": "YARN",
+      "filename": "yarn-site.xml"
     },
     {
       "id": "site property",
@@ -290,14 +312,16 @@ module.exports =
       "displayName": "yarn.timeline-service.leveldb-timeline-store.ttl-interval-ms",
       "displayType": "int",
       "category": "APP_TIMELINE_SERVER",
-      "serviceName": "YARN"
+      "serviceName": "YARN",
+      "filename": "yarn-site.xml"
     },
     {
       "id": "site property",
       "name": "yarn.timeline-service.store-class",
       "displayName": "yarn.timeline-service.store-class",
       "category": "APP_TIMELINE_SERVER",
-      "serviceName": "YARN"
+      "serviceName": "YARN",
+      "filename": "yarn-site.xml"
     },
     {
       "id": "site property",
@@ -305,7 +329,8 @@ module.exports =
       "displayName": "yarn.timeline-service.ttl-enable",
       "displayType": "checkbox",
       "category": "APP_TIMELINE_SERVER",
-      "serviceName": "YARN"
+      "serviceName": "YARN",
+      "filename": "yarn-site.xml"
     },
     {
       "id": "site property",
@@ -313,14 +338,16 @@ module.exports =
       "displayName": "yarn.timeline-service.ttl-ms",
       "displayType": "int",
       "category": "APP_TIMELINE_SERVER",
-      "serviceName": "YARN"
+      "serviceName": "YARN",
+      "filename": "yarn-site.xml"
     },
     {
       "id": "site property",
       "name": "yarn.timeline-service.generic-application-history.store-class",
       "displayName": "yarn.timeline-service.generic-application-history.store-class",
       "category": "APP_TIMELINE_SERVER",
-      "serviceName": "YARN"
+      "serviceName": "YARN",
+      "filename": "yarn-site.xml"
     },
     {
       "id": "site property",
@@ -328,7 +355,8 @@ module.exports =
       "displayName": "yarn.timeline-service.webapp.address",
       "displayType": "string",
       "category": "APP_TIMELINE_SERVER",
-      "serviceName": "YARN"
+      "serviceName": "YARN",
+      "filename": "yarn-site.xml"
     },
     {
       "id": "site property",
@@ -336,7 +364,8 @@ module.exports =
       "displayName": "yarn.timeline-service.webapp.https.address",
       "displayType": "string",
       "category": "APP_TIMELINE_SERVER",
-      "serviceName": "YARN"
+      "serviceName": "YARN",
+      "filename": "yarn-site.xml"
     },
     {
       "id": "site property",
@@ -344,7 +373,8 @@ module.exports =
       "displayName": "yarn.timeline-service.address",
       "displayType": "string",
       "category": "APP_TIMELINE_SERVER",
-      "serviceName": "YARN"
+      "serviceName": "YARN",
+      "filename": "yarn-site.xml"
     },
   /**********************************************MAPREDUCE2***************************************/
     {
@@ -354,7 +384,8 @@ module.exports =
       "displayType": "int",
       "unit": "MB",
       "category": "General",
-      "serviceName": "MAPREDUCE2"
+      "serviceName": "MAPREDUCE2",
+      "filename": "mapred-site.xml"
     },
     {
       "id": "site property",
@@ -363,7 +394,8 @@ module.exports =
       "displayType": "int",
       "unit": "MB",
       "category": "General",
-      "serviceName": "MAPREDUCE2"
+      "serviceName": "MAPREDUCE2",
+      "filename": "mapred-site.xml"
     },
     {
       "id": "site property",
@@ -372,7 +404,8 @@ module.exports =
       "displayType": "int",
       "unit": "MB",
       "category": "General",
-      "serviceName": "MAPREDUCE2"
+      "serviceName": "MAPREDUCE2",
+      "filename": "mapred-site.xml"
     },
     {
       "id": "site property",
@@ -380,6 +413,7 @@ module.exports =
       "displayName": "hadoop.security.auth_to_local",
       "displayType": "multiLine",
       "serviceName": "HDFS",
+      "filename": "core-site.xml",
       "category": "Advanced core-site"
     },
     {
@@ -388,7 +422,8 @@ module.exports =
       "displayName": "yarn.app.mapreduce.am.resource.mb",
       "displayType": "int",
       "category": "Advanced mapred-site",
-      "serviceName": "MAPREDUCE2"
+      "serviceName": "MAPREDUCE2",
+      "filename": "mapred-site.xml"
     },
 
   /**********************************************oozie-site***************************************/
@@ -401,6 +436,7 @@ module.exports =
       "isObserved": true,
       "category": "OOZIE_SERVER",
       "serviceName": "OOZIE",
+      "filename": "oozie-site.xml",
       "index": 4
     },
     {
@@ -411,6 +447,7 @@ module.exports =
       "displayType": "host",
       "category": "OOZIE_SERVER",
       "serviceName": "OOZIE",
+      "filename": "oozie-site.xml",
       "index": 5
     },
     {
@@ -431,6 +468,7 @@ module.exports =
       "isOverridable": false,
       "category": "OOZIE_SERVER",
       "serviceName": "OOZIE",
+      "filename": "oozie-site.xml",
       "index": 7
     },
     {
@@ -441,6 +479,7 @@ module.exports =
       "displayType": "advanced",
       "category": "OOZIE_SERVER",
       "serviceName": "OOZIE",
+      "filename": "oozie-site.xml",
       "index": 8
     },
 
@@ -452,6 +491,7 @@ module.exports =
       "isOverridable": false,
       "category": "HIVE_METASTORE",
       "serviceName": "HIVE",
+      "filename": "hive-site.xml",
       "index": 7
     },
     {
@@ -462,6 +502,7 @@ module.exports =
       "unit": "MB",
       "isOverridable": false,
       "serviceName": "HIVE",
+      "filename": "hive-site.xml",
       "category": "General",
       "index": 9
     },
@@ -473,6 +514,7 @@ module.exports =
       "isOverridable": false,
       "category": "HIVE_METASTORE",
       "serviceName": "HIVE",
+      "filename": "hive-site.xml",
       "index": 5
     },
     {
@@ -483,6 +525,7 @@ module.exports =
       "isOverridable": false,
       "category": "HIVE_METASTORE",
       "serviceName": "HIVE",
+      "filename": "hive-site.xml",
       "index": 6
     },
     {
@@ -493,6 +536,7 @@ module.exports =
       "isOverridable": false,
       "category": "HIVE_METASTORE",
       "serviceName": "HIVE",
+      "filename": "hive-site.xml",
       "index": 8
     },
     {
@@ -503,6 +547,7 @@ module.exports =
       "isOverridable": false,
       "isObserved": true,
       "serviceName": "HIVE",
+      "filename": "hive-site.xml",
       "category": "HIVE_METASTORE",
       "index": 4
     },
@@ -519,19 +564,20 @@ module.exports =
       "name": "hive.server2.thrift.port",
       "displayName": "Hive Server Port",
       "description": "TCP port number to listen on, default 10000.",
-      "defaultValue": "10000",
+      "recommendedValue": "10000",
       "displayType": "int",
       "isReconfigurable": true,
       "isOverridable": false,
       "isVisible": true,
       "category": "Advanced hive-site",
-      "serviceName": "HIVE"
+      "serviceName": "HIVE",
+      "filename": "hive-site.xml"
     },
     {
       "id": "site property",
       "name": "hive.server2.support.dynamic.service.discovery",
       "displayName": "hive.server2.support.dynamic.service.discovery",
-      "defaultValue": true,
+      "recommendedValue": true,
       "displayType": "checkbox",
       "category": "Advanced hive-site",
       "serviceName": "HIVE"
@@ -540,7 +586,7 @@ module.exports =
       "id": "site property",
       "name": "hive.zookeeper.quorum",
       "displayName": "hive.zookeeper.quorum",
-      "defaultValue": "localhost:2181",
+      "recommendedValue": "localhost:2181",
       "displayType": "multiLine",
       "isVisible": true,
       "serviceName": "HIVE",
@@ -631,12 +677,11 @@ module.exports =
     {
       "id": "site property",
       "name": "hbase.tmp.dir",
-      "displayName": "HBase local directory",
-      "defaultDirectory": "/hadoop/hbase",
+      "displayName": "HBase tmp directory",
       "displayType": "directory",
       "category": "Advanced hbase-site",
-      "serviceName": "HBASE"
-
+      "serviceName": "HBASE",
+      "filename": "hbase-site.xml"
     },
     {
       "id": "site property",
@@ -647,6 +692,7 @@ module.exports =
       "isOverridable": false,
       "isVisible": true,
       "serviceName": "HBASE",
+      "filename": "hbase-site.xml",
       "category": "Advanced hbase-site"
     },
     {
@@ -655,7 +701,8 @@ module.exports =
       "displayName": "hbase.regionserver.global.memstore.upperLimit",
       "displayType": "float",
       "category": "Advanced hbase-site",
-      "serviceName": "HBASE"
+      "serviceName": "HBASE",
+      "filename": "hbase-site.xml"
     },
     {
       "id": "site property",
@@ -663,7 +710,8 @@ module.exports =
       "displayName": "hbase.regionserver.global.memstore.lowerLimit",
       "displayType": "float",
       "category": "Advanced hbase-site",
-      "serviceName": "HBASE"
+      "serviceName": "HBASE",
+      "filename": "hbase-site.xml"
     },
     {
       "id": "site property",
@@ -671,7 +719,8 @@ module.exports =
       "displayName": "hstore blocking storefiles",
       "displayType": "int",
       "category": "Advanced hbase-site",
-      "serviceName": "HBASE"
+      "serviceName": "HBASE",
+      "filename": "hbase-site.xml"
     },
     {
       "id": "site property",
@@ -680,6 +729,7 @@ module.exports =
       "displayType": "int",
       "category": "General",
       "serviceName": "HBASE",
+      "filename": "hbase-site.xml",
       "index": 0
     },
     {
@@ -689,6 +739,7 @@ module.exports =
       "displayType": "float",
       "category": "General",
       "serviceName": "HBASE",
+      "filename": "hbase-site.xml",
       "index": 1
     },
     {
@@ -699,6 +750,7 @@ module.exports =
       "unit": "bytes",
       "category": "General",
       "serviceName": "HBASE",
+      "filename": "hbase-site.xml",
       "index": 2
     },
     {
@@ -708,6 +760,7 @@ module.exports =
       "displayType": "int",
       "category": "HBASE_REGIONSERVER",
       "serviceName": "HBASE",
+      "filename": "hbase-site.xml",
       "index": 2
     },
     {
@@ -718,6 +771,7 @@ module.exports =
       "unit": "ms",
       "category": "HBASE_REGIONSERVER",
       "serviceName": "HBASE",
+      "filename": "hbase-site.xml",
       "index": 3
     },
     {
@@ -727,6 +781,7 @@ module.exports =
       "displayType": "int",
       "category": "HBASE_REGIONSERVER",
       "serviceName": "HBASE",
+      "filename": "hbase-site.xml",
       "index": 4
     },
     {
@@ -735,7 +790,8 @@ module.exports =
       "displayName": "hbase.hregion.memstore.mslab.enabled",
       "displayType": "checkbox",
       "category": "Advanced hbase-site",
-      "serviceName": "HBASE"
+      "serviceName": "HBASE",
+      "filename": "hbase-site.xml"
     },
     {
       "id": "site property",
@@ -745,6 +801,7 @@ module.exports =
       "unit": "bytes",
       "category": "HBASE_REGIONSERVER",
       "serviceName": "HBASE",
+      "filename": "hbase-site.xml",
       "index": 5
     },
     {
@@ -755,6 +812,7 @@ module.exports =
       "unit": "rows",
       "category": "General",
       "serviceName": "HBASE",
+      "filename": "hbase-site.xml",
       "index": 3
     },
     {
@@ -765,6 +823,7 @@ module.exports =
       "unit": "ms",
       "category": "General",
       "serviceName": "HBASE",
+      "filename": "hbase-site.xml",
       "index": 4
     },
     {
@@ -775,6 +834,7 @@ module.exports =
       "unit": "bytes",
       "category": "General",
       "serviceName": "HBASE",
+      "filename": "hbase-site.xml",
       "index": 5
     },
     {
@@ -783,7 +843,8 @@ module.exports =
       "displayName": "hbase.coprocessor.region.classes",
       "category": "Advanced hbase-site",
       "isRequired": false,
-      "serviceName": "HBASE"
+      "serviceName": "HBASE",
+      "filename": "hbase-site.xml"
     },
     {
       "id": "site property",
@@ -791,7 +852,8 @@ module.exports =
       "displayName": "hbase.coprocessor.master.classes",
       "category": "Advanced hbase-site",
       "isRequired": false,
-      "serviceName": "HBASE"
+      "serviceName": "HBASE",
+      "filename": "hbase-site.xml"
     },
     {
       "id": "site property",
@@ -799,6 +861,7 @@ module.exports =
       "displayName": "hbase.zookeeper.quorum",
       "displayType": "multiLine",
       "serviceName": "HBASE",
+      "filename": "hbase-site.xml",
       "category": "Advanced hbase-site"
     },
 
@@ -815,7 +878,6 @@ module.exports =
       "id": "site property",
       "name": "storm.local.dir",
       "displayName": "storm.local.dir",
-      "defaultDirectory": "/hadoop/storm",
       "displayType": "directory",
       "serviceName": "STORM",
       "category": "General"
@@ -1567,6 +1629,7 @@ module.exports =
       "name": "*.falcon.http.authentication.kerberos.name.rules",
       "displayName": "*.falcon.http.authentication.kerberos.name.rules",
       "category": "FalconStartupSite",
+      "displayType": "multiLine",
       "serviceName": "FALCON",
       "filename": "falcon-startup.properties.xml"
     },
@@ -1587,6 +1650,7 @@ module.exports =
       "displayName": "templeton.hive.archive",
       "isRequired": false,
       "serviceName": "HIVE",
+      "filename": "webhcat-site.xml",
       "category": "Advanced webhcat-site"
     },
     {
@@ -1595,6 +1659,7 @@ module.exports =
       "displayName": "templeton.pig.archive",
       "isRequired": false,
       "serviceName": "HIVE",
+      "filename": "webhcat-site.xml",
       "category": "Advanced webhcat-site"
     },
     {
@@ -1603,6 +1668,7 @@ module.exports =
       "displayName": "templeton.zookeeper.hosts",
       "displayType": "multiLine",
       "serviceName": "HIVE",
+      "filename": "webhcat-site.xml",
       "category": "Advanced webhcat-site"
     },
   /**********************************************pig.properties*****************************************/
@@ -1611,7 +1677,7 @@ module.exports =
       "name": "content",
       "displayName": "content",
       "value": "",
-      "defaultValue": "",
+      "recommendedValue": "",
       "description": "pig properties",
       "displayType": "content",
       "isRequired": false,
@@ -1637,7 +1703,7 @@ module.exports =
       "name": "flume_conf_dir",
       "displayName": "Flume Conf Dir",
       "description": "Location to save configuration files",
-      "defaultValue": "/etc/flume/conf",
+      "recommendedValue": "/etc/flume/conf",
       "isReconfigurable": false,
       "displayType": "directory",
       "isOverridable": false,
@@ -1652,7 +1718,7 @@ module.exports =
       "name": "flume_log_dir",
       "displayName": "Flume Log Dir",
       "description": "Location to save log files",
-      "defaultValue": "/var/log/flume",
+      "recommendedValue": "/var/log/flume",
       "isReconfigurable": false,
       "displayType": "directory",
       "isOverridable": false,
@@ -1668,7 +1734,7 @@ module.exports =
       "name": "namenode_host",
       "displayName": "NameNode hosts",
       "value": "",
-      "defaultValue": "",
+      "recommendedValue": "",
       "description": "The hosts that has been assigned to run NameNode",
       "displayType": "masterHosts",
       "isOverridable": false,
@@ -1684,7 +1750,7 @@ module.exports =
       "name": "namenode_heapsize",
       "displayName": "NameNode Java heap size",
       "description": "Initial and maximum Java heap size for NameNode (Java options -Xms and -Xmx).  This also applies to the Secondary NameNode.",
-      "defaultValue": "1024",
+      "recommendedValue": "1024",
       "displayType": "int",
       "unit": "MB",
       "isOverridable": false,
@@ -1699,7 +1765,7 @@ module.exports =
       "name": "namenode_opt_newsize",
       "displayName": "NameNode new generation size",
       "description": "Default size of Java new generation for NameNode (Java option -XX:NewSize).  This also applies to the Secondary NameNode.",
-      "defaultValue": "200",
+      "recommendedValue": "200",
       "displayType": "int",
       "unit": "MB",
       "isOverridable": false,
@@ -1714,7 +1780,7 @@ module.exports =
       "name": "namenode_opt_maxnewsize",
       "displayName": "NameNode maximum new generation size",
       "description": "Maximum size of Java new generation for NameNode (Java option -XX:MaxnewSize).",
-      "defaultValue": "200",
+      "recommendedValue": "200",
       "displayType": "int",
       "unit": "MB",
       "isOverridable": false,
@@ -1729,7 +1795,7 @@ module.exports =
       "name": "namenode_opt_permsize",
       "displayName": "NameNode permanent generation size",
       "description": "Default size of Java new generation for NameNode (Java option -XX:PermSize).  This also applies to the Secondary NameNode.",
-      "defaultValue": "128",
+      "recommendedValue": "128",
       "displayType": "int",
       "unit": "MB",
       "isOverridable": false,
@@ -1744,7 +1810,7 @@ module.exports =
       "name": "namenode_opt_maxpermsize",
       "displayName": "NameNode maximum permanent generation size",
       "description": "Maximum size of Java permanent generation for NameNode (Java option -XX:MaxPermSize).",
-      "defaultValue": "256",
+      "recommendedValue": "256",
       "displayType": "int",
       "unit": "MB",
       "isOverridable": false,
@@ -1759,7 +1825,7 @@ module.exports =
       "name": "snamenode_host",
       "displayName": "SNameNode host",
       "value": "",
-      "defaultValue": "",
+      "recommendedValue": "",
       "description": "The host that has been assigned to run SecondaryNameNode",
       "displayType": "masterHost",
       "isOverridable": false,
@@ -1775,7 +1841,7 @@ module.exports =
       "name": "datanode_hosts", //not in the schema. For UI purpose
       "displayName": "DataNode hosts",
       "value": "",
-      "defaultValue": "",
+      "recommendedValue": "",
       "description": "The hosts that have been assigned to run DataNode",
       "displayType": "slaveHosts",
       "isRequired": false,
@@ -1792,7 +1858,7 @@ module.exports =
       "name": "dtnode_heapsize",
       "displayName": "DataNode maximum Java heap size",
       "description": "Maximum Java heap size for DataNode (Java option -Xmx)",
-      "defaultValue": "1024",
+      "recommendedValue": "1024",
       "displayType": "int",
       "unit": "MB",
       "isVisible": true,
@@ -1806,7 +1872,7 @@ module.exports =
       "name": "hadoop_heapsize",
       "displayName": "Hadoop maximum Java heap size",
       "description": "Maximum Java heap size for daemons such as Balancer (Java option -Xmx)",
-      "defaultValue": "1024",
+      "recommendedValue": "1024",
       "displayType": "int",
       "unit": "MB",
       "isVisible": true,
@@ -1820,7 +1886,7 @@ module.exports =
       "name": "hdfs_log_dir_prefix",
       "displayName": "Hadoop Log Dir Prefix",
       "description": "The parent directory for Hadoop log files.  The HDFS log directory will be ${hadoop_log_dir_prefix} / ${hdfs_user} and the MapReduce log directory will be ${hadoop_log_dir_prefix} / ${mapred_user}.",
-      "defaultValue": "/var/log/hadoop",
+      "recommendedValue": "/var/log/hadoop",
       "isReconfigurable": false,
       "displayType": "directory",
       "isOverridable": false,
@@ -1834,7 +1900,7 @@ module.exports =
       "name": "hadoop_pid_dir_prefix",
       "displayName": "Hadoop PID Dir Prefix",
       "description": "The parent directory in which the PID files for Hadoop processes will be created.  The HDFS PID directory will be ${hadoop_pid_dir_prefix} / ${hdfs_user} and the MapReduce PID directory will be ${hadoop_pid_dir_prefix} / ${mapred_user}.",
-      "defaultValue": "/var/run/hadoop",
+      "recommendedValue": "/var/run/hadoop",
       "isReconfigurable": false,
       "displayType": "directory",
       "isOverridable": false,
@@ -1848,51 +1914,13 @@ module.exports =
       "name": "hadoop_root_logger",
       "displayName": "Hadoop Root Logger",
       "description": "Hadoop logging options",
-      "defaultValue": "INFO,RFA",
+      "recommendedValue": "INFO,RFA",
       "displayType": "string",
       "isOverridable": false,
       "isVisible": true,
       "serviceName": "HDFS",
       "filename": "hadoop-env.xml",
       "category": "Advanced hadoop-env"
-    },
-    {
-      "id": "puppet var",
-      "name": "security_enabled",
-      "displayName": "Hadoop Security",
-      "description": "Enable hadoop security",
-      "defaultValue": 'false',
-      "isRequired": false,
-      "displayType": "checkbox",
-      "isOverridable": false,
-      "isVisible": false,
-      "serviceName": "MISC",
-      "filename": "cluster-env.xml"
-    },
-    {
-      "id": "puppet var",
-      "name": "kerberos_domain",
-      "displayName": "Kerberos realm",
-      "description": "Kerberos realm",
-      "defaultValue": 'EXAMPLE.COM',
-      "isRequired": false,
-      "isOverridable": false,
-      "isVisible": false,
-      "serviceName": "MISC",
-      "filename": "cluster-env.xml"
-    },
-    {
-      "id": "puppet var",
-      "name": "rpm_version",
-      "displayName": "Hadoop RPM version",
-      "description": "Hadoop RPM version",
-      "defaultValue": '',
-      "isRequired": true,
-      "isOverridable": false,
-      "isVisible": false,
-      "isEditable": false,
-      "serviceName": "MISC",
-      "filename": "cluster-env.xml"
     },
 
   /**********************************************MAPREDUCE2***************************************/
@@ -1901,7 +1929,7 @@ module.exports =
       "name": "hs_host",
       "displayName": "History Server",
       "description": "History Server",
-      "defaultValue": "",
+      "recommendedValue": "",
       "isOverridable": false,
       "displayType": "masterHost",
       "isRequiredByAgent": false,
@@ -1916,7 +1944,7 @@ module.exports =
       "name": "jobhistory_heapsize",
       "displayName": "History Server heap size",
       "description": "History Server heap size",
-      "defaultValue": "900",
+      "recommendedValue": "900",
       "unit": "MB",
       "isOverridable": true,
       "displayType": "int",
@@ -1931,7 +1959,7 @@ module.exports =
       "name": "mapred_log_dir_prefix",
       "displayName": "Mapreduce Log Dir Prefix",
       "description": "",
-      "defaultValue": "/var/log/hadoop-mapreduce",
+      "recommendedValue": "/var/log/hadoop-mapreduce",
       "displayType": "directory",
       "isOverridable": false,
       "isVisible": true,
@@ -1945,7 +1973,7 @@ module.exports =
       "name": "mapred_pid_dir_prefix",
       "displayName": "Mapreduce PID Dir Prefix",
       "description": "",
-      "defaultValue": "/var/run/hadoop-mapreduce",
+      "recommendedValue": "/var/run/hadoop-mapreduce",
       "displayType": "directory",
       "isOverridable": false,
       "isVisible": true,
@@ -1960,7 +1988,7 @@ module.exports =
       "name": "yarn_heapsize",
       "displayName": "YARN Java heap size",
       "description": "Max heapsize for all YARN components",
-      "defaultValue": "1024",
+      "recommendedValue": "1024",
       "isOverridable": true,
       "displayType": "int",
       "unit": "MB",
@@ -1975,7 +2003,7 @@ module.exports =
       "name": "rm_host",
       "displayName": "ResourceManager",
       "description": "ResourceManager",
-      "defaultValue": "",
+      "recommendedValue": "",
       "isOverridable": false,
       "displayType": "masterHost",
       "isRequiredByAgent": false,
@@ -1990,7 +2018,7 @@ module.exports =
       "name": "resourcemanager_heapsize",
       "displayName": "ResourceManager Java heap size",
       "description": "Max heapsize for ResourceManager",
-      "defaultValue": "1024",
+      "recommendedValue": "1024",
       "isOverridable": false,
       "displayType": "int",
       "unit": "MB",
@@ -2005,7 +2033,7 @@ module.exports =
       "name": "nm_hosts",
       "displayName": "NodeManager",
       "description": "List of NodeManager Hosts.",
-      "defaultValue": "",
+      "recommendedValue": "",
       "isOverridable": false,
       "displayType": "slaveHosts",
       "isRequiredByAgent": false,
@@ -2020,7 +2048,7 @@ module.exports =
       "name": "nodemanager_heapsize",
       "displayName": "NodeManager Java heap size",
       "description": "Max heapsize for NodeManager",
-      "defaultValue": "1024",
+      "recommendedValue": "1024",
       "isOverridable": true,
       "displayType": "int",
       "unit": "MB",
@@ -2035,7 +2063,7 @@ module.exports =
       "name": "yarn_log_dir_prefix",
       "displayName": "YARN Log Dir Prefix",
       "description": "",
-      "defaultValue": "/var/log/hadoop-yarn",
+      "recommendedValue": "/var/log/hadoop-yarn",
       "displayType": "directory",
       "isOverridable": false,
       "isReconfigurable": false,
@@ -2049,7 +2077,7 @@ module.exports =
       "name": "yarn_pid_dir_prefix",
       "displayName": "YARN PID Dir Prefix",
       "description": "",
-      "defaultValue": "/var/run/hadoop-yarn",
+      "recommendedValue": "/var/run/hadoop-yarn",
       "displayType": "directory",
       "isOverridable": false,
       "isVisible": true,
@@ -2074,7 +2102,7 @@ module.exports =
       "name": "ats_host",
       "displayName": "App Timeline Server",
       "description": "Application Timeline Server Host",
-      "defaultValue": "",
+      "recommendedValue": "",
       "isOverridable": false,
       "displayType": "masterHost",
       "isRequiredByAgent": false,
@@ -2089,7 +2117,7 @@ module.exports =
       "name": "apptimelineserver_heapsize",
       "displayName": "AppTimelineServer Java heap size",
       "description": "AppTimelineServer Java heap size",
-      "defaultValue": "1024",
+      "recommendedValue": "1024",
       "isOverridable": false,
       "displayType": "int",
       "unit": "MB",
@@ -2105,7 +2133,7 @@ module.exports =
       "name": "hbasemaster_host",
       "displayName": "HBase Master hosts",
       "value": "",
-      "defaultValue": "",
+      "recommendedValue": "",
       "description": "The host that has been assigned to run HBase Master",
       "displayType": "masterHosts",
       "isOverridable": false,
@@ -2121,7 +2149,7 @@ module.exports =
       "name": "hbase_master_heapsize",
       "displayName": "HBase Master Maximum Java heap size",
       "description": "Maximum Java heap size for HBase master (Java option -Xmx)",
-      "defaultValue": "1024",
+      "recommendedValue": "1024",
       "displayType": "int",
       "unit": "MB",
       "isOverridable": true,
@@ -2136,7 +2164,7 @@ module.exports =
       "name": "regionserver_hosts",
       "displayName": "RegionServer hosts",
       "value": "",
-      "defaultValue": "",
+      "recommendedValue": "",
       "description": "The hosts that have been assigned to run RegionServer",
       "displayType": "slaveHosts",
       "isOverridable": false,
@@ -2153,7 +2181,7 @@ module.exports =
       "name": "hbase_regionserver_heapsize",
       "displayName": "RegionServers maximum Java heap size",
       "description": "Maximum Java heap size for RegionServers (Java option -Xmx)",
-      "defaultValue": "1024",
+      "recommendedValue": "1024",
       "displayType": "int",
       "unit": "MB",
       "isVisible": true,
@@ -2170,6 +2198,7 @@ module.exports =
       "unit": "MB",
       "isVisible": true,
       "serviceName": "HBASE",
+      "filename": "hbase-env.xml",
       "category": "HBASE_REGIONSERVER",
       "index": 6
     },
@@ -2180,6 +2209,7 @@ module.exports =
       "displayType": "float",
       "isVisible": true,
       "serviceName": "HBASE",
+      "filename": "hbase-env.xml",
       "category": "HBASE_REGIONSERVER",
       "index": 7
     },
@@ -2188,7 +2218,7 @@ module.exports =
       "name": "hbase_log_dir",
       "displayName": "HBase Log Dir",
       "description": "Directory for HBase logs",
-      "defaultValue": "/var/log/hbase",
+      "recommendedValue": "/var/log/hbase",
       "isReconfigurable": false,
       "displayType": "directory",
       "isOverridable": false,
@@ -2202,7 +2232,7 @@ module.exports =
       "name": "hbase_pid_dir",
       "displayName": "HBase PID Dir",
       "description": "Directory in which the pid files for HBase processes will be created",
-      "defaultValue": "/var/run/hbase",
+      "recommendedValue": "/var/run/hbase",
       "isReconfigurable": false,
       "displayType": "directory",
       "isOverridable": false,
@@ -2236,7 +2266,7 @@ module.exports =
       "name": "fs_glusterfs_default_name",
       "displayName": "GlusterFS default fs name 1.x Hadoop",
       "description": "GlusterFS default filesystem name (glusterfs://{MasterFQDN}:9000)",
-      "defaultValue": "glusterfs:///localhost:8020",
+      "recommendedValue": "glusterfs:///localhost:8020",
       "displayType": "string",
       "isVisible": true,
       "serviceName": "GLUSTERFS",
@@ -2248,7 +2278,7 @@ module.exports =
       "name": "glusterfs_defaultFS_name",
       "displayName": "GlusterFS default fs name 2.x Hadoop",
       "description": "GlusterFS default filesystem name (glusterfs:///)",
-      "defaultValue": "glusterfs:///localhost:8020",
+      "recommendedValue": "glusterfs:///localhost:8020",
       "displayType": "string",
       "isVisible": true,
       "serviceName": "GLUSTERFS",
@@ -2260,7 +2290,7 @@ module.exports =
       "name": "hadoop_heapsize",
       "displayName": "Hadoop maximum Java heap size",
       "description": "Maximum Java heap size for daemons such as Balancer (Java option -Xmx)",
-      "defaultValue": "1024",
+      "recommendedValue": "1024",
       "displayType": "int",
       "unit": "MB",
       "isVisible": true,
@@ -2274,7 +2304,7 @@ module.exports =
       "name": "hdfs_log_dir_prefix",
       "displayName": "Hadoop Log Dir Prefix",
       "description": "The parent directory for Hadoop log files.  The HDFS log directory will be ${hadoop_log_dir_prefix} / ${hdfs_user} and the MapReduce log directory will be ${hadoop_log_dir_prefix} / ${mapred_user}.",
-      "defaultValue": "/var/log/hadoop",
+      "recommendedValue": "/var/log/hadoop",
       "isReconfigurable": false,
       "displayType": "directory",
       "isOverridable": false,
@@ -2288,7 +2318,7 @@ module.exports =
       "name": "hadoop_pid_dir_prefix",
       "displayName": "Hadoop PID Dir Prefix",
       "description": "The parent directory in which the PID files for Hadoop processes will be created.  The HDFS PID directory will be ${hadoop_pid_dir_prefix} / ${hdfs_user} and the MapReduce PID directory will be ${hadoop_pid_dir_prefix} / ${mapred_user}.",
-      "defaultValue": "/var/run/hadoop",
+      "recommendedValue": "/var/run/hadoop",
       "isReconfigurable": false,
       "displayType": "directory",
       "isOverridable": false,
@@ -2302,7 +2332,7 @@ module.exports =
       "name": "namenode_heapsize",
       "displayName": "Name Node Heap Size",
       "description": "Name Node Heap Size, default jvm memory setting",
-      "defaultValue": "1024",
+      "recommendedValue": "1024",
       "isReconfigurable": false,
       "displayType": "int",
       "isOverridable": false,
@@ -2316,7 +2346,7 @@ module.exports =
       "name": "namenode_opt_newsize",
       "displayName": "NameNode new generation size",
       "description": "Default size of Java new generation for NameNode (Java option -XX:NewSize).  This also applies to the Secondary NameNode.",
-      "defaultValue": "200",
+      "recommendedValue": "200",
       "displayType": "int",
       "unit": "MB",
       "isOverridable": false,
@@ -2330,7 +2360,7 @@ module.exports =
       "name": "namenode_opt_maxnewsize",
       "displayName": "NameNode maximum new generation size",
       "description": "Maximum size of Java new generation for NameNode (Java option -XX:MaxnewSize).",
-      "defaultValue": "200",
+      "recommendedValue": "200",
       "displayType": "int",
       "unit": "MB",
       "isOverridable": false,
@@ -2344,7 +2374,7 @@ module.exports =
       "name": "namenode_opt_permsize",
       "displayName": "NameNode permanent generation size",
       "description": "Default size of Java permanent generation for NameNode (Java option -XX:PermSize).  This also applies to the Secondary NameNode.",
-      "defaultValue": "128",
+      "recommendedValue": "128",
       "displayType": "int",
       "unit": "MB",
       "isOverridable": false,
@@ -2358,7 +2388,7 @@ module.exports =
       "name": "namenode_opt_maxpermsize",
       "displayName": "NameNode maximum permanent generation size",
       "description": "Maximum size of Java permanent generation for NameNode (Java option -XX:MaxPermSize).",
-      "defaultValue": "256",
+      "recommendedValue": "256",
       "displayType": "int",
       "unit": "MB",
       "isOverridable": false,
@@ -2372,7 +2402,7 @@ module.exports =
       "name": "dtnode_heapsize",
       "displayName": "DataNode maximum Java heap size",
       "description": "Maximum Java heap size for DataNode (Java option -Xmx)",
-      "defaultValue": "1024",
+      "recommendedValue": "1024",
       "displayType": "int",
       "unit": "MB",
       "isVisible": false,
@@ -2385,7 +2415,7 @@ module.exports =
       "name": "glusterfs_user",
       "displayName": "glusterfs user",
       "description": "glusterfs user",
-      "defaultValue": "root",
+      "recommendedValue": "root",
       "displayType": "string",
       "isVisible": false,
       "serviceName": "GLUSTERFS",
@@ -2397,7 +2427,7 @@ module.exports =
       "name": "namenode_host",
       "displayName": "NameNode Host",
       "description": "NameNode Host.",
-      "defaultValue": "",
+      "recommendedValue": "",
       "displayType": "string",
       "isVisible": false,
       "serviceName": "GLUSTERFS",
@@ -2409,7 +2439,7 @@ module.exports =
       "name": "snamenode_host",
       "displayName": "Secondary NameNode Host",
       "description": "Secondary NameNode Host.",
-      "defaultValue": "",
+      "recommendedValue": "",
       "displayType": "string",
       "isVisible": false,
       "serviceName": "GLUSTERFS",
@@ -2420,11 +2450,11 @@ module.exports =
     {
       "id": "puppet var",
       "name": "hivemetastore_host",
-      "displayName": "Hive Metastore host",
+      "displayName": "Hive Metastore hosts",
       "value": "",
-      "defaultValue": "",
-      "description": "The host that has been assigned to run Hive Metastore",
-      "displayType": "masterHost",
+      "recommendedValue": "",
+      "description": "The hosts that have been assigned to run Hive Metastore",
+      "displayType": "masterHosts",
       "isOverridable": false,
       "isRequiredByAgent": false,
       "isVisible": true,
@@ -2433,17 +2463,28 @@ module.exports =
       "category": "HIVE_METASTORE",
       "index": 0
     },
+    {
+      "name": "hive_master_hosts",
+      "value": "",
+      "recommendedValue": "",
+      "isOverridable": false,
+      "isRequiredByAgent": false,
+      "isVisible": false,
+      "serviceName": "HIVE",
+      "filename": "hive-env.xml"
+    },
     // for existing MySQL
     {
       "id": "puppet var",
       "name": "hive_existing_mysql_database",
       "displayName": "Database Type",
       "value": "",
-      "defaultValue": "MySQL",
+      "recommendedValue": "MySQL",
       "description": "Using an existing MySQL database for Hive Metastore",
       "displayType": "masterHost",
       "isOverridable": false,
       "isVisible": false,
+      "isRequiredByAgent": false,
       "isReconfigurable": false,
       "serviceName": "HIVE",
       "filename": "hive-env.xml",
@@ -2456,11 +2497,12 @@ module.exports =
       "name": "hive_existing_postgresql_database",
       "displayName": "Database Type",
       "value": "",
-      "defaultValue": "PostgreSQL",
+      "recommendedValue": "PostgreSQL",
       "description": "Using an existing PostgreSQL database for Hive Metastore",
       "displayType": "masterHost",
       "isOverridable": false,
       "isVisible": false,
+      "isRequiredByAgent": false,
       "isReconfigurable": false,
       "serviceName": "HIVE",
       "filename": "hive-env.xml",
@@ -2473,10 +2515,11 @@ module.exports =
       "name": "hive_existing_oracle_database",
       "displayName": "Database Type",
       "value": "",
-      "defaultValue": "Oracle",
+      "recommendedValue": "Oracle",
       "description": "Using an existing Oracle database for Hive Metastore",
       "displayType": "masterHost",
       "isVisible": false,
+      "isRequiredByAgent": false,
       "isOverridable": false,
       "isReconfigurable": false,
       "serviceName": "HIVE",
@@ -2490,11 +2533,12 @@ module.exports =
       "name": "hive_ambari_database",
       "displayName": "Database Type",
       "value": "",
-      "defaultValue": "PostgreSQL",
+      "recommendedValue": "PostgreSQL",
       "description": "PostgreSQL will be installed by Ambari",
       "displayType": "masterHost",
       "isOverridable": false,
       "isVisible": false,
+      "isRequiredByAgent": false,
       "serviceName": "HIVE",
       "filename": "hive-env.xml",
       "category": "HIVE_METASTORE",
@@ -2505,7 +2549,7 @@ module.exports =
       "name": "hive_database",
       "displayName": "Hive Database",
       "value": "",
-      "defaultValue": "New PostgreSQL Database",
+      "recommendedValue": "New PostgreSQL Database",
       "options": [
         {
           displayName: 'New PostgreSQL Database',
@@ -2521,13 +2565,12 @@ module.exports =
         },
         {
           displayName: 'Existing Oracle Database',
-          foreignKeys: ['hive_existing_oracle_database', 'hive_existing_oracle_host'],
-          hidden: !App.supports.hiveOozieExtraDatabases
+          foreignKeys: ['hive_existing_oracle_database', 'hive_existing_oracle_host']
         }
       ],
       "description": "PostgreSQL will be installed by Ambari",
       "displayType": "radio button",
-      "isReconfigurable": false,
+      "isReconfigurable": true,
       "radioName": "hive-database",
       "isOverridable": false,
       "isVisible": true,
@@ -2541,7 +2584,8 @@ module.exports =
       "name": "hive_hostname",
       "displayName": "Database Host",
       "description": "Specify the host on which the database is hosted",
-      "defaultValue": "",
+      "savedValue": "",
+      "recommendedValue": "",
       "isReconfigurable": true,
       "displayType": "host",
       "isOverridable": false,
@@ -2557,11 +2601,9 @@ module.exports =
       "name": "hive_existing_mysql_host",
       "displayName": "Database Host",
       "description": "Specify the host on which the existing database is hosted",
-      "defaultValue": "",
-      "isReconfigurable": false,
+      "recommendedValue": "",
       "displayType": "host",
       "isOverridable": false,
-      "isRequiredByAgent": false,
       "isVisible": false,
       "isObserved": true,
       "serviceName": "HIVE",
@@ -2574,11 +2616,9 @@ module.exports =
       "name": "hive_existing_postgresql_host",
       "displayName": "Database Host",
       "description": "Specify the host on which the existing database is hosted",
-      "defaultValue": "",
-      "isReconfigurable": false,
+      "recommendedValue": "",
       "displayType": "host",
       "isOverridable": false,
-      "isRequiredByAgent": false,
       "isVisible": false,
       "isObserved": true,
       "serviceName": "HIVE",
@@ -2591,10 +2631,9 @@ module.exports =
       "name": "hive_existing_oracle_host",
       "displayName": "Database Host",
       "description": "Specify the host on which the existing database is hosted",
-      "defaultValue": "",
+      "recommendedValue": "",
       "displayType": "host",
       "isOverridable": false,
-      "isRequiredByAgent": false,
       "isVisible": false,
       "isObserved": true,
       "serviceName": "HIVE",
@@ -2606,14 +2645,14 @@ module.exports =
       "id": "puppet var",
       "name": "hive_ambari_host",
       "value": "",
-      "defaultValue": "",
+      "recommendedValue": "",
       "displayName": "Database Host",
       "description": "Host on which the database will be created by Ambari",
       "isReconfigurable": false,
       "displayType": "masterHost",
-      "isRequiredByAgent": false,
       "isOverridable": false,
       "isVisible": false,
+      "isRequiredByAgent": false,
       "serviceName": "HIVE",
       "filename": "hive-env.xml",
       "category": "HIVE_METASTORE",
@@ -2624,7 +2663,7 @@ module.exports =
       "name": "hive_metastore_port",
       "displayName": "Hive metastore port",
       "description": "",
-      "defaultValue": "9083",
+      "recommendedValue": "9083",
       "isReconfigurable": false,
       "displayType": "int",
       "isOverridable": false,
@@ -2638,7 +2677,7 @@ module.exports =
       "name": "hive_lib",
       "displayName": "Hive library",
       "description": "",
-      "defaultValue": "/usr/lib/hive/lib/",
+      "recommendedValue": "/usr/lib/hive/lib/",
       "isReconfigurable": false,
       "displayType": "directory",
       "isVisible": false,
@@ -2652,7 +2691,7 @@ module.exports =
       "name": "hive_dbroot",
       "displayName": "Hive db directory",
       "description": "",
-      "defaultValue": "/usr/lib/hive/lib",
+      "recommendedValue": "/usr/lib/hive/lib",
       "isReconfigurable": false,
       "displayType": "directory",
       "isVisible": false,
@@ -2666,7 +2705,7 @@ module.exports =
       "name": "hive_log_dir",
       "displayName": "Hive Log Dir",
       "description": "Directory for Hive log files",
-      "defaultValue": "/var/log/hive",
+      "recommendedValue": "/var/log/hive",
       "isReconfigurable": false,
       "displayType": "directory",
       "isOverridable": false,
@@ -2680,7 +2719,7 @@ module.exports =
       "name": "hive_pid_dir",
       "displayName": "Hive PID Dir",
       "description": "Directory in which the PID files for Hive processes will be created",
-      "defaultValue": "/var/run/hive",
+      "recommendedValue": "/var/run/hive",
       "isReconfigurable": false,
       "displayType": "directory",
       "isOverridable": false,
@@ -2695,7 +2734,7 @@ module.exports =
       "name": "webhcatserver_host",
       "displayName": "WebHCat Server host",
       "value": "",
-      "defaultValue": "",
+      "recommendedValue": "",
       "description": "The host that has been assigned to run WebHCat Server",
       "displayType": "masterHost",
       "isOverridable": false,
@@ -2710,13 +2749,13 @@ module.exports =
       "name": "hcat_log_dir",
       "displayName": "WebHCat Log Dir",
       "description": "Directory for WebHCat log files",
-      "defaultValue": "/var/log/webhcat",
+      "recommendedValue": "/var/log/webhcat",
       "isReconfigurable": false,
       "displayType": "directory",
       "isOverridable": false,
       "isVisible": true,
       "serviceName": "HIVE",
-      "filename": "webhcat-env.xml",
+      "filename": "hive-env.xml",
       "category": "Advanced webhcat-env"
     },
     {
@@ -2724,13 +2763,13 @@ module.exports =
       "name": "hcat_pid_dir",
       "displayName": "WebHCat PID Dir",
       "description": "Directory in which the PID files for WebHCat processes will be created",
-      "defaultValue": "/var/run/webhcat",
+      "recommendedValue": "/var/run/webhcat",
       "isReconfigurable": false,
       "displayType": "directory",
       "isOverridable": false,
       "isVisible": true,
       "serviceName": "HIVE",
-      "filename": "webhcat-env.xml",
+      "filename": "hive-env.xml",
       "category": "Advanced webhcat-env"
     },
   /**********************************************OOZIE***************************************/
@@ -2739,9 +2778,9 @@ module.exports =
       "name": "oozieserver_host",
       "displayName": "Oozie Server host",
       "value": "",
-      "defaultValue": "",
-      "description": "The host that has been assigned to run Oozie Server",
-      "displayType": "masterHost",
+      "recommendedValue": "",
+      "description": "The hosts that have been assigned to run Oozie Server",
+      "displayType": "masterHosts",
       "isOverridable": false,
       "isVisible": true,
       "isRequiredByAgent": false,
@@ -2756,7 +2795,7 @@ module.exports =
       "name": "oozie_existing_oracle_database",
       "displayName": "Database Type",
       "value": "",
-      "defaultValue": "Oracle",
+      "recommendedValue": "Oracle",
       "description": "Using an existing Oracle database for Oozie Metastore",
       "displayType": "masterHost",
       "isVisible": false,
@@ -2774,7 +2813,7 @@ module.exports =
       "name": "oozie_existing_postgresql_database",
       "displayName": "Database Type",
       "value": "",
-      "defaultValue": "PostgreSQL",
+      "recommendedValue": "PostgreSQL",
       "description": "Using an existing PostgreSQL database for Oozie Metastore",
       "displayType": "masterHost",
       "isOverridable": false,
@@ -2791,7 +2830,7 @@ module.exports =
       "name": "oozie_ambari_database",
       "displayName": "Database Type",
       "value": "",
-      "defaultValue": "MySQL",
+      "recommendedValue": "MySQL",
       "description": "MySQL will be installed by Ambari",
       "displayType": "masterHost",
       "isVisible": false,
@@ -2807,7 +2846,7 @@ module.exports =
       "name": "oozie_derby_database",
       "displayName": "Database Type",
       "value": "",
-      "defaultValue": "Derby",
+      "recommendedValue": "Derby",
       "description": "Using current Derby database for Oozie Metastore",
       "displayType": "masterHost",
       "isVisible": false,
@@ -2824,7 +2863,7 @@ module.exports =
       "name": "oozie_existing_mysql_database",
       "displayName": "Database Type",
       "value": "",
-      "defaultValue": "MySQL",
+      "recommendedValue": "MySQL",
       "description": "Using an existing MySQL database for Oozie Metastore",
       "displayType": "masterHost",
       "isVisible": false,
@@ -2840,36 +2879,28 @@ module.exports =
       "name": "oozie_database",
       "displayName": "Oozie Database",
       "value": "",
-      "defaultValue": "New Derby Database",
+      "recommendedValue": "New Derby Database",
       "options": [
         {
           displayName: 'New Derby Database',
           foreignKeys: ['oozie_derby_database']
         },
-        /*{
-         displayName: 'New MySQL Database',
-         foreignKeys: ['oozie_ambari_database', 'oozie_ambari_host'],
-         hidden: !App.supports.hiveOozieExtraDatabases
-         },*/
         {
           displayName: 'Existing MySQL Database',
-          foreignKeys: ['oozie_existing_mysql_database', 'oozie_existing_mysql_host'],
-          hidden: !App.supports.hiveOozieExtraDatabases
+          foreignKeys: ['oozie_existing_mysql_database', 'oozie_existing_mysql_host']
         },
         {
           displayName: 'Existing PostgreSQL Database',
-          foreignKeys: ['oozie_existing_postgresql_database', 'oozie_existing_postgresql_host'],
-          hidden: !App.supports.hiveOozieExtraDatabases
+          foreignKeys: ['oozie_existing_postgresql_database', 'oozie_existing_postgresql_host']
         },
         {
           displayName: 'Existing Oracle Database',
-          foreignKeys: ['oozie_existing_oracle_database', 'oozie_existing_oracle_host'],
-          hidden: !App.supports.hiveOozieExtraDatabases
+          foreignKeys: ['oozie_existing_oracle_database', 'oozie_existing_oracle_host']
         }
       ],
       "description": "Current Derby Database will be installed by Ambari",
       "displayType": "radio button",
-      "isReconfigurable": false,
+      "isReconfigurable": true,
       "isOverridable": false,
       "radioName": "oozie-database",
       "isVisible": true,
@@ -2883,8 +2914,6 @@ module.exports =
       "name": "oozie_data_dir",
       "displayName": "Oozie Data Dir",
       "description": "Data directory in which the Oozie DB exists",
-      "defaultValue": "",
-      "defaultDirectory": "/hadoop/oozie/data",
       "isReconfigurable": true,
       "displayType": "directory",
       "isOverridable": false,
@@ -2898,7 +2927,8 @@ module.exports =
     {
       "id": "puppet var",
       "name": "oozie_hostname",
-      "defaultValue": "",
+      "savedValue": "",
+      "recommendedValue": "",
       "displayName": "Database Host",
       "description": "The host where the Oozie database is located",
       "isReconfigurable": true,
@@ -2915,7 +2945,7 @@ module.exports =
       "name": "oozie_existing_mysql_host",
       "displayName": "Database Host",
       "description": "Specify the host on which the existing database is hosted",
-      "defaultValue": "",
+      "recommendedValue": "",
       "isOverridable": false,
       "displayType": "host",
       "isVisible": false,
@@ -2930,7 +2960,7 @@ module.exports =
       "name": "oozie_existing_postgresql_host",
       "displayName": "Database Host",
       "description": "Specify the host on which the existing database is hosted",
-      "defaultValue": "",
+      "recommendedValue": "",
       "isOverridable": false,
       "displayType": "host",
       "isVisible": false,
@@ -2945,7 +2975,7 @@ module.exports =
       "name": "oozie_existing_oracle_host",
       "displayName": "Database Host",
       "description": "Specify the host on which the existing database is hosted",
-      "defaultValue": "",
+      "recommendedValue": "",
       "isOverridable": false,
       "displayType": "host",
       "isVisible": false,
@@ -2959,7 +2989,7 @@ module.exports =
       "id": "puppet var",
       "name": "oozie_ambari_host",
       "value": "",
-      "defaultValue": "",
+      "recommendedValue": "",
       "displayName": "Database Host",
       "description": "Host on which the database will be created by Ambari",
       "isReconfigurable": false,
@@ -2976,7 +3006,7 @@ module.exports =
       "name": "oozie_log_dir",
       "displayName": "Oozie Log Dir",
       "description": "Directory for oozie logs",
-      "defaultValue": "/var/log/oozie",
+      "recommendedValue": "/var/log/oozie",
       "isReconfigurable": false,
       "displayType": "directory",
       "isOverridable": false,
@@ -2990,7 +3020,7 @@ module.exports =
       "name": "oozie_pid_dir",
       "displayName": "Oozie PID Dir",
       "description": "Directory in which the pid files for oozie processes will be created",
-      "defaultValue": "/var/run/oozie",
+      "recommendedValue": "/var/run/oozie",
       "isReconfigurable": false,
       "displayType": "directory",
       "isOverridable": false,
@@ -3011,58 +3041,13 @@ module.exports =
       "filename": "oozie-env.xml",
       "category": "Advanced oozie-env"
     },
-  /**********************************************NAGIOS***************************************/
-    {
-      "id": "puppet var",
-      "name": "nagios_web_login",
-      "displayName": "Nagios Admin username",
-      "description": "Nagios Web UI Admin username",
-      "defaultValue": "nagiosadmin",
-      "isReconfigurable": false,
-      "displayType": "user",
-      "isOverridable": false,
-      "isVisible": true,
-      "serviceName": "NAGIOS",
-      "category": "General",
-      "filename": "nagios-env.xml",
-      "index": 0
-    },
-    {
-      "id": "puppet var",
-      "name": "nagios_web_password",
-      "displayName": "Nagios Admin password",
-      "description": "Nagios Web UI Admin password",
-      "defaultValue": "",
-      "isReconfigurable": true,
-      "displayType": "password",
-      "isOverridable": false,
-      "isVisible": true,
-      "serviceName": "NAGIOS",
-      "filename": "nagios-env.xml",
-      "category": "General",
-      "index": 1
-    },
-    {
-      "id": "puppet var",
-      "name": "nagios_contact",
-      "displayName": "Hadoop Admin email",
-      "description": "Hadoop Administrator email for alert notification",
-      "defaultValue": "",
-      "displayType": "email",
-      "isOverridable": false,
-      "isVisible": true,
-      "serviceName": "NAGIOS",
-      "filename": "nagios-env.xml",
-      "category": "General",
-      "index": 2
-    },
   /**********************************************ZOOKEEPER***************************************/
     {
       "id": "puppet var",
       "name": "zookeeperserver_hosts",
       "displayName": "ZooKeeper Server hosts",
       "value": "",
-      "defaultValue": "",
+      "recommendedValue": "",
       "description": "The host that has been assigned to run ZooKeeper Server",
       "displayType": "masterHosts",
       "isVisible": true,
@@ -3079,8 +3064,6 @@ module.exports =
       "name": "zk_data_dir",
       "displayName": "ZooKeeper directory",
       "description": "Data directory for ZooKeeper",
-      "defaultValue": "",
-      "defaultDirectory": "/hadoop/zookeeper",
       "isReconfigurable": true,
       "displayType": "directory",
       "isVisible": true,
@@ -3094,7 +3077,7 @@ module.exports =
       "name": "tickTime",
       "displayName": "Length of single Tick",
       "description": "The length of a single tick in milliseconds, which is the basic time unit used by ZooKeeper",
-      "defaultValue": "2000",
+      "recommendedValue": "2000",
       "displayType": "int",
       "unit": "ms",
       "isOverridable": false,
@@ -3109,7 +3092,7 @@ module.exports =
       "name": "initLimit",
       "displayName": "Ticks to allow for sync at Init",
       "description": "Amount of time, in ticks to allow followers to connect and sync to a leader",
-      "defaultValue": "10",
+      "recommendedValue": "10",
       "displayType": "int",
       "isOverridable": false,
       "isVisible": true,
@@ -3123,7 +3106,7 @@ module.exports =
       "name": "syncLimit",
       "displayName": "Ticks to allow for sync at Runtime",
       "description": "Amount of time, in ticks to allow followers to connect",
-      "defaultValue": "5",
+      "recommendedValue": "5",
       "displayType": "int",
       "isOverridable": false,
       "isVisible": true,
@@ -3137,7 +3120,7 @@ module.exports =
       "name": "clientPort",
       "displayName": "Port for running ZK Server",
       "description": "Port for running ZooKeeper server",
-      "defaultValue": "2181",
+      "recommendedValue": "2181",
       "displayType": "int",
       "isOverridable": false,
       "isVisible": true,
@@ -3151,7 +3134,7 @@ module.exports =
       "name": "zk_log_dir",
       "displayName": "ZooKeeper Log Dir",
       "description": "Directory for ZooKeeper log files",
-      "defaultValue": "/var/log/zookeeper",
+      "recommendedValue": "/var/log/zookeeper",
       "isReconfigurable": false,
       "displayType": "directory",
       "isOverridable": false,
@@ -3166,7 +3149,7 @@ module.exports =
       "name": "zk_pid_dir",
       "displayName": "ZooKeeper PID Dir",
       "description": "Directory in which the pid files for zookeeper processes will be created",
-      "defaultValue": "/var/run/zookeeper",
+      "recommendedValue": "/var/run/zookeeper",
       "isReconfigurable": false,
       "displayType": "directory",
       "isOverridable": false,
@@ -3182,7 +3165,7 @@ module.exports =
       "name": "ganglia_conf_dir",
       "displayName": "Ganglia conf directory",
       "description": "",
-      "defaultValue": "/etc/ganglia/hdp",
+      "recommendedValue": "/etc/ganglia/hdp",
       "isReconfigurable": false,
       "displayType": "directory",
       "isVisible": false,
@@ -3197,7 +3180,7 @@ module.exports =
       "name": "falconserver_host",
       "displayName": "Falcon Server",
       "description": "The host that has been assigned to run Falcon Server",
-      "defaultValue": "falcon",
+      "recommendedValue": "falcon",
       "displayType": "masterHost",
       "isVisible": true,
       "isRequiredByAgent": false,
@@ -3210,7 +3193,7 @@ module.exports =
       "name": "falcon_port",
       "displayName": "Falcon server port",
       "description": "Port the Falcon Server listens on",
-      "defaultValue": "15000",
+      "recommendedValue": "15000",
       "isReconfigurable": true,
       "displayType": "int",
       "isVisible": true,
@@ -3224,7 +3207,7 @@ module.exports =
       "name": "falcon_local_dir",
       "displayName": "Falcon data directory",
       "description": "Directory where Falcon data, such as activemq data, is stored",
-      "defaultValue": "/hadoop/falcon",
+      "recommendedValue": "/hadoop/falcon",
       "isReconfigurable": true,
       "displayType": "directory",
       "isVisible": true,
@@ -3238,7 +3221,7 @@ module.exports =
       "name": "falcon_store_uri",
       "displayName": "Falcon store URI",
       "description": "Directory where entity definitions are stored",
-      "defaultValue": "file:///hadoop/falcon/store",
+      "recommendedValue": "file:///hadoop/falcon/store",
       "isReconfigurable": true,
       "displayType": "string",
       "isVisible": true,
@@ -3252,7 +3235,7 @@ module.exports =
       "name": "falcon_log_dir",
       "displayName": "Falcon Log Dir",
       "description": "Directory for Falcon logs",
-      "defaultValue": "/var/log/falcon",
+      "recommendedValue": "/var/log/falcon",
       "displayType": "directory",
       "isOverridable": false,
       "isVisible": true,
@@ -3267,7 +3250,7 @@ module.exports =
       "name": "falcon_pid_dir",
       "displayName": "Falcon PID Dir",
       "description": "Directory in which the pid files for Falcon processes will be created",
-      "defaultValue": "/var/run/falcon",
+      "recommendedValue": "/var/run/falcon",
       "displayType": "directory",
       "isOverridable": false,
       "isVisible": true,
@@ -3282,7 +3265,7 @@ module.exports =
       "name": "falcon.embeddedmq",
       "displayName": "falcon.embeddedmq",
       "description": "Whether embeddedmq is enabled or not.",
-      "defaultValue": "true",
+      "recommendedValue": "true",
       "displayType": "string",
       "isOverridable": false,
       "isVisible": true,
@@ -3297,7 +3280,7 @@ module.exports =
       "name": "falcon.embeddedmq.data",
       "displayName": "falcon.embeddedmq.data",
       "description": "Directory in which embeddedmq data is stored.",
-      "defaultValue": "/hadoop/falcon/embeddedmq/data",
+      "recommendedValue": "/hadoop/falcon/embeddedmq/data",
       "displayType": "directory",
       "isOverridable": false,
       "isVisible": true,
@@ -3312,7 +3295,7 @@ module.exports =
       "name": "falcon.emeddedmq.port",
       "displayName": "falcon.emeddedmq.port",
       "description": "Port that embeddedmq will listen on.",
-      "defaultValue": "61616",
+      "recommendedValue": "61616",
       "displayType": "string",
       "isOverridable": false,
       "isVisible": true,
@@ -3328,7 +3311,7 @@ module.exports =
       "name": "storm_log_dir",
       "displayName": "storm_log_dir",
       "description": "Storm log directory",
-      "defaultValue": "/var/log/storm",
+      "recommendedValue": "/var/log/storm",
       "displayType": "directory",
       "isReconfigurable": true,
       "isVisible": true,
@@ -3342,7 +3325,7 @@ module.exports =
       "name": "storm_pid_dir",
       "displayName": "storm_pid_dir",
       "description": "Storm PID directory",
-      "defaultValue": "/var/run/storm",
+      "recommendedValue": "/var/run/storm",
       "displayType": "directory",
       "isReconfigurable": true,
       "isVisible": true,
@@ -3356,7 +3339,7 @@ module.exports =
       "name": "stormuiserver_host",
       "displayName": "Storm UI Server host",
       "description": "The host that has been assigned to run Storm UI Server",
-      "defaultValue": "",
+      "recommendedValue": "",
       "displayType": "masterHost",
       "isReconfigurable": false,
       "isVisible": true,
@@ -3370,7 +3353,7 @@ module.exports =
       "name": "drpcserver_host",
       "displayName": "DRPC Server host",
       "description": "The host that has been assigned to run DRPC Server",
-      "defaultValue": "",
+      "recommendedValue": "",
       "displayType": "masterHost",
       "isReconfigurable": false,
       "isVisible": true,
@@ -3384,7 +3367,7 @@ module.exports =
       "name": "supervisor_hosts",
       "displayName": "Supervisor hosts",
       "description": "The host that has been assigned to run Supervisor",
-      "defaultValue": "",
+      "recommendedValue": "",
       "displayType": "slaveHosts",
       "isReconfigurable": false,
       "isVisible": true,
@@ -3399,7 +3382,7 @@ module.exports =
       "name": "storm_rest_api_host",
       "displayName": "Storm REST API host",
       "description": "The host that has been assigned to run Storm REST API Server",
-      "defaultValue": "",
+      "recommendedValue": "",
       "displayType": "masterHost",
       "isReconfigurable": false,
       "isVisible": true,
@@ -3415,7 +3398,7 @@ module.exports =
       "name": "hbase_conf_dir",
       "displayName": "HBase conf dir",
       "description": "",
-      "defaultValue": "/etc/hbase",
+      "recommendedValue": "/etc/hbase",
       "isRequired": false,
       "displayType": "directory",
       "isVisible": false,
@@ -3430,12 +3413,12 @@ module.exports =
       "name": "proxyuser_group",
       "displayName": "Proxy group for Hive, WebHCat, Oozie and Falcon",
       "description": "",
-      "defaultValue": "users",
+      "recommendedValue": "users",
       "isReconfigurable": false,
       "displayType": "user",
       "isOverridable": false,
       "isVisible": true,
-      "filename": "core-site.xml",
+      "filename": "hadoop-env.xml",
       "serviceName": "MISC",
       "category": "Users and Groups",
       "belongsToService": ["HIVE", "OOZIE", "FALCON"],
@@ -3446,7 +3429,7 @@ module.exports =
       "name": "ganglia_runtime_dir",
       "displayName": "Ganglia runtime directory",
       "description": "",
-      "defaultValue": "/var/run/ganglia/hdp",
+      "recommendedValue": "/var/run/ganglia/hdp",
       "isReconfigurable": false,
       "displayType": "directory",
       "isVisible": false,
@@ -3460,7 +3443,7 @@ module.exports =
       "name": "hdfs_user",
       "displayName": "HDFS User",
       "description": "User to run HDFS as",
-      "defaultValue": "hdfs",
+      "recommendedValue": "hdfs",
       "isReconfigurable": false,
       "displayType": "user",
       "isOverridable": false,
@@ -3476,7 +3459,7 @@ module.exports =
       "name": "mapred_user",
       "displayName": "MapReduce User",
       "description": "User to run MapReduce as",
-      "defaultValue": "mapred",
+      "recommendedValue": "mapred",
       "isReconfigurable": false,
       "displayType": "user",
       "isOverridable": false,
@@ -3492,7 +3475,7 @@ module.exports =
       "name": "yarn_user",
       "displayName": "YARN User",
       "description": "User to run YARN as",
-      "defaultValue": "yarn",
+      "recommendedValue": "yarn",
       "isReconfigurable": false,
       "displayType": "user",
       "isOverridable": false,
@@ -3508,7 +3491,7 @@ module.exports =
       "name": "hbase_user",
       "displayName": "HBase User",
       "description": "User to run HBase as",
-      "defaultValue": "hbase",
+      "recommendedValue": "hbase",
       "isReconfigurable": false,
       "displayType": "user",
       "isOverridable": false,
@@ -3524,7 +3507,7 @@ module.exports =
       "name": "hive_user",
       "displayName": "Hive User",
       "description": "User to run Hive as",
-      "defaultValue": "hive",
+      "recommendedValue": "hive",
       "isReconfigurable": false,
       "displayType": "user",
       "isOverridable": false,
@@ -3540,7 +3523,7 @@ module.exports =
       "name": "hcat_user",
       "displayName": "HCat User",
       "description": "User to run HCatalog as",
-      "defaultValue": "hcat",
+      "recommendedValue": "hcat",
       "isReconfigurable": false,
       "displayType": "user",
       "isOverridable": false,
@@ -3556,13 +3539,13 @@ module.exports =
       "name": "webhcat_user",
       "displayName": "WebHCat User",
       "description": "User to run WebHCat as",
-      "defaultValue": "hcat",
+      "recommendedValue": "hcat",
       "isReconfigurable": false,
       "displayType": "user",
       "isOverridable": false,
       "isVisible": true,
       "serviceName": "MISC",
-      "filename": "webhcat-env.xml",
+      "filename": "hive-env.xml",
       "category": "Users and Groups",
       "belongsToService": ["HIVE"],
       "index": 7
@@ -3572,7 +3555,7 @@ module.exports =
       "name": "oozie_user",
       "displayName": "Oozie User",
       "description": "User to run Oozie as",
-      "defaultValue": "oozie",
+      "recommendedValue": "oozie",
       "isReconfigurable": false,
       "displayType": "user",
       "isOverridable": false,
@@ -3588,7 +3571,7 @@ module.exports =
       "name": "falcon_user",
       "displayName": "Falcon User",
       "description": "User to run Falcon as",
-      "defaultValue": "falcon",
+      "recommendedValue": "falcon",
       "isReconfigurable": false,
       "displayType": "user",
       "isOverridable": false,
@@ -3604,7 +3587,7 @@ module.exports =
       "name": "storm_user",
       "displayName": "Storm User",
       "description": "User to run Storm as",
-      "defaultValue": "storm",
+      "recommendedValue": "storm",
       "isReconfigurable": false,
       "displayType": "user",
       "isOverridable": false,
@@ -3620,7 +3603,7 @@ module.exports =
       "name": "zk_user",
       "displayName": "ZooKeeper User",
       "description": "User to run ZooKeeper as",
-      "defaultValue": "zookeeper",
+      "recommendedValue": "zookeeper",
       "isReconfigurable": false,
       "displayType": "user",
       "isOverridable": false,
@@ -3636,7 +3619,7 @@ module.exports =
       "name": "flume_user",
       "displayName": "Flume User",
       "description": "User to run Flume as",
-      "defaultValue": "flume",
+      "recommendedValue": "flume",
       "isReconfigurable": false,
       "displayType": "user",
       "isOverridable": false,
@@ -3652,7 +3635,7 @@ module.exports =
       "name": "gmetad_user",
       "displayName": "Ganglia User",
       "description": "The user used to run Ganglia",
-      "defaultValue": "nobody",
+      "recommendedValue": "nobody",
       "isReconfigurable": false,
       "displayType": "user",
       "isOverridable": false,
@@ -3668,7 +3651,7 @@ module.exports =
       "name": "gmond_user",
       "displayName": "Gmond User",
       "description": "The user used to run gmond for Ganglia",
-      "defaultValue": "nobody",
+      "recommendedValue": "nobody",
       "isReconfigurable": false,
       "displayType": "advanced",
       "isOverridable": false,
@@ -3680,57 +3663,10 @@ module.exports =
     },
     {
       "id": "puppet var",
-      "name": "nagios_user",
-      "displayName": "Nagios User",
-      "description": "User to run Nagios as",
-      "defaultValue": "nagios",
-      "isReconfigurable": false,
-      "displayType": "user",
-      "isOverridable": false,
-      "isVisible": true,
-      "serviceName": "MISC",
-      "filename": "nagios-env.xml",
-      "category": "Users and Groups",
-      "belongsToService": ["NAGIOS"],
-      "index": 14
-    },
-    {
-      "id": "puppet var",
-      "name": "nagios_group",
-      "displayName": "Nagios Group",
-      "description": "Nagios Group",
-      "defaultValue": "nagios",
-      "isReconfigurable": false,
-      "displayType": "user",
-      "isOverridable": false,
-      "isVisible": true,
-      "serviceName": "MISC",
-      "filename": "nagios-env.xml",
-      "category": "Users and Groups",
-      "belongsToService": ["NAGIOS"],
-      "index": 13
-    },
-    {
-      "id": "puppet var",
-      "name": "smokeuser",
-      "displayName": "Smoke Test User",
-      "description": "The user used to run service smoke tests",
-      "defaultValue": "ambari-qa",
-      "isReconfigurable": false,
-      "displayType": "user",
-      "isOverridable": false,
-      "isVisible": App.supports.customizeSmokeTestUser,
-      "serviceName": "MISC",
-      "filename": "cluster-env.xml",
-      "category": "Users and Groups",
-      "index": 16
-    },
-    {
-      "id": "puppet var",
       "name": "tez_user",
       "displayName": "Tez User",
       "description": "User to run Tez as",
-      "defaultValue": "tez",
+      "recommendedValue": "tez",
       "isReconfigurable": false,
       "displayType": "user",
       "isOverridable": false,
@@ -3740,21 +3676,6 @@ module.exports =
       "category": "Users and Groups",
       "belongsToService": ["TEZ"],
       "index": 15
-    },
-    {
-      "id": "puppet var",
-      "name": "user_group",
-      "displayName": "Hadoop Group",
-      "description": "Group that the users specified above belong to",
-      "defaultValue": "hadoop",
-      "isReconfigurable": false,
-      "displayType": "user",
-      "isOverridable": false,
-      "isVisible": true,
-      "serviceName": "MISC",
-      "filename": "cluster-env.xml",
-      "category": "Users and Groups",
-      "index": 17
     },
     {
       "id": "puppet var",
@@ -3775,13 +3696,13 @@ module.exports =
       "name": "rrdcached_base_dir",
       "displayName": "Ganglia rrdcached base directory",
       "description": "Default directory for saving the rrd files on ganglia server",
-      "defaultValue": "/var/lib/ganglia/rrds",
+      "recommendedValue": "/var/lib/ganglia/rrds",
       "displayType": "directory",
       "isReconfigurable": true,
       "isOverridable": false,
       "isVisible": true,
       "serviceName": "GANGLIA",
-      "filename": "nagios-env.xml",
+      "filename": "ganglia-env.xml",
       "category": "General",
       "belongsToService": ["GANGLIA"]
     },
@@ -3793,7 +3714,6 @@ module.exports =
       "isReconfigurable": true,
       "isOverridable": false,
       "isVisible": true,
-      "serviceName": "MISC",
       "filename": "cluster-env.xml",
       "category": "Users and Groups"
     }

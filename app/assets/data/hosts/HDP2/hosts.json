@@ -13,6 +13,103 @@
         "public_host_name" : "dev01.hortonworks.com",
         "total_mem" : 4055304
       },
+      "stack_versions": [
+        {
+          "HostStackVersions" : {
+            "cluster_name" : "c1",
+            "host_name" : "dev01.hortonworks.com",
+            "id" : 1,
+            "stack" : "HDP",
+            "state" : "CURRENT",
+            "version" : "2.2"
+          },
+          "repository_versions" : [
+            {
+              "RepositoryVersions" : {
+                "id" : 1,
+                "repository_version" : "2.2.0.1-885",
+                "display_name" : "HDP-2.2.0.1-885"
+              }
+            }
+          ]
+        },
+        {
+          "HostStackVersions" : {
+            "cluster_name" : "c1",
+            "host_name" : "dev01.hortonworks.com",
+            "id" : 2,
+            "stack" : "HDP",
+            "state" : "INSTALLED",
+            "version" : "2.2"
+          },
+          "repository_versions" : [
+            {
+              "RepositoryVersions" : {
+                "id" : 2,
+                "repository_version" : "2.2.1.1-885",
+                "display_name" : "HDP-2.2.1.1-885"
+              }
+            }
+          ]
+        },
+        {
+          "HostStackVersions" : {
+            "cluster_name" : "c1",
+            "host_name" : "dev01.hortonworks.com",
+            "id" : 3,
+            "stack" : "HDP",
+            "state" : "OUT_OF_SYNC",
+            "version" : "2.2"
+          },
+          "repository_versions" : [
+            {
+              "RepositoryVersions" : {
+                "id" : 3,
+                "repository_version" : "2.2.2.1-885",
+                "display_name" : "HDP-2.2.2.1-885"
+              }
+            }
+          ]
+        },
+        {
+          "HostStackVersions" : {
+            "cluster_name" : "c1",
+            "host_name" : "dev01.hortonworks.com",
+            "id" : 4,
+            "stack" : "HDP",
+            "state" : "INSTALL_FAILED",
+            "version" : "2.2"
+          },
+          "repository_versions" : [
+            {
+              "RepositoryVersions" : {
+                "id" : 4,
+                "repository_version" : "2.2.3.1-885",
+                "display_name" : "HDP-2.2.3.1-885"
+              }
+            }
+          ]
+        },
+        {
+          "HostStackVersions" : {
+            "cluster_name" : "c1",
+            "host_name" : "dev01.hortonworks.com",
+            "id" : 5,
+            "stack" : "HDP",
+            "state" : "INSTALLING",
+            "version" : "2.3"
+          },
+          "repository_versions" : [
+            {
+              "RepositoryVersions" : {
+                "id" : 6,
+                "repository_version" : "2.2.4.1-885",
+                "display_name" : "HDP-2.2.4.1-885"
+              }
+            }
+          ]
+        }
+      ],
       "host_components" : [
         {
           "HostRoles" : {
@@ -65,24 +162,6 @@
             "maintenance_state" : "OFF",
             "service_name" : "FLUME",
             "stale_configs" : false,
-            "state" : "INSTALL_FAILED"
-          }
-        },
-        {
-          "HostRoles" : {
-            "component_name" : "GANGLIA_MONITOR",
-            "maintenance_state" : "OFF",
-            "service_name" : "GANGLIA",
-            "stale_configs" : true,
-            "state" : "INSTALL_FAILED"
-          }
-        },
-        {
-          "HostRoles" : {
-            "component_name" : "GANGLIA_SERVER",
-            "maintenance_state" : "OFF",
-            "service_name" : "GANGLIA",
-            "stale_configs" : true,
             "state" : "INSTALL_FAILED"
           }
         },
@@ -174,15 +253,6 @@
             "service_name" : "HIVE",
             "stale_configs" : false,
             "state" : "INSTALL_FAILED"
-          }
-        },
-        {
-          "HostRoles" : {
-            "component_name" : "NAGIOS_SERVER",
-            "maintenance_state" : "OFF",
-            "service_name" : "NAGIOS",
-            "stale_configs" : true,
-            "state" : "INIT"
           }
         },
         {

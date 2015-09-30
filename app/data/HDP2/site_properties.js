@@ -18,4207 +18,3349 @@
 
 var App = require('app');
 
-module.exports =
-{
-  "configProperties": [
+var hdp2properties = [
   //***************************************** HDP stack **************************************
   /**********************************************HDFS***************************************/
-    {
-      "id": "site property",
-      "name": "dfs.namenode.checkpoint.dir",
-      "displayName": "SecondaryNameNode Checkpoint directories",
-      "defaultDirectory": "/hadoop/hdfs/namesecondary",
-      "displayType": "directories",
-      "isOverridable": false,
-      "serviceName": "HDFS",
-      "category": "SECONDARY_NAMENODE",
-      "index": 1
-    },
-    {
-      "id": "site property",
-      "name": "dfs.namenode.checkpoint.period",
-      "displayName": "HDFS Maximum Checkpoint Delay",
-      "displayType": "int",
-      "unit": "seconds",
-      "category": "General",
-      "serviceName": "HDFS",
-      "index": 3
-    },
-    {
-      "id": "site property",
-      "name": "dfs.namenode.name.dir",
-      "displayName": "NameNode directories",
-      "defaultDirectory": "/hadoop/hdfs/namenode",
-      "displayType": "directories",
-      "isOverridable": false,
-      "serviceName": "HDFS",
-      "category": "NAMENODE",
-      "index": 1
-    },
-    {
-      "id": "site property",
-      "name": "dfs.webhdfs.enabled",
-      "displayName": "WebHDFS enabled",
-      "displayType": "checkbox",
-      "isOverridable": false,
-      "category": "General",
-      "serviceName": "HDFS",
-      "index": 0
-    },
-    {
-      "id": "site property",
-      "name": "dfs.datanode.failed.volumes.tolerated",
-      "displayName": "DataNode volumes failure toleration",
-      "displayType": "int",
-      "category": "DATANODE",
-      "serviceName": "HDFS",
-      "index": 3
-    },
-    {
-      "id": "site property",
-      "name": "dfs.datanode.data.dir.mount.file",
-      "displayName": "File that stores mount point for each data dir",
-      "description": "File path that contains the last known mount point for each data dir. This file is used to avoid creating a DFS data dir on the root drive (and filling it up) if a path was previously mounted on a drive.",
-      "defaultValue": "/etc/hadoop/conf/dfs_data_dir_mount.hist",
-      "displayType": "directory",
-      "isVisible": true,
-      "category": "DATANODE",
-      "serviceName": "HDFS",
-      "filename": "hadoop-env.xml",
-      "index": 4
-    },
-    {
-      "id": "site property",
-      "name": "dfs.datanode.data.dir",
-      "displayName": "DataNode directories",
-      "defaultDirectory": "/hadoop/hdfs/data",
-      "displayType": "directories",
-      "category": "DATANODE",
-      "serviceName": "HDFS",
-      "index": 1
-    },
-    {
-      "id": "site property",
-      "name": "dfs.datanode.data.dir.perm",
-      "displayName": "DataNode directories permission",
-      "displayType": "int",
-      "category": "DATANODE",
-      "serviceName": "HDFS"
-    },
-    {
-      "id": "site property",
-      "name": "dfs.replication",
-      "displayName": "Block replication",
-      "displayType": "int",
-      "category": "General",
-      "serviceName": "HDFS"
-    },
-    {
-      "id": "site property",
-      "name": "dfs.datanode.du.reserved",
-      "displayName": "Reserved space for HDFS",
-      "displayType": "int",
-      "unit": "bytes",
-      "category": "General",
-      "serviceName": "HDFS",
-      "index": 2
-    },
-    {
-      "id": "site property",
-      "name": "dfs.client.read.shortcircuit",
-      "displayName": "HDFS Short-circuit read",
-      "displayType": "checkbox",
-      "category": "Advanced hdfs-site",
-      "serviceName": "HDFS"
-    },
-    {
-      "id": "site property",
-      "name": "apache_artifacts_download_url",
-      "displayName": "apache_artifacts_download_url",
-      "description": "",
-      "isRequired": false,
-      "isRequiredByAgent": false,
-      "isVisible": false,
-      "category": "Advanced hdfs-site",
-      "serviceName": "HDFS"
-    },
+  {
+    "name": "dfs.namenode.checkpoint.dir",
+    "displayType": "directories",
+    "serviceName": "HDFS",
+    "filename": "hdfs-site.xml",
+    "category": "SECONDARY_NAMENODE",
+    "index": 1
+  },
+  {
+    "name": "dfs.namenode.checkpoint.period",
+    "displayType": "int",
+    "category": "General",
+    "serviceName": "HDFS",
+    "filename": "hdfs-site.xml",
+    "index": 3
+  },
+  {
+    "name": "dfs.namenode.name.dir",
+    "displayType": "directories",
+    "serviceName": "HDFS",
+    "filename": "hdfs-site.xml",
+    "category": "NAMENODE",
+    "index": 1
+  },
+  {
+    "name": "dfs.webhdfs.enabled",
+    "displayType": "checkbox",
+    "category": "General",
+    "serviceName": "HDFS",
+    "filename": "hdfs-site.xml",
+    "index": 0
+  },
+  {
+    "name": "dfs.datanode.failed.volumes.tolerated",
+    "displayType": "int",
+    "category": "DATANODE",
+    "serviceName": "HDFS",
+    "filename": "hdfs-site.xml",
+    "index": 3
+  },
+  {
+    "name": "dfs.datanode.data.dir.mount.file",
+    "displayType": "directory",
+    "category": "DATANODE",
+    "serviceName": "HDFS",
+    "filename": "hadoop-env.xml",
+    "index": 4
+  },
+  {
+    "name": "dfs.datanode.data.dir",
+    "displayType": "directories",
+    "category": "DATANODE",
+    "serviceName": "HDFS",
+    "filename": "hdfs-site.xml",
+    "index": 1
+  },
+  {
+    "name": "dfs.datanode.data.dir.perm",
+    "displayType": "int",
+    "category": "DATANODE",
+    "serviceName": "HDFS",
+    "filename": "hdfs-site.xml"
+  },
+  {
+    "name": "nfs.file.dump.dir",
+    "displayType": "directory",
+    "category": "NFS_GATEWAY",
+    "serviceName": "HDFS",
+    "filename": "hdfs-site.xml",
+    "index": 1
+  },
+  {
+    "name": "dfs.namenode.accesstime.precision",
+    "displayType": "long",
+    "category": "General",
+    "serviceName": "HDFS",
+    "filename": "hdfs-site.xml",
+    "index": 2
+  },
+  {
+    "name": "nfs.exports.allowed.hosts",
+    "displayType": "string",
+    "category": "NFS_GATEWAY",
+    "serviceName": "HDFS",
+    "filename": "hdfs-site.xml",
+    "index": 3
+  },
+  {
+    "name": "dfs.replication",
+    "displayType": "int",
+    "category": "General",
+    "serviceName": "HDFS",
+    "filename": "hdfs-site.xml"
+  },
+  {
+    "name": "dfs.datanode.du.reserved",
+    "displayType": "int",
+    "category": "General",
+    "serviceName": "HDFS",
+    "filename": "hdfs-site.xml",
+    "index": 2
+  },
+  {
+    "name": "dfs.client.read.shortcircuit",
+    "displayType": "checkbox",
+    "category": "Advanced hdfs-site",
+    "serviceName": "HDFS",
+    "filename": "hdfs-site.xml"
+  },
+  {
+    "name": "namenode_host",
+    "displayName": "NameNode hosts",
+    "value": "",
+    "recommendedValue": "",
+    "description": "The hosts that has been assigned to run NameNode",
+    "displayType": "masterHosts",
+    "isOverridable": false,
+    "isRequiredByAgent": false,
+    "serviceName": "HDFS",
+    "filename": "hadoop-env.xml",
+    "category": "NAMENODE",
+    "index": 0
+  },
+  {
+    "name": "namenode_heapsize",
+    "displayType": "int",
+    "serviceName": "HDFS",
+    "filename": "hadoop-env.xml",
+    "category": "NAMENODE",
+    "index": 2
+  },
+  {
+    "name": "namenode_opt_newsize",
+    "displayType": "int",
+    "serviceName": "HDFS",
+    "filename": "hadoop-env.xml",
+    "category": "NAMENODE",
+    "index": 3
+  },
+  {
+    "name": "namenode_opt_permsize",
+    "displayType": "int",
+    "serviceName": "HDFS",
+    "filename": "hadoop-env.xml",
+    "category": "NAMENODE",
+    "index": 5
+  },
+  {
+    "name": "namenode_opt_maxpermsize",
+    "displayType": "int",
+    "serviceName": "HDFS",
+    "filename": "hadoop-env.xml",
+    "category": "NAMENODE",
+    "index": 6
+  },
+  {
+    "name": "namenode_opt_maxnewsize",
+    "displayType": "int",
+    "serviceName": "HDFS",
+    "filename": "hadoop-env.xml",
+    "category": "NAMENODE",
+    "index": 4
+  },
+  {
+    "name": "snamenode_host",
+    "displayName": "SNameNode host",
+    "value": "",
+    "recommendedValue": "",
+    "description": "The host that has been assigned to run SecondaryNameNode",
+    "displayType": "masterHost",
+    "isOverridable": false,
+    "isRequiredByAgent": false,
+    "serviceName": "HDFS",
+    "filename": "hadoop-env.xml",
+    "category": "SECONDARY_NAMENODE",
+    "index": 0
+  },
+  {
+    "name": "datanode_hosts", //not in the schema. For UI purpose
+    "displayName": "DataNode hosts",
+    "value": "",
+    "recommendedValue": "",
+    "description": "The hosts that have been assigned to run DataNode",
+    "displayType": "slaveHosts",
+    "isRequired": false,
+    "isOverridable": false,
+    "isRequiredByAgent": false,
+    "serviceName": "HDFS",
+    "filename": "hadoop-env.xml",
+    "category": "DATANODE",
+    "index": 0
+  },
+  {
+    "name": "dtnode_heapsize",
+    "displayType": "int",
+    "serviceName": "HDFS",
+    "filename": "hadoop-env.xml",
+    "category": "DATANODE",
+    "index": 2
+  },
+  {
+    "name": "nfsgateway_hosts", //not in the schema. For UI purpose
+    "displayName": "NFSGateway hosts",
+    "value": "",
+    "recommendedValue": "",
+    "description": "The hosts that have been assigned to run NFSGateway",
+    "displayType": "slaveHosts",
+    "isRequired": false,
+    "isOverridable": false,
+    "isVisible": true,
+    "isRequiredByAgent": false,
+    "serviceName": "HDFS",
+    "filename": "hadoop-env.xml",
+    "category": "NFS_GATEWAY",
+    "index": 0
+  },
+  {
+    "name": "nfsgateway_heapsize",
+    "displayType": "int",
+    "serviceName": "HDFS",
+    "filename": "hadoop-env.xml",
+    "category": "NFS_GATEWAY",
+    "index": 1
+  },
+  {
+    "name": "hadoop_heapsize",
+    "displayType": "int",
+    "serviceName": "HDFS",
+    "filename": "hadoop-env.xml",
+    "category": "General",
+    "index": 1
+  },
+  {
+    "name": "hdfs_log_dir_prefix",
+    "displayType": "directory",
+    "serviceName": "HDFS",
+    "filename": "hadoop-env.xml",
+    "category": "Advanced hadoop-env"
+  },
+  {
+    "name": "hadoop_pid_dir_prefix",
+    "displayType": "directory",
+    "serviceName": "HDFS",
+    "filename": "hadoop-env.xml",
+    "category": "Advanced hadoop-env"
+  },
+  {
+    "name": "hadoop_root_logger",
+    "displayType": "string",
+    "serviceName": "HDFS",
+    "filename": "hadoop-env.xml",
+    "category": "Advanced hadoop-env"
+  },
 
-  /**********************************************YARN***************************************/
-    {
-      "id": "site property",
-      "name": "yarn.acl.enable",
-      "displayName": "yarn.acl.enable",
-      "displayType": "checkbox",
-      "serviceName": "YARN",
-      "category": "RESOURCEMANAGER"
-    },
-    {
-      "id": "site property",
-      "name": "yarn.admin.acl",
-      "displayName": "yarn.admin.acl",
-      "isRequired": false,
-      "serviceName": "YARN",
-      "category": "RESOURCEMANAGER"
-    },
-    {
-      "id": "site property",
-      "name": "yarn.log-aggregation-enable",
-      "displayName": "yarn.log-aggregation-enable",
-      "displayType": "checkbox",
-      "serviceName": "YARN",
-      "category": "RESOURCEMANAGER"
-    },
-    {
-      "id": "site property",
-      "name": "yarn.resourcemanager.scheduler.class",
-      "displayName": "yarn.resourcemanager.scheduler.class",
-      "serviceName": "YARN",
-      "category": "CapacityScheduler"
-    },
-    {
-      "id": "site property",
-      "name": "yarn.scheduler.minimum-allocation-mb",
-      "displayName": "yarn.scheduler.minimum-allocation-mb",
-      "displayType": "int",
-      "serviceName": "YARN",
-      "category": "CapacityScheduler"
-    },
-    {
-      "id": "site property",
-      "name": "yarn.scheduler.maximum-allocation-mb",
-      "displayName": "yarn.scheduler.maximum-allocation-mb",
-      "displayType": "int",
-      "serviceName": "YARN",
-      "category": "CapacityScheduler"
-    },
-    {
-      "id": "site property",
-      "name": "yarn.nodemanager.resource.memory-mb",
-      "displayName": "yarn.nodemanager.resource.memory-mb",
-      "displayType": "int",
-      "serviceName": "YARN",
-      "category": "NODEMANAGER"
-    },
-    {
-      "id": "site property",
-      "name": "yarn.nodemanager.vmem-pmem-ratio",
-      "displayName": "yarn.nodemanager.vmem-pmem-ratio",
-      "serviceName": "YARN",
-      "category": "NODEMANAGER"
-    },
-    {
-      "id": "site property",
-      "name": "yarn.nodemanager.linux-container-executor.group",
-      "displayName": "yarn.nodemanager.linux-container-executor.group",
-      "serviceName": "YARN",
-      "category": "NODEMANAGER"
-    },
-    {
-      "id": "site property",
-      "name": "yarn.nodemanager.log-dirs",
-      "displayName": "yarn.nodemanager.log-dirs",
-      "defaultDirectory": "/hadoop/yarn/log",
-      "displayType": "directories",
-      "serviceName": "YARN",
-      "category": "NODEMANAGER"
-    },
-    {
-      "id": "site property",
-      "name": "yarn.nodemanager.local-dirs",
-      "displayName": "yarn.nodemanager.local-dirs",
-      "defaultDirectory": "/hadoop/yarn/local",
-      "displayType": "directories",
-      "serviceName": "YARN",
-      "category": "NODEMANAGER"
-    },
-    {
-      "id": "site property",
-      "name": "yarn.nodemanager.remote-app-log-dir",
-      "displayName": "yarn.nodemanager.remote-app-log-dir",
-      "displayType": "directory",
-      "serviceName": "YARN",
-      "category": "NODEMANAGER"
-    },
-    {
-      "id": "site property",
-      "name": "yarn.nodemanager.remote-app-log-dir-suffix",
-      "displayName": "yarn.nodemanager.remote-app-log-dir-suffix",
-      "serviceName": "YARN",
-      "category": "NODEMANAGER"
-    },
-    {
-      "id": "site property",
-      "name": "yarn.nodemanager.aux-services",
-      "displayName": "yarn.nodemanager.aux-services",
-      "serviceName": "YARN",
-      "category": "NODEMANAGER"
-    },
-    {
-      "id": "site property",
-      "name": "yarn.nodemanager.log.retain-second",
-      "displayName": "yarn.nodemanager.log.retain-second",
-      "serviceName": "YARN",
-      "category": "NODEMANAGER"
-    },
-    {
-      "id": "site property",
-      "name": "yarn.log.server.url",
-      "displayName": "yarn.log.server.url",
-      "category": "Advanced yarn-site",
-      "serviceName": "YARN"
-    },
-    {
-      "id": "site property",
-      "name": "yarn.timeline-service.enabled",
-      "displayName": "yarn.timeline-service.enabled",
-      "category": "APP_TIMELINE_SERVER",
-      "displayType": "checkbox",
-      "serviceName": "YARN"
-    },
-    {
-      "id": "site property",
-      "name": "yarn.timeline-service.leveldb-timeline-store.path",
-      "displayName": "yarn.timeline-service.leveldb-timeline-store.path",
-      "defaultDirectory": "/hadoop/yarn/timeline",
-      "category": "APP_TIMELINE_SERVER",
-      "displayType": "directory",
-      "serviceName": "YARN"
-    },
-    {
-      "id": "site property",
-      "name": "yarn.timeline-service.leveldb-timeline-store.ttl-interval-ms",
-      "displayName": "yarn.timeline-service.leveldb-timeline-store.ttl-interval-ms",
-      "displayType": "int",
-      "category": "APP_TIMELINE_SERVER",
-      "serviceName": "YARN"
-    },
-    {
-      "id": "site property",
-      "name": "yarn.timeline-service.store-class",
-      "displayName": "yarn.timeline-service.store-class",
-      "category": "APP_TIMELINE_SERVER",
-      "serviceName": "YARN"
-    },
-    {
-      "id": "site property",
-      "name": "yarn.timeline-service.ttl-enable",
-      "displayName": "yarn.timeline-service.ttl-enable",
-      "displayType": "checkbox",
-      "category": "APP_TIMELINE_SERVER",
-      "serviceName": "YARN"
-    },
-    {
-      "id": "site property",
-      "name": "yarn.timeline-service.ttl-ms",
-      "displayName": "yarn.timeline-service.ttl-ms",
-      "displayType": "int",
-      "category": "APP_TIMELINE_SERVER",
-      "serviceName": "YARN"
-    },
-    {
-      "id": "site property",
-      "name": "yarn.timeline-service.generic-application-history.store-class",
-      "displayName": "yarn.timeline-service.generic-application-history.store-class",
-      "category": "APP_TIMELINE_SERVER",
-      "serviceName": "YARN"
-    },
-    {
-      "id": "site property",
-      "name": "yarn.timeline-service.webapp.address",
-      "displayName": "yarn.timeline-service.webapp.address",
-      "displayType": "string",
-      "category": "APP_TIMELINE_SERVER",
-      "serviceName": "YARN"
-    },
-    {
-      "id": "site property",
-      "name": "yarn.timeline-service.webapp.https.address",
-      "displayName": "yarn.timeline-service.webapp.https.address",
-      "displayType": "string",
-      "category": "APP_TIMELINE_SERVER",
-      "serviceName": "YARN"
-    },
-    {
-      "id": "site property",
-      "name": "yarn.timeline-service.address",
-      "displayName": "yarn.timeline-service.address",
-      "displayType": "string",
-      "category": "APP_TIMELINE_SERVER",
-      "serviceName": "YARN"
-    },
-  /**********************************************MAPREDUCE2***************************************/
-    {
-      "id": "site property",
-      "name": "mapreduce.map.memory.mb",
-      "displayName": "Default virtual memory for a job's map-task",
-      "displayType": "int",
-      "unit": "MB",
-      "category": "General",
-      "serviceName": "MAPREDUCE2"
-    },
-    {
-      "id": "site property",
-      "name": "mapreduce.reduce.memory.mb",
-      "displayName": "Default virtual memory for a job's reduce-task",
-      "displayType": "int",
-      "unit": "MB",
-      "category": "General",
-      "serviceName": "MAPREDUCE2"
-    },
-    {
-      "id": "site property",
-      "name": "mapreduce.task.io.sort.mb",
-      "displayName": "Map-side sort buffer memory",
-      "displayType": "int",
-      "unit": "MB",
-      "category": "General",
-      "serviceName": "MAPREDUCE2"
-    },
-    {
-      "id": "site property",
-      "name": "hadoop.security.auth_to_local",
-      "displayName": "hadoop.security.auth_to_local",
-      "displayType": "multiLine",
-      "serviceName": "HDFS",
-      "category": "Advanced core-site"
-    },
-    {
-      "id": "site property",
-      "name": "yarn.app.mapreduce.am.resource.mb",
-      "displayName": "yarn.app.mapreduce.am.resource.mb",
-      "displayType": "int",
-      "category": "Advanced mapred-site",
-      "serviceName": "MAPREDUCE2"
-    },
+/**********************************************YARN***************************************/
+  {
+    "name": "yarn.acl.enable",
+    "displayType": "checkbox",
+    "serviceName": "YARN",
+    "filename": "yarn-site.xml",
+    "category": "RESOURCEMANAGER"
+  },
+  {
+    "name": "yarn.admin.acl",
+    "serviceName": "YARN",
+    "filename": "yarn-site.xml",
+    "category": "RESOURCEMANAGER"
+  },
+  {
+    "name": "yarn.log-aggregation-enable",
+    "displayType": "checkbox",
+    "serviceName": "YARN",
+    "filename": "yarn-site.xml",
+    "category": "RESOURCEMANAGER"
+  },
+  {
+    "name": "yarn.resourcemanager.scheduler.class",
+    "serviceName": "YARN",
+    "filename": "yarn-site.xml",
+    "category": "CapacityScheduler"
+  },
+  {
+    "name": "yarn.scheduler.minimum-allocation-mb",
+    "displayType": "int",
+    "serviceName": "YARN",
+    "filename": "yarn-site.xml",
+    "category": "CapacityScheduler"
+  },
+  {
+    "name": "yarn.scheduler.maximum-allocation-mb",
+    "displayType": "int",
+    "serviceName": "YARN",
+    "filename": "yarn-site.xml",
+    "category": "CapacityScheduler"
+  },
+  {
+    "name": "yarn.nodemanager.resource.memory-mb",
+    "displayType": "int",
+    "serviceName": "YARN",
+    "filename": "yarn-site.xml",
+    "category": "NODEMANAGER"
+  },
+  {
+    "name": "yarn.nodemanager.vmem-pmem-ratio",
+    "serviceName": "YARN",
+    "filename": "yarn-site.xml",
+    "category": "NODEMANAGER"
+  },
+  {
+    "name": "yarn.nodemanager.linux-container-executor.group",
+    "serviceName": "YARN",
+    "category": "NODEMANAGER",
+    "filename": "yarn-site.xml"
+  },
+  {
+    "name": "yarn.nodemanager.log-dirs",
+    "displayType": "directories",
+    "serviceName": "YARN",
+    "filename": "yarn-site.xml",
+    "category": "NODEMANAGER"
+  },
+  {
+    "name": "yarn.nodemanager.local-dirs",
+    "displayType": "directories",
+    "serviceName": "YARN",
+    "filename": "yarn-site.xml",
+    "category": "NODEMANAGER"
+  },
+  {
+    "name": "yarn.nodemanager.remote-app-log-dir",
+    "serviceName": "YARN",
+    "filename": "yarn-site.xml",
+    "category": "NODEMANAGER"
+  },
+  {
+    "name": "yarn.nodemanager.remote-app-log-dir-suffix",
+    "serviceName": "YARN",
+    "filename": "yarn-site.xml",
+    "category": "NODEMANAGER"
+  },
+  {
+    "name": "yarn.nodemanager.aux-services",
+    "serviceName": "YARN",
+    "filename": "yarn-site.xml",
+    "category": "NODEMANAGER"
+  },
+  {
+    "name": "yarn.nodemanager.log.retain-second",
+    "serviceName": "YARN",
+    "filename": "yarn-site.xml",
+    "category": "NODEMANAGER"
+  },
+  {
+    "name": "yarn_heapsize",
+    "displayType": "int",
+    "serviceName": "YARN",
+    "filename": "yarn-env.xml",
+    "category": "General",
+    "index": 0
+  },
+  {
+    "name": "rm_host",
+    "displayName": "ResourceManager",
+    "description": "ResourceManager",
+    "recommendedValue": "",
+    "isOverridable": false,
+    "displayType": "masterHost",
+    "isRequiredByAgent": false,
+    "serviceName": "YARN",
+    "filename": "yarn-env.xml",
+    "category": "RESOURCEMANAGER",
+    "index": 0
+  },
+  {
+    "name": "resourcemanager_heapsize",
+    "displayType": "int",
+    "serviceName": "YARN",
+    "filename": "yarn-env.xml",
+    "category": "RESOURCEMANAGER",
+    "index": 1
+  },
+  {
+    "name": "nm_hosts",
+    "displayName": "NodeManager",
+    "description": "List of NodeManager Hosts.",
+    "recommendedValue": "",
+    "isOverridable": false,
+    "displayType": "slaveHosts",
+    "isRequiredByAgent": false,
+    "serviceName": "YARN",
+    "filename": "yarn-env.xml",
+    "category": "NODEMANAGER",
+    "index": 0
+  },
+  {
+    "name": "nodemanager_heapsize",
+    "displayType": "int",
+    "serviceName": "YARN",
+    "filename": "yarn-env.xml",
+    "category": "NODEMANAGER",
+    "index": 0
+  },
+  {
+    "name": "yarn_log_dir_prefix",
+    "displayType": "directory",
+    "serviceName": "YARN",
+    "filename": "yarn-env.xml",
+    "category": "Advanced yarn-env"
+  },
+  {
+    "name": "yarn_pid_dir_prefix",
+    "displayType": "directory",
+    "serviceName": "YARN",
+    "filename": "yarn-env.xml",
+    "category": "Advanced yarn-env"
+  },
+  {
+    "name": "min_user_id",
+    "displayType": "int",
+    "serviceName": "YARN",
+    "filename": "yarn-env.xml",
+    "category": "Advanced yarn-env"
+  },
+  {
+    "name": "ats_host",
+    "displayName": "App Timeline Server",
+    "description": "Application Timeline Server Host",
+    "recommendedValue": "",
+    "isOverridable": false,
+    "displayType": "masterHost",
+    "isRequiredByAgent": false,
+    "serviceName": "YARN",
+    "filename": "yarn-env.xml",
+    "category": "APP_TIMELINE_SERVER",
+    "index": 0
+  },
+  {
+    "name": "apptimelineserver_heapsize",
+    "displayType": "int",
+    "serviceName": "YARN",
+    "filename": "yarn-env.xml",
+    "category": "APP_TIMELINE_SERVER",
+    "index": 1
+  },
+/**********************************************MAPREDUCE2***************************************/
+  {
+    "name": "mapreduce.map.memory.mb",
+    "displayType": "int",
+    "category": "General",
+    "serviceName": "MAPREDUCE2",
+    "filename": "mapred-site.xml"
+  },
+  {
+    "name": "mapreduce.reduce.memory.mb",
+    "displayType": "int",
+    "category": "General",
+    "serviceName": "MAPREDUCE2",
+    "filename": "mapred-site.xml"
+  },
+  {
+    "name": "mapreduce.task.io.sort.mb",
+    "displayType": "int",
+    "category": "General",
+    "serviceName": "MAPREDUCE2",
+    "filename": "mapred-site.xml"
+  },
+  {
+    "name": "hadoop.security.auth_to_local",
+    "displayType": "multiLine",
+    "serviceName": "HDFS",
+    "filename": "core-site.xml",
+    "category": "Advanced core-site"
+  },
+  {
+    "name": "yarn.app.mapreduce.am.resource.mb",
+    "displayType": "int",
+    "category": "Advanced mapred-site",
+    "serviceName": "MAPREDUCE2",
+    "filename": "mapred-site.xml"
+  },
+  {
+    "name": "hs_host",
+    "displayName": "History Server",
+    "description": "History Server",
+    "recommendedValue": "",
+    "isOverridable": false,
+    "displayType": "masterHost",
+    "isRequiredByAgent": false,
+    "isVisible": true,
+    "serviceName": "MAPREDUCE2",
+    "filename": "mapred-env.xml",
+    "category": "HISTORYSERVER",
+    "index": 0
+  },
+  {
+    "name": "jobhistory_heapsize",
+    "displayType": "int",
+    "serviceName": "MAPREDUCE2",
+    "filename": "mapred-env.xml",
+    "category": "HISTORYSERVER",
+    "index": 1
+  },
+  {
+    "name": "mapred_log_dir_prefix",
+    "displayType": "directory",
+    "serviceName": "MAPREDUCE2",
+    "filename": "mapred-env.xml",
+    "category": "Advanced mapred-env"
+  },
+  {
+    "name": "mapred_pid_dir_prefix",
+    "displayType": "directory",
+    "serviceName": "MAPREDUCE2",
+    "filename": "mapred-env.xml",
+    "category": "Advanced mapred-env"
+  },
+/**********************************************oozie-site***************************************/
+  {
+    "name": "oozie.db.schema.name",
+    "displayType": "host",
+    "category": "OOZIE_SERVER",
+    "serviceName": "OOZIE",
+    "filename": "oozie-site.xml",
+    "index": 4
+  },
+  {
+    "name": "oozie.service.JPAService.jdbc.username",
+    "displayType": "user",
+    "category": "OOZIE_SERVER",
+    "serviceName": "OOZIE",
+    "filename": "oozie-site.xml",
+    "index": 5
+  },
+  {
+    "name": "oozie.service.JPAService.jdbc.password",
+    "category": "OOZIE_SERVER",
+    "serviceName": "OOZIE",
+    "filename": "oozie-site.xml",
+    "index": 6
+  },
+  {
+    "name": "oozie.service.JPAService.jdbc.driver", // the default value of this property is overriden in code
+    "category": "OOZIE_SERVER",
+    "serviceName": "OOZIE",
+    "filename": "oozie-site.xml",
+    "index": 7
+  },
+  {
+    "name": "oozie.service.JPAService.jdbc.url",
+    "displayType": "advanced",
+    "category": "OOZIE_SERVER",
+    "serviceName": "OOZIE",
+    "filename": "oozie-site.xml",
+    "index": 8
+  },
+  {
+    "name": "oozieserver_host",
+    "displayName": "Oozie Server host",
+    "value": "",
+    "recommendedValue": "",
+    "description": "The hosts that have been assigned to run Oozie Server",
+    "displayType": "masterHosts",
+    "isOverridable": false,
+    "isRequiredByAgent": false,
+    "serviceName": "OOZIE",
+    "filename": "oozie-env.xml",
+    "category": "OOZIE_SERVER",
+    "index": 0
+  },
+  {
+    "name": "oozie_database",
+    "options": [
+      {
+        displayName: 'New Derby Database',
+        hidden: false
+      },
+      {
+        displayName: 'Existing MySQL Database',
+        hidden: false
+      },
+      {
+        displayName: 'Existing PostgreSQL Database',
+        hidden: false
+      },
+      {
+        displayName: 'Existing Oracle Database',
+        hidden: false
+      },
+      {
+        displayName: 'Existing SQLA Database',
+        hidden: App.get('currentStackName') !== 'SAPHD' && (App.get('currentStackName') !== 'HDP' || !App.get('isHadoop23Stack'))
+      }
+    ],
+    "displayType": "radio button",
+    "radioName": "oozie-database",
+    "serviceName": "OOZIE",
+    "filename": "oozie-env.xml",
+    "category": "OOZIE_SERVER",
+    "index": 2
+  },
+  {
+    "name": "oozie_data_dir",
+    "displayType": "directory",
+    "serviceName": "OOZIE",
+    "filename": "oozie-env.xml",
+    "category": "OOZIE_SERVER",
+    "index": 9
+  },
+  {
+    "name": "oozie_hostname",
+    "displayType": "host",
+    "serviceName": "OOZIE",
+    "filename": "oozie-env.xml",
+    "category": "OOZIE_SERVER",
+    "index": 3
+  },
+  {
+    "name": "oozie_log_dir",
+    "displayType": "directory",
+    "serviceName": "OOZIE",
+    "filename": "oozie-env.xml",
+    "category": "Advanced oozie-env"
+  },
+  {
+    "name": "oozie_pid_dir",
+    "displayType": "directory",
+    "serviceName": "OOZIE",
+    "filename": "oozie-env.xml",
+    "category": "Advanced oozie-env"
+  },
+  {
+    "name": "oozie_admin_port",
+    "displayType": "int",
+    "serviceName": "OOZIE",
+    "filename": "oozie-env.xml",
+    "category": "Advanced oozie-env"
+  },
 
-  /**********************************************oozie-site***************************************/
-    {
-      "id": "site property",
-      "name": "oozie.db.schema.name",
-      "displayName": "Database Name",
-      "isOverridable": false,
-      "displayType": "host",
-      "isObserved": true,
-      "category": "OOZIE_SERVER",
-      "serviceName": "OOZIE",
-      "index": 4
-    },
-    {
-      "id": "site property",
-      "name": "oozie.service.JPAService.jdbc.username",
-      "displayName": "Database Username",
-      "isOverridable": false,
-      "displayType": "host",
-      "category": "OOZIE_SERVER",
-      "serviceName": "OOZIE",
-      "index": 5
-    },
-    {
-      "id": "site property",
-      "name": "oozie.service.JPAService.jdbc.password",
-      "displayName": "Database Password",
-      "isOverridable": false,
-      "displayType": "password",
-      "category": "OOZIE_SERVER",
-      "serviceName": "OOZIE",
-      "filename": "oozie-site.xml",
-      "index": 6
-    },
-    {
-      "id": "site property",
-      "name": "oozie.service.JPAService.jdbc.driver", // the default value of this property is overriden in code
-      "displayName": "JDBC Driver Class",
-      "isOverridable": false,
-      "category": "OOZIE_SERVER",
-      "serviceName": "OOZIE",
-      "index": 7
-    },
-    {
-      "id": "site property",
-      "name": "oozie.service.JPAService.jdbc.url",
-      "displayName": "Database URL",
-      "isOverridable": false,
-      "displayType": "advanced",
-      "category": "OOZIE_SERVER",
-      "serviceName": "OOZIE",
-      "index": 8
-    },
+/**********************************************HIVE***************************************/
+  {
+    "name": "javax.jdo.option.ConnectionDriverName",  // the default value is overwritten in code
+    "category": "HIVE_METASTORE",
+    "serviceName": "HIVE",
+    "filename": "hive-site.xml",
+    "index": 7
+  },
+  {
+    "name": "hive.metastore.heapsize",  // the default value is overwritten in code
+    "category": "HIVE_METASTORE",
+    "serviceName": "HIVE",
+    "filename": "hive-env.xml",
+    "displayType": "int",
+    "index": 11
+  },
+  {
+    "name": "hive.heapsize",
+    "displayType": "int",
+    "serviceName": "HIVE",
+    "filename": "hive-site.xml",
+    "category": "HIVE_SERVER2",
+    "index": 9
+  },
+  {
+    "name": "hive.client.heapsize",
+    "category": "HIVE_CLIENT",
+    "serviceName": "HIVE",
+    "filename": "hive-env.xml",
+    "displayType": "int",
+    "index": 10
+  },
+  {
+    "name": "javax.jdo.option.ConnectionUserName",
+    "displayType": "user",
+    "category": "HIVE_METASTORE",
+    "serviceName": "HIVE",
+    "filename": "hive-site.xml",
+    "index": 5
+  },
+  {
+    "name": "javax.jdo.option.ConnectionPassword",
+    "displayType": "password",
+    "category": "HIVE_METASTORE",
+    "serviceName": "HIVE",
+    "filename": "hive-site.xml",
+    "index": 6
+  },
+  {
+    "name": "javax.jdo.option.ConnectionURL",
+    "displayType": "advanced",
+    "category": "HIVE_METASTORE",
+    "serviceName": "HIVE",
+    "filename": "hive-site.xml",
+    "index": 8
+  },
+  {
+    "name": "ambari.hive.db.schema.name",
+    "displayType": "host",
+    "serviceName": "HIVE",
+    "filename": "hive-site.xml",
+    "category": "HIVE_METASTORE",
+    "index": 4
+  },
+  {
+    "name": "hive.server2.tez.default.queues",
+    "serviceName": "HIVE",
+    "filename": "hive-site.xml",
+    "category": "Advanced hive-site"
+  },
+  {
+    "name": "hive.server2.thrift.port",
+    "displayType": "int",
+    "category": "Advanced hive-site",
+    "serviceName": "HIVE",
+    "filename": "hive-site.xml"
+  },
+  {
+    "name": "hive.server2.support.dynamic.service.discovery",
+    "displayType": "checkbox",
+    "category": "Advanced hive-site",
+    "serviceName": "HIVE",
+    "filename": "hive-site.xml"
+  },
+  {
+    "name": "hive.security.authorization.enabled",
+    "displayType": "checkbox",
+    "category": "Advanced hive-site",
+    "serviceName": "HIVE",
+    "filename": "hive-site.xml"
+  },
+  {
+    "name": "hivemetastore_host",
+    "displayName": "Hive Metastore hosts",
+    "value": "",
+    "recommendedValue": "",
+    "description": "The hosts that have been assigned to run Hive Metastore",
+    "displayType": "masterHosts",
+    "isOverridable": false,
+    "isRequiredByAgent": false,
+    "serviceName": "HIVE",
+    "filename": "hive-env.xml",
+    "category": "HIVE_METASTORE",
+    "index": 0
+  },
+  {
+    "name": "hive_master_hosts",
+    "value": "",
+    "recommendedValue": "",
+    "isOverridable": false,
+    "isRequiredByAgent": false,
+    "isVisible": false,
+    "serviceName": "HIVE",
+    "filename": "hive-env.xml"
+  },
+  {
+    "name": "hive_ambari_database",
+    "displayName": "Database Type",
+    "value": "",
+    "recommendedValue": "MySQL",
+    "description": "MySQL will be installed by Ambari",
+    "displayType": "masterHost",
+    "isOverridable": false,
+    "isReconfigurable": false,
+    "isRequiredByAgent": false,
+    "isVisible": false,
+    "serviceName": "HIVE",
+    "filename": "hive-env.xml",
+    "category": "HIVE_METASTORE",
+    "index": 1
+  },
+  {
+    "name": "hive_database",
+    "options": [
+      {
+        displayName: 'New MySQL Database',
+        hidden: false
+      },
+      {
+        displayName: 'Existing MySQL Database',
+        hidden: false
+      },
+      {
+        displayName: 'Existing PostgreSQL Database',
+        hidden: false
+      },
+      {
+        displayName: 'Existing Oracle Database',
+        hidden: false
+      },
+      {
+        displayName: 'Existing SQLA Database',
+        hidden: App.get('currentStackName') !== 'SAPHD' && (App.get('currentStackName') !== 'HDP' || !App.get('isHadoop23Stack'))
+      }
+    ],
+    "displayType": "radio button",
+    "radioName": "hive-database",
+    "serviceName": "HIVE",
+    "filename": "hive-env.xml",
+    "category": "HIVE_METASTORE",
+    "index": 2
+  },
+  {
+    "name": "hive_hostname",
+    "displayName": "Database Host",
+    "description": "Specify the host on which the database is hosted",
+    "recommendedValue": "",
+    "isReconfigurable": true,
+    "displayType": "host",
+    "isOverridable": false,
+    "isRequiredByAgent": false,
+    "isVisible": true,
+    "serviceName": "HIVE",
+    "filename": "hive-env.xml",
+    "category": "HIVE_METASTORE",
+    "index": 3
+  },
+  {
+    "name": "hive_ambari_host",
+    "value": "",
+    "recommendedValue": "",
+    "displayName": "Database Host",
+    "description": "Host on which the database will be created by Ambari",
+    "isReconfigurable": false,
+    "displayType": "masterHost",
+    "isOverridable": false,
+    "isVisible": false,
+    "isRequiredByAgent": false,
+    "serviceName": "HIVE",
+    "filename": "hive-env.xml",
+    "category": "HIVE_METASTORE",
+    "index": 3
+  },
+  {
+    "name": "hive_log_dir",
+    "displayType": "directory",
+    "serviceName": "HIVE",
+    "filename": "hive-env.xml",
+    "category": "Advanced hive-env"
+  },
+  {
+    "name": "hive_pid_dir",
+    "displayType": "directory",
+    "serviceName": "HIVE",
+    "filename": "hive-env.xml",
+    "category": "Advanced hive-env"
+  },
+  {
+    "name": "webhcatserver_host",
+    "displayName": "WebHCat Server host",
+    "value": "",
+    "recommendedValue": "",
+    "description": "The host that has been assigned to run WebHCat Server",
+    "displayType": "masterHost",
+    "isOverridable": false,
+    "isRequiredByAgent": false,
+    "serviceName": "HIVE",
+    "filename": "webhcat-env.xml",
+    "category": "WEBHCAT_SERVER"
+  },
+  {
+    "name": "hcat_log_dir",
+    "displayType": "directory",
+    "serviceName": "HIVE",
+    "filename": "hive-env.xml",
+    "category": "Advanced webhcat-env"
+  },
+  {
+    "name": "hcat_pid_dir",
+    "displayType": "directory",
+    "serviceName": "HIVE",
+    "filename": "hive-env.xml",
+    "category": "Advanced webhcat-env"
+  },
+  {
+    "name": "hive_database_name",
+    "serviceName": "HIVE",
+    "filename": "hive-env.xml",
+    "category": "Advanced hive-env"
+  },
+  {
+    "name": "hive_database_type",
+    "serviceName": "HIVE",
+    "filename": "hive-env.xml",
+    "category": "HIVE_METASTORE"
+  },
+/**********************************************TEZ*****************************************/
+  {
+    "name": "tez.am.resource.memory.mb",
+    "displayType": "int",
+    "category": "General",
+    "serviceName": "TEZ",
+    "filename": "tez-site.xml"
+  },
+  {
+    "name": "tez.am.java.opts",
+    "category": "General",
+    "serviceName": "TEZ",
+    "filename": "tez-site.xml"
+  },
+  {
+    "name": "tez.am.grouping.split-waves",
+    "displayType": "float",
+    "category": "General",
+    "serviceName": "TEZ",
+    "filename": "tez-site.xml"
+  },
+  {
+    "name": "tez.am.grouping.min-size",
+    "displayType": "int",
+    "category": "General",
+    "serviceName": "TEZ",
+    "filename": "tez-site.xml"
+  },
+  {
+    "name": "tez.am.grouping.max-size",
+    "displayType": "int",
+    "category": "General",
+    "serviceName": "TEZ",
+    "filename": "tez-site.xml"
+  },
+  {
+    "name": "tez.am.log.level",
+    "displayType": "string",
+    "category": "General",
+    "serviceName": "TEZ",
+    "filename": "tez-site.xml"
+  },
+  {
+    "name": "tez.runtime.intermediate-input.compress.codec",
+    "displayType": "string",
+    "category": "General",
+    "serviceName": "TEZ",
+    "filename": "tez-site.xml"
+  },
+  {
+    "name": "tez.runtime.intermediate-input.is-compressed",
+    "displayType": "checkbox",
+    "category": "General",
+    "serviceName": "TEZ",
+    "filename": "tez-site.xml"
+  },
+  {
+    "name": "tez.runtime.intermediate-output.compress.codec",
+    "displayType": "string",
+    "category": "General",
+    "serviceName": "TEZ",
+    "filename": "tez-site.xml"
+  },
+  {
+    "name": "tez.runtime.intermediate-output.should-compress",
+    "displayType": "checkbox",
+    "category": "General",
+    "serviceName": "TEZ",
+    "filename": "tez-site.xml"
+  },
 
-  /**********************************************hive-site***************************************/
-    {
-      "id": "site property",
-      "name": "javax.jdo.option.ConnectionDriverName",  // the default value is overwritten in code
-      "displayName": "JDBC Driver Class",
-      "isOverridable": false,
-      "category": "HIVE_METASTORE",
-      "serviceName": "HIVE",
-      "index": 7
-    },
-    {
-      "id": "site property",
-      "name": "hive.heapsize",
-      "displayName": "Hive heap size",
-      "displayType": "int",
-      "unit": "MB",
-      "isOverridable": false,
-      "serviceName": "HIVE",
-      "category": "General",
-      "index": 9
-    },
-    {
-      "id": "site property",
-      "name": "javax.jdo.option.ConnectionUserName",
-      "displayName": "Database Username",
-      "displayType": "host",
-      "isOverridable": false,
-      "category": "HIVE_METASTORE",
-      "serviceName": "HIVE",
-      "index": 5
-    },
-    {
-      "id": "site property",
-      "name": "javax.jdo.option.ConnectionPassword",
-      "displayName": "Database Password",
-      "displayType": "password",
-      "isOverridable": false,
-      "category": "HIVE_METASTORE",
-      "serviceName": "HIVE",
-      "index": 6
-    },
-    {
-      "id": "site property",
-      "name": "javax.jdo.option.ConnectionURL",
-      "displayName": "Database URL",
-      "displayType": "advanced",
-      "isOverridable": false,
-      "category": "HIVE_METASTORE",
-      "serviceName": "HIVE",
-      "index": 8
-    },
-    {
-      "id": "site property",
-      "name": "ambari.hive.db.schema.name",
-      "displayName": "Database Name",
-      "displayType": "host",
-      "isOverridable": false,
-      "isObserved": true,
-      "serviceName": "HIVE",
-      "category": "HIVE_METASTORE",
-      "index": 4
-    },
-    {
-      "id": "site property",
-      "name": "hive.server2.tez.default.queues",
-      "displayName": "hive.server2.tez.default.queues",
-      "isRequired": false,
-      "serviceName": "HIVE",
-      "category": "Advanced hive-site"
-    },
-    {
-      "id": "site property",
-      "name": "hive.server2.thrift.port",
-      "displayName": "Hive Server Port",
-      "description": "TCP port number to listen on, default 10000.",
-      "defaultValue": "10000",
-      "displayType": "int",
-      "isReconfigurable": true,
-      "isOverridable": false,
-      "isVisible": true,
-      "category": "Advanced hive-site",
-      "serviceName": "HIVE"
-    },
-    {
-      "id": "site property",
-      "name": "hive.server2.support.dynamic.service.discovery",
-      "displayName": "hive.server2.support.dynamic.service.discovery",
-      "defaultValue": true,
-      "displayType": "checkbox",
-      "category": "Advanced hive-site",
-      "serviceName": "HIVE"
-    },
-    {
-      "id": "site property",
-      "name": "hive.security.authorization.enabled",
-      "displayName": "hive.security.authorization.enabled",
-      "defaultValue": false,
-      "displayType": "checkbox",
-      "category": "Advanced hive-site",
-      "serviceName": "HIVE"
-    },
-  /**********************************************tez-site*****************************************/
-    {
-      "id": "site property",
-      "name": "tez.am.resource.memory.mb",
-      "displayName": "tez.am.resource.memory.mb",
-      "displayType": "int",
-      "category": "General",
-      "serviceName": "TEZ"
-    },
-    {
-      "id": "site property",
-      "name": "tez.am.java.opts",
-      "displayName": "tez.am.java.opts",
-      "category": "General",
-      "serviceName": "TEZ"
-    },
-    {
-      "id": "site property",
-      "name": "tez.am.grouping.split-waves",
-      "displayName": "tez.am.grouping.split-waves",
-      "displayType": "float",
-      "category": "General",
-      "serviceName": "TEZ"
-    },
-    {
-      "id": "site property",
-      "name": "tez.am.grouping.min-size",
-      "displayName": "tez.am.grouping.min-size",
-      "displayType": "int",
-      "category": "General",
-      "serviceName": "TEZ"
-    },
-    {
-      "id": "site property",
-      "name": "tez.am.grouping.max-size",
-      "displayName": "tez.am.grouping.max-size",
-      "displayType": "int",
-      "category": "General",
-      "serviceName": "TEZ"
-    },
-    {
-      "id": "site property",
-      "name": "tez.am.log.level",
-      "displayName": "tez.am.log.level",
-      "displayType": "string",
-      "category": "General",
-      "serviceName": "TEZ"
-    },
-    {
-      "id": "site property",
-      "name": "tez.runtime.intermediate-input.compress.codec",
-      "displayName": "tez.runtime.intermediate-input.compress.codec",
-      "displayType": "string",
-      "category": "General",
-      "serviceName": "TEZ"
-    },
-    {
-      "id": "site property",
-      "name": "tez.runtime.intermediate-input.is-compressed",
-      "displayName": "tez.runtime.intermediate-input.is-compressed",
-      "displayType": "checkbox",
-      "category": "General",
-      "serviceName": "TEZ"
-    },
-    {
-      "id": "site property",
-      "name": "tez.runtime.intermediate-output.compress.codec",
-      "displayName": "tez.runtime.intermediate-output.compress.codec",
-      "displayType": "string",
-      "category": "General",
-      "serviceName": "TEZ"
-    },
-    {
-      "id": "site property",
-      "name": "tez.runtime.intermediate-output.should-compress",
-      "displayName": "tez.runtime.intermediate-output.should-compress",
-      "displayType": "checkbox",
-      "category": "General",
-      "serviceName": "TEZ"
-    },
+/**********************************************HBASE***************************************/
+  {
+    "name": "hbase.tmp.dir",
+    "displayType": "directory",
+    "category": "Advanced hbase-site",
+    "serviceName": "HBASE",
+    "filename": "hbase-site.xml"
+  },
+  {
+    "name": "hbase.master.port",
+    "displayType": "int",
+    "serviceName": "HBASE",
+    "filename": "hbase-site.xml",
+    "category": "Advanced hbase-site"
+  },
+  {
+    "name": "hbase.regionserver.global.memstore.upperLimit",
+    "displayType": "float",
+    "category": "Advanced hbase-site",
+    "serviceName": "HBASE",
+    "filename": "hbase-site.xml"
+  },
+  {
+    "name": "hbase.regionserver.global.memstore.lowerLimit",
+    "displayType": "float",
+    "category": "Advanced hbase-site",
+    "serviceName": "HBASE",
+    "filename": "hbase-site.xml"
+  },
+  {
+    "name": "hbase.hstore.blockingStoreFiles",
+    "displayType": "int",
+    "category": "Advanced hbase-site",
+    "serviceName": "HBASE",
+    "filename": "hbase-site.xml"
+  },
+  {
+    "name": "hbase.hstore.compactionThreshold",
+    "displayType": "int",
+    "category": "General",
+    "serviceName": "HBASE",
+    "filename": "hbase-site.xml",
+    "index": 0
+  },
+  {
+    "name": "hfile.block.cache.size",
+    "displayType": "float",
+    "category": "General",
+    "serviceName": "HBASE",
+    "filename": "hbase-site.xml",
+    "index": 1
+  },
+  {
+    "name": "hbase.hregion.max.filesize",
+    "displayType": "int",
+    "category": "General",
+    "serviceName": "HBASE",
+    "filename": "hbase-site.xml",
+    "index": 2
+  },
+  {
+    "name": "hbase.regionserver.handler.count",
+    "displayType": "int",
+    "category": "HBASE_REGIONSERVER",
+    "serviceName": "HBASE",
+    "filename": "hbase-site.xml",
+    "index": 2
+  },
+  {
+    "name": "hbase.hregion.majorcompaction",
+    "displayType": "int",
+    "category": "HBASE_REGIONSERVER",
+    "serviceName": "HBASE",
+    "filename": "hbase-site.xml",
+    "index": 3
+  },
+  {
+    "name": "hbase.hregion.memstore.block.multiplier",
+    "displayType": "int",
+    "category": "HBASE_REGIONSERVER",
+    "serviceName": "HBASE",
+    "filename": "hbase-site.xml",
+    "index": 4
+  },
+  {
+    "name": "hbase.hregion.memstore.mslab.enabled",
+    "displayType": "checkbox",
+    "category": "Advanced hbase-site",
+    "serviceName": "HBASE",
+    "filename": "hbase-site.xml"
+  },
+  {
+    "name": "hbase.hregion.memstore.flush.size",
+    "displayType": "int",
+    "category": "HBASE_REGIONSERVER",
+    "serviceName": "HBASE",
+    "filename": "hbase-site.xml",
+    "index": 5
+  },
+  {
+    "name": "hbase.client.scanner.caching",
+    "displayType": "int",
+    "category": "General",
+    "serviceName": "HBASE",
+    "filename": "hbase-site.xml",
+    "index": 3
+  },
+  {
+    "name": "zookeeper.session.timeout",
+    "displayType": "int",
+    "category": "General",
+    "serviceName": "HBASE",
+    "filename": "hbase-site.xml",
+    "index": 4
+  },
+  {
+    "name": "hbase.client.keyvalue.maxsize",
+    "displayType": "int",
+    "category": "General",
+    "serviceName": "HBASE",
+    "filename": "hbase-site.xml",
+    "index": 5
+  },
+  {
+    "name": "hbase.coprocessor.region.classes",
+    "category": "Advanced hbase-site",
+    "serviceName": "HBASE",
+    "filename": "hbase-site.xml"
+  },
+  {
+    "name": "hbase.coprocessor.master.classes",
+    "category": "Advanced hbase-site",
+    "serviceName": "HBASE",
+    "filename": "hbase-site.xml"
+  },
+  {
+    "name": "hbase.coprocessor.regionserver.classes",
+    "category": "Advanced hbase-site",
+    "serviceName": "HBASE",
+    "filename": "hbase-site.xml"
+  },
+  {
+    "name": "hbase.zookeeper.quorum",
+    "displayType": "multiLine",
+    "serviceName": "HBASE",
+    "filename": "hbase-site.xml",
+    "category": "Advanced hbase-site"
+  },
+  {
+    "name": "hbasemaster_host",
+    "displayName": "HBase Master hosts",
+    "value": "",
+    "recommendedValue": "",
+    "description": "The host that has been assigned to run HBase Master",
+    "displayType": "masterHosts",
+    "isOverridable": false,
+    "isRequiredByAgent": false,
+    "isVisible": true,
+    "serviceName": "HBASE",
+    "filename": "hbase-env.xml",
+    "category": "HBASE_MASTER",
+    "index": 0
+  },
+  {
+    "name": "hbase_master_heapsize",
+    "displayType": "int",
+    "serviceName": "HBASE",
+    "filename": "hbase-env.xml",
+    "category": "HBASE_MASTER",
+    "index": 1
+  },
+  {
+    "name": "regionserver_hosts",
+    "displayName": "RegionServer hosts",
+    "value": "",
+    "recommendedValue": "",
+    "description": "The hosts that have been assigned to run RegionServer",
+    "displayType": "slaveHosts",
+    "isOverridable": false,
+    "isRequiredByAgent": false,
+    "serviceName": "HBASE",
+    "filename": "hbase-env.xml",
+    "category": "HBASE_REGIONSERVER",
+    "index": 0
+  },
+  {
+    "name": "hbase_regionserver_heapsize",
+    "displayType": "int",
+    "serviceName": "HBASE",
+    "filename": "hbase-env.xml",
+    "category": "HBASE_REGIONSERVER",
+    "index": 1
+  },
+  {
+    "name": "hbase_regionserver_xmn_max",
+    "displayType": "int",
+    "serviceName": "HBASE",
+    "filename": "hbase-env.xml",
+    "category": "HBASE_REGIONSERVER",
+    "index": 6
+  },
+  {
+    "name": "hbase_regionserver_xmn_ratio",
+    "displayType": "float",
+    "serviceName": "HBASE",
+    "filename": "hbase-env.xml",
+    "category": "HBASE_REGIONSERVER",
+    "index": 7
+  },
+  {
+    "name": "hbase_log_dir",
+    "displayType": "directory",
+    "serviceName": "HBASE",
+    "filename": "hbase-env.xml",
+    "category": "Advanced hbase-env"
+  },
+  {
+    "name": "hbase_pid_dir",
+    "displayType": "directory",
+    "serviceName": "HBASE",
+    "filename": "hbase-env.xml",
+    "category": "Advanced hbase-env"
+  },
 
-  /**********************************************hbase-site***************************************/
-    {
-      "id": "site property",
-      "name": "hbase.tmp.dir",
-      "displayName": "HBase local directory",
-      "defaultDirectory": "/hadoop/hbase",
-      "displayType": "directory",
-      "category": "Advanced hbase-site",
-      "serviceName": "HBASE"
-    },
-    {
-      "id": "site property",
-      "name": "hbase.master.port",
-      "displayName": "HBase Master Port",
-      "isReconfigurable": true,
-      "displayType": "int",
-      "isOverridable": false,
-      "isVisible": true,
-      "serviceName": "HBASE",
-      "category": "Advanced hbase-site"
-    },
-    {
-      "id": "site property",
-      "name": "hbase.regionserver.global.memstore.upperLimit",
-      "displayName": "hbase.regionserver.global.memstore.upperLimit",
-      "displayType": "float",
-      "category": "Advanced hbase-site",
-      "serviceName": "HBASE"
-    },
-    {
-      "id": "site property",
-      "name": "hbase.regionserver.global.memstore.lowerLimit",
-      "displayName": "hbase.regionserver.global.memstore.lowerLimit",
-      "displayType": "float",
-      "category": "Advanced hbase-site",
-      "serviceName": "HBASE"
-    },
-    {
-      "id": "site property",
-      "name": "hbase.hstore.blockingStoreFiles",
-      "displayName": "hstore blocking storefiles",
-      "displayType": "int",
-      "category": "Advanced hbase-site",
-      "serviceName": "HBASE"
-    },
-    {
-      "id": "site property",
-      "name": "hbase.hstore.compactionThreshold",
-      "displayName": "HBase HStore compaction threshold",
-      "displayType": "int",
-      "category": "General",
-      "serviceName": "HBASE",
-      "index": 0
-    },
-    {
-      "id": "site property",
-      "name": "hfile.block.cache.size",
-      "displayName": "HFile block cache size ",
-      "displayType": "float",
-      "category": "General",
-      "serviceName": "HBASE",
-      "index": 1
-    },
-    {
-      "id": "site property",
-      "name": "hbase.hregion.max.filesize",
-      "displayName": "Maximum HStoreFile Size",
-      "displayType": "int",
-      "unit": "bytes",
-      "category": "General",
-      "serviceName": "HBASE",
-      "index": 2
-    },
-    {
-      "id": "site property",
-      "name": "hbase.regionserver.handler.count",
-      "displayName": "RegionServer Handler",
-      "displayType": "int",
-      "category": "HBASE_REGIONSERVER",
-      "serviceName": "HBASE",
-      "index": 2
-    },
-    {
-      "id": "site property",
-      "name": "hbase.hregion.majorcompaction",
-      "displayName": "HBase Region Major Compaction",
-      "displayType": "int",
-      "unit": "ms",
-      "category": "HBASE_REGIONSERVER",
-      "serviceName": "HBASE",
-      "index": 3
-    },
-    {
-      "id": "site property",
-      "name": "hbase.hregion.memstore.block.multiplier",
-      "displayName": "HBase Region Block Multiplier",
-      "displayType": "int",
-      "category": "HBASE_REGIONSERVER",
-      "serviceName": "HBASE",
-      "index": 4
-    },
-    {
-      "id": "site property",
-      "name": "hbase.hregion.memstore.mslab.enabled",
-      "displayName": "hbase.hregion.memstore.mslab.enabled",
-      "displayType": "checkbox",
-      "category": "Advanced hbase-site",
-      "serviceName": "HBASE"
-    },
-    {
-      "id": "site property",
-      "name": "hbase.hregion.memstore.flush.size",
-      "displayName": "HBase Region Memstore Flush Size",
-      "displayType": "int",
-      "unit": "bytes",
-      "category": "HBASE_REGIONSERVER",
-      "serviceName": "HBASE",
-      "index": 5
-    },
-    {
-      "id": "site property",
-      "name": "hbase.client.scanner.caching",
-      "displayName": "HBase Client Scanner Caching",
-      "displayType": "int",
-      "unit": "rows",
-      "category": "General",
-      "serviceName": "HBASE",
-      "index": 3
-    },
-    {
-      "id": "site property",
-      "name": "zookeeper.session.timeout",
-      "displayName": "Zookeeper timeout for HBase Session",
-      "displayType": "int",
-      "unit": "ms",
-      "category": "General",
-      "serviceName": "HBASE",
-      "index": 4
-    },
-    {
-      "id": "site property",
-      "name": "hbase.client.keyvalue.maxsize",
-      "displayName": "HBase Client Maximum key-value Size",
-      "displayType": "int",
-      "unit": "bytes",
-      "category": "General",
-      "serviceName": "HBASE",
-      "index": 5
-    },
-    {
-      "id": "site property",
-      "name": "hbase.coprocessor.region.classes",
-      "displayName": "hbase.coprocessor.region.classes",
-      "category": "Advanced hbase-site",
-      "isRequired": false,
-      "serviceName": "HBASE"
-    },
-    {
-      "id": "site property",
-      "name": "hbase.coprocessor.master.classes",
-      "displayName": "hbase.coprocessor.master.classes",
-      "category": "Advanced hbase-site",
-      "isRequired": false,
-      "serviceName": "HBASE"
-    },
-    {
-      "id": "site property",
-      "name": "hbase.zookeeper.quorum",
-      "displayName": "hbase.zookeeper.quorum",
-      "displayType": "multiLine",
-      "serviceName": "HBASE",
-      "category": "Advanced hbase-site"
-    },
+/**********************************************storm-site***************************************/
+  {
+    "name": "storm.zookeeper.root",
+    "displayType": "directory",
+    "serviceName": "STORM",
+    "filename": "storm-site.xml",
+    "category": "General"
+  },
+  {
+    "name": "storm.local.dir",
+    "displayType": "directory",
+    "serviceName": "STORM",
+    "filename": "storm-site.xml",
+    "category": "General"
+  },
+  {
+    "name": "storm.zookeeper.servers",
+    "displayType": "masterHosts",
+    "serviceName": "STORM",
+    "filename": "storm-site.xml",
+    "category": "General"
+  },
+  {
+    "name": "storm.zookeeper.port",
+    "displayType": "int",
+    "serviceName": "STORM",
+    "filename": "storm-site.xml",
+    "category": "General"
+  },
+  {
+    "name": "storm.zookeeper.session.timeout",
+    "displayType": "int",
+    "serviceName": "STORM",
+    "filename": "storm-site.xml",
+    "category": "General"
+  },
+  {
+    "name": "storm.zookeeper.connection.timeout",
+    "displayType": "int",
+    "serviceName": "STORM",
+    "filename": "storm-site.xml",
+    "category": "General"
+  },
+  {
+    "name": "storm.zookeeper.retry.times",
+    "displayType": "int",
+    "serviceName": "STORM",
+    "filename": "storm-site.xml",
+    "category": "General"
+  },
+  {
+    "name": "storm.zookeeper.retry.interval",
+    "displayType": "int",
+    "serviceName": "STORM",
+    "filename": "storm-site.xml",
+    "category": "General"
+  },
+  {
+    "name": "storm.zookeeper.retry.intervalceiling.millis",
+    "displayType": "int",
+    "serviceName": "STORM",
+    "filename": "storm-site.xml",
+    "category": "General"
+  },
+  {
+    "name": "storm.cluster.mode",
+    "serviceName": "STORM",
+    "filename": "storm-site.xml",
+    "category": "General"
+  },
+  {
+    "name": "storm.local.mode.zmq",
+    "displayType": "checkbox",
+    "serviceName": "STORM",
+    "filename": "storm-site.xml",
+    "category": "General"
+  },
+  {
+    "name": "storm.thrift.transport",
+    "serviceName": "STORM",
+    "filename": "storm-site.xml",
+    "category": "General"
+  },
+  {
+    "name": "storm.messaging.transport",
+    "serviceName": "STORM",
+    "filename": "storm-site.xml",
+    "category": "General"
+  },
+  {
+    "name": "storm.messaging.netty.buffer_size",
+    "displayType": "int",
+    "category": "General",
+    "serviceName": "STORM",
+    "filename": "storm-site.xml"
+  },
+  {
+    "serviceName": "STORM",
+    "category": "General",
+    "name": "storm.messaging.netty.max_retries",
+    "displayType": "int",
+    "filename": "storm-site.xml"
+  },
+  {
+    "name": "storm.messaging.netty.max_wait_ms",
+    "displayType": "int",
+    "category": "General",
+    "serviceName": "STORM",
+    "filename": "storm-site.xml"
+  },
+  {
+    "name": "storm.messaging.netty.min_wait_ms",
+    "displayType": "int",
+    "category": "General",
+    "serviceName": "STORM",
+    "filename": "storm-site.xml"
+  },
+  {
+    "name": "storm.messaging.netty.server_worker_threads",
+    "displayType": "int",
+    "category": "General",
+    "serviceName": "STORM",
+    "filename": "storm-site.xml"
+  },
+  {
+    "name": "storm.messaging.netty.client_worker_threads",
+    "displayType": "int",
+    "category": "General",
+    "serviceName": "STORM",
+    "filename": "storm-site.xml"
+  },
+  {
+    "name": "nimbus.host",
+    "displayType": "masterHost",
+    "serviceName": "STORM",
+    "filename": "storm-site.xml",
+    "category": "NIMBUS"
+  },
+  {
+    "name": "nimbus.thrift.port",
+    "displayType": "int",
+    "serviceName": "STORM",
+    "filename": "storm-site.xml",
+    "category": "NIMBUS"
+  },
+  {
+    "name": "nimbus.thrift.max_buffer_size",
+    "displayType": "int",
+    "serviceName": "STORM",
+    "filename": "storm-site.xml",
+    "category": "NIMBUS"
+  },
+  {
+    "name": "nimbus.childopts",
+    "displayType": "multiLine",
+    "serviceName": "STORM",
+    "category": "NIMBUS",
+    "filename": "storm-site.xml"
+  },
+  {
+    "name": "nimbus.task.timeout.secs",
+    "displayType": "int",
+    "serviceName": "STORM",
+    "filename": "storm-site.xml",
+    "category": "NIMBUS"
+  },
+  {
+    "name": "nimbus.supervisor.timeout.secs",
+    "displayType": "int",
+    "serviceName": "STORM",
+    "filename": "storm-site.xml",
+    "category": "NIMBUS"
+  },
+  {
+    "name": "nimbus.monitor.freq.secs",
+    "displayType": "int",
+    "serviceName": "STORM",
+    "filename": "storm-site.xml",
+    "category": "NIMBUS"
+  },
+  {
+    "name": "nimbus.cleanup.inbox.freq.secs",
+    "displayType": "int",
+    "serviceName": "STORM",
+    "filename": "storm-site.xml",
+    "category": "NIMBUS"
+  },
+  {
+    "name": "nimbus.inbox.jar.expiration.secs",
+    "displayType": "int",
+    "serviceName": "STORM",
+    "filename": "storm-site.xml",
+    "category": "NIMBUS"
+  },
+  {
+    "name": "nimbus.task.launch.secs",
+    "displayType": "int",
+    "serviceName": "STORM",
+    "filename": "storm-site.xml",
+    "category": "NIMBUS"
+  },
+  {
+    "name": "nimbus.reassign",
+    "displayType": "checkbox",
+    "serviceName": "STORM",
+    "filename": "storm-site.xml",
+    "category": "NIMBUS"
+  },
+  {
+    "name": "nimbus.file.copy.expiration.secs",
+    "displayType": "int",
+    "serviceName": "STORM",
+    "filename": "storm-site.xml",
+    "category": "NIMBUS"
+  },
+  {
+    "name": "nimbus.topology.validator",
+    "serviceName": "STORM",
+    "filename": "storm-site.xml",
+    "category": "NIMBUS"
+  },
+  {
+    "name": "supervisor.slots.ports",
+    "displayType": "string",
+    "serviceName": "STORM",
+    "filename": "storm-site.xml",
+    "category": "SUPERVISOR"
+  },
+  {
+    "name": "supervisor.childopts",
+    "displayType": "multiLine",
+    "category": "SUPERVISOR",
+    "serviceName": "STORM",
+    "filename": "storm-site.xml"
+  },
+  {
+    "name": "supervisor.worker.start.timeout.secs",
+    "displayType": "int",
+    "category": "SUPERVISOR",
+    "serviceName": "STORM",
+    "filename": "storm-site.xml"
+  },
+  {
+    "name": "supervisor.worker.timeout.secs",
+    "displayType": "int",
+    "category": "SUPERVISOR",
+    "serviceName": "STORM",
+    "filename": "storm-site.xml"
+  },
+  {
+    "name": "supervisor.monitor.frequency.secs",
+    "displayType": "int",
+    "category": "SUPERVISOR",
+    "serviceName": "STORM",
+    "filename": "storm-site.xml"
+  },
+  {
+    "name": "supervisor.heartbeat.frequency.secs",
+    "displayType": "int",
+    "category": "SUPERVISOR",
+    "serviceName": "STORM",
+    "filename": "storm-site.xml"
+  },
+  {
+    "name": "drpc.port",
+    "displayType": "int",
+    "category": "DRPC_SERVER",
+    "serviceName": "STORM",
+    "filename": "storm-site.xml"
+  },
+  {
+    "name": "drpc.worker.threads",
+    "displayType": "int",
+    "category": "DRPC_SERVER",
+    "serviceName": "STORM",
+    "filename": "storm-site.xml"
+  },
+  {
+    "name": "drpc.queue.size",
+    "displayType": "int",
+    "category": "DRPC_SERVER",
+    "serviceName": "STORM",
+    "filename": "storm-site.xml"
+  },
+  {
+    "name": "drpc.invocations.port",
+    "displayType": "int",
+    "category": "DRPC_SERVER",
+    "serviceName": "STORM",
+    "filename": "storm-site.xml"
+  },
+  {
+    "name": "drpc.request.timeout.secs",
+    "displayType": "int",
+    "category": "DRPC_SERVER",
+    "serviceName": "STORM",
+    "filename": "storm-site.xml"
+  },
+  {
+    "name": "drpc.childopts",
+    "displayType": "string",
+    "category": "DRPC_SERVER",
+    "serviceName": "STORM",
+    "filename": "storm-site.xml"
+  },
+  {
+    "name": "ui.port",
+    "displayType": "int",
+    "category": "STORM_UI_SERVER",
+    "serviceName": "STORM",
+    "filename": "storm-site.xml"
+  },
+  {
+    "name": "ui.childopts",
+    "displayType": "string",
+    "category": "STORM_UI_SERVER",
+    "serviceName": "STORM",
+    "filename": "storm-site.xml"
+  },
+  {
+    "name": "worker.childopts",
+    "displayType": "multiLine",
+    "category": "Advanced storm-site",
+    "serviceName": "STORM",
+    "filename": "storm-site.xml"
+  },
+/*********************************************oozie-site for Falcon*****************************/
+  {
+    "name": "oozie.service.ELService.ext.functions.coord-job-submit-instances",
+    "displayType": "custom",
+    "category": "Falcon - Oozie integration",
+    "serviceName": "FALCON",
+    "filename": "oozie-site.xml"
+  },
+  {
+    "serviceName": "FALCON",
+    "category": "Falcon - Oozie integration",
+    "name": "oozie.service.ELService.ext.functions.coord-action-create-inst",
+    "displayType": "custom",
+    "filename": "oozie-site.xml"
+  },
+  {
+    "serviceName": "FALCON",
+    "category": "Falcon - Oozie integration",
+    "name": "oozie.service.ELService.ext.functions.coord-action-create",
+    "displayType": "custom",
+    "filename": "oozie-site.xml"
+  },
+  {
+    "serviceName": "FALCON",
+    "category": "Falcon - Oozie integration",
+    "name": "oozie.service.ELService.ext.functions.coord-job-submit-data",
+    "displayType": "custom",
+    "filename": "oozie-site.xml"
+  },
+  {
+    "serviceName": "FALCON",
+    "category": "Falcon - Oozie integration",
+    "name": "oozie.service.ELService.ext.functions.coord-action-start",
+    "displayType": "custom",
+    "filename": "oozie-site.xml"
+  },
+  {
+    "serviceName": "FALCON",
+    "category": "Falcon - Oozie integration",
+    "name": "oozie.service.ELService.ext.functions.coord-sla-submit",
+    "displayType": "custom",
+    "filename": "oozie-site.xml"
+  },
+  {
+    "serviceName": "FALCON",
+    "category": "Falcon - Oozie integration",
+    "name": "oozie.service.ELService.ext.functions.coord-sla-create",
+    "displayType": "custom",
+    "filename": "oozie-site.xml"
+  },
 
-  /**********************************************storm-site***************************************/
-    {
-      "id": "site property",
-      "name": "storm.zookeeper.root",
-      "displayName": "storm.zookeeper.root",
-      "displayType": "directory",
-      "serviceName": "STORM",
-      "category": "General"
-    },
-    {
-      "id": "site property",
-      "name": "storm.local.dir",
-      "displayName": "storm.local.dir",
-      "defaultDirectory": "/hadoop/storm",
-      "displayType": "directory",
-      "serviceName": "STORM",
-      "category": "General"
-    },
-    {
-      "id": "site property",
-      "name": "storm.zookeeper.servers",
-      "displayName": "storm.zookeeper.servers",
-      "displayType": "masterHosts",
-      "isOverridable": false,
-      "isReconfigurable": false,
-      "serviceName": "STORM",
-      "category": "General"
-    },
-    {
-      "id": "site property",
-      "name": "storm.zookeeper.port",
-      "displayName": "storm.zookeeper.port",
-      "displayType": "int",
-      "serviceName": "STORM",
-      "category": "General"
-    },
-    {
-      "id": "site property",
-      "name": "storm.zookeeper.session.timeout",
-      "displayName": "storm.zookeeper.session.timeout",
-      "displayType": "int",
-      "serviceName": "STORM",
-      "category": "General"
-    },
-    {
-      "id": "site property",
-      "name": "storm.zookeeper.connection.timeout",
-      "displayName": "storm.zookeeper.connection.timeout",
-      "displayType": "int",
-      "serviceName": "STORM",
-      "category": "General"
-    },
-    {
-      "id": "site property",
-      "name": "storm.zookeeper.retry.times",
-      "displayName": "storm.zookeeper.retry.times",
-      "displayType": "int",
-      "serviceName": "STORM",
-      "category": "General"
-    },
-    {
-      "id": "site property",
-      "name": "storm.zookeeper.retry.interval",
-      "displayName": "storm.zookeeper.retry.interval",
-      "displayType": "int",
-      "serviceName": "STORM",
-      "category": "General",
-      "unit": "ms"
-    },
-    {
-      "id": "site property",
-      "name": "storm.zookeeper.retry.intervalceiling.millis",
-      "displayName": "storm.zookeeper.retry.intervalceiling.millis",
-      "displayType": "int",
-      "serviceName": "STORM",
-      "category": "General",
-      "unit": "ms"
-    },
-    {
-      "id": "site property",
-      "name": "storm.cluster.mode",
-      "displayName": "storm.cluster.mode",
-      "serviceName": "STORM",
-      "category": "General"
-    },
-    {
-      "id": "site property",
-      "name": "storm.local.mode.zmq",
-      "displayName": "storm.local.mode.zmq",
-      "displayType": "checkbox",
-      "serviceName": "STORM",
-      "category": "General"
-    },
-    {
-      "id": "site property",
-      "name": "storm.thrift.transport",
-      "displayName": "storm.thrift.transport",
-      "serviceName": "STORM",
-      "category": "General"
-    },
-    {
-      "id": "site property",
-      "name": "storm.messaging.transport",
-      "displayName": "storm.messaging.transport",
-      "serviceName": "STORM",
-      "category": "General"
-    },
-    {
-      "id": "site property",
-      "serviceName": "STORM",
-      "category": "General",
-      "displayName": "storm.messaging.netty.buffer_size",
-      "name": "storm.messaging.netty.buffer_size",
-      "displayType": "int",
-      "unit": "bytes"
-    },
-    {
-      "id": "site property",
-      "serviceName": "STORM",
-      "category": "General",
-      "displayName": "storm.messaging.netty.max_retries",
-      "name": "storm.messaging.netty.max_retries",
-      "displayType": "int"
-    },
-    {
-      "id": "site property",
-      "serviceName": "STORM",
-      "category": "General",
-      "displayName": "storm.messaging.netty.max_wait_ms",
-      "name": "storm.messaging.netty.max_wait_ms",
-      "displayType": "int",
-      "unit": "ms"
-    },
-    {
-      "id": "site property",
-      "serviceName": "STORM",
-      "category": "General",
-      "displayName": "storm.messaging.netty.min_wait_ms",
-      "name": "storm.messaging.netty.min_wait_ms",
-      "displayType": "int",
-      "unit": "ms"
-    },
-    {
-      "id": "site property",
-      "serviceName": "STORM",
-      "category": "General",
-      "displayName": "storm.messaging.netty.server_worker_threads",
-      "name": "storm.messaging.netty.server_worker_threads",
-      "displayType": "int"
-    },
-    {
-      "id": "site property",
-      "serviceName": "STORM",
-      "category": "General",
-      "displayName": "storm.messaging.netty.client_worker_threads",
-      "name": "storm.messaging.netty.client_worker_threads",
-      "displayType": "int"
-    },
-    {
-      "id": "site property",
-      "name": "nimbus.host",
-      "displayName": "nimbus.host",
-      "displayType": "masterHost",
-      "isOverridable": false,
-      "isReconfigurable": false,
-      "serviceName": "STORM",
-      "category": "NIMBUS"
-    },
-    {
-      "id": "site property",
-      "name": "nimbus.thrift.port",
-      "displayName": "nimbus.thrift.port",
-      "displayType": "int",
-      "serviceName": "STORM",
-      "category": "NIMBUS"
-    },
-    {
-      "id": "site property",
-      "name": "nimbus.thrift.max_buffer_size",
-      "displayName": "nimbus.thrift.max_buffer_size",
-      "displayType": "int",
-      "serviceName": "STORM",
-      "category": "NIMBUS",
-      "unit": "bytes"
-    },
-    {
-      "id": "site property",
-      "name": "nimbus.childopts",
-      "displayName": "nimbus.childopts",
-      "displayType": "multiLine",
-      "isOverridable": false,
-      "serviceName": "STORM",
-      "category": "NIMBUS",
-      "filename": "storm-site.xml"
-    },
-    {
-      "id": "site property",
-      "name": "nimbus.task.timeout.secs",
-      "displayName": "nimbus.task.timeout.secs",
-      "displayType": "int",
-      "serviceName": "STORM",
-      "category": "NIMBUS",
-      "unit": "seconds"
-    },
-    {
-      "id": "site property",
-      "name": "nimbus.supervisor.timeout.secs",
-      "displayName": "nimbus.supervisor.timeout.secs",
-      "displayType": "int",
-      "serviceName": "STORM",
-      "category": "NIMBUS",
-      "unit": "seconds"
-    },
-    {
-      "id": "site property",
-      "name": "nimbus.monitor.freq.secs",
-      "displayName": "nimbus.monitor.freq.secs",
-      "displayType": "int",
-      "serviceName": "STORM",
-      "category": "NIMBUS",
-      "unit": "seconds"
-    },
-    {
-      "id": "site property",
-      "name": "nimbus.cleanup.inbox.freq.secs",
-      "displayName": "nimbus.cleanup.inbox.freq.secs",
-      "displayType": "int",
-      "serviceName": "STORM",
-      "category": "NIMBUS",
-      "unit": "seconds"
-    },
-    {
-      "id": "site property",
-      "name": "nimbus.inbox.jar.expiration.secs",
-      "displayName": "nimbus.inbox.jar.expiration.secs",
-      "displayType": "int",
-      "serviceName": "STORM",
-      "category": "NIMBUS",
-      "unit": "seconds"
-    },
-    {
-      "id": "site property",
-      "name": "nimbus.task.launch.secs",
-      "displayName": "nimbus.task.launch.secs",
-      "displayType": "int",
-      "serviceName": "STORM",
-      "category": "NIMBUS",
-      "unit": "seconds"
-    },
-    {
-      "id": "site property",
-      "name": "nimbus.reassign",
-      "displayName": "nimbus.reassign",
-      "displayType": "checkbox",
-      "isReconfigurable": true,
-      "serviceName": "STORM",
-      "category": "NIMBUS"
-    },
-    {
-      "id": "site property",
-      "name": "nimbus.file.copy.expiration.secs",
-      "displayName": "nimbus.file.copy.expiration.secs",
-      "displayType": "int",
-      "serviceName": "STORM",
-      "category": "NIMBUS",
-      "unit": "seconds"
-    },
-    {
-      "id": "site property",
-      "name": "nimbus.topology.validator",
-      "displayName": "nimbus.topology.validator",
-      "serviceName": "STORM",
-      "category": "NIMBUS"
-    },
-    {
-      "id": "site property",
-      "name": "supervisor.slots.ports",
-      "displayName": "supervisor.slots.ports",
-      "displayType": "string",
-      "serviceName": "STORM",
-      "category": "SUPERVISOR"
-    },
-    {
-      "id": "site property",
-      "isOverrideable": false,
-      "serviceName": "STORM",
-      "category": "SUPERVISOR",
-      "displayName": "supervisor.childopts",
-      "name": "supervisor.childopts",
-      "displayType": "multiLine",
-      "filename": "storm-site.xml"
-    },
-    {
-      "id": "site property",
-      "serviceName": "STORM",
-      "category": "SUPERVISOR",
-      "displayName": "supervisor.worker.start.timeout.secs",
-      "name": "supervisor.worker.start.timeout.secs",
-      "displayType": "int",
-      "unit": "seconds"
-    },
-    {
-      "id": "site property",
-      "serviceName": "STORM",
-      "category": "SUPERVISOR",
-      "displayName": "supervisor.worker.timeout.secs",
-      "name": "supervisor.worker.timeout.secs",
-      "displayType": "int",
-      "unit": "seconds"
-    },
-    {
-      "id": "site property",
-      "serviceName": "STORM",
-      "category": "SUPERVISOR",
-      "displayName": "supervisor.monitor.frequency.secs",
-      "name": "supervisor.monitor.frequency.secs",
-      "displayType": "int",
-      "unit": "seconds"
-    },
-    {
-      "id": "site property",
-      "serviceName": "STORM",
-      "category": "SUPERVISOR",
-      "displayName": "supervisor.heartbeat.frequency.secs",
-      "name": "supervisor.heartbeat.frequency.secs",
-      "displayType": "int",
-      "unit": "seconds"
-    },
-    {
-      "id": "site property",
-      "serviceName": "STORM",
-      "category": "DRPC_SERVER",
-      "displayName": "drpc.port",
-      "name": "drpc.port",
-      "displayType": "int"
-    },
-    {
-      "id": "site property",
-      "serviceName": "STORM",
-      "category": "DRPC_SERVER",
-      "displayName": "drpc.worker.threads",
-      "name": "drpc.worker.threads",
-      "displayType": "int"
-    },
-    {
-      "id": "site property",
-      "serviceName": "STORM",
-      "category": "DRPC_SERVER",
-      "displayName": "drpc.queue.size",
-      "name": "drpc.queue.size",
-      "displayType": "int"
-    },
-    {
-      "id": "site property",
-      "serviceName": "STORM",
-      "category": "DRPC_SERVER",
-      "displayName": "drpc.invocations.port",
-      "name": "drpc.invocations.port",
-      "displayType": "int"
-    },
-    {
-      "id": "site property",
-      "serviceName": "STORM",
-      "category": "DRPC_SERVER",
-      "displayName": "drpc.request.timeout.secs",
-      "name": "drpc.request.timeout.secs",
-      "displayType": "int",
-      "unit": "seconds"
-    },
-    {
-      "id": "site property",
-      "serviceName": "STORM",
-      "category": "DRPC_SERVER",
-      "displayName": "drpc.childopts",
-      "name": "drpc.childopts",
-      "displayType": "string"
-    },
-    {
-      "id": "site property",
-      "serviceName": "STORM",
-      "category": "STORM_UI_SERVER",
-      "displayName": "ui.port",
-      "name": "ui.port",
-      "displayType": "int"
-    },
-    {
-      "id": "site property",
-      "serviceName": "STORM",
-      "category": "STORM_UI_SERVER",
-      "displayName": "ui.childopts",
-      "name": "ui.childopts",
-      "displayType": "string"
-    },
-    //@Todo: uncomment following properties when logviewer is treated as different section on storm service page
-    /*
-    {
-      "id": "site property",
-      "serviceName": "STORM",
-      "category": "LogviewerServer",
-      "displayName": "logviewer.port",
-      "name": "logviewer.port",
-      "displayType": "int"
-    },
-    {
-      "id": "site property",
-      "serviceName": "STORM",
-      "category": "LogviewerServer",
-      "displayName": "logviewer.childopts",
-      "name": "logviewer.childopts",
-      "displayType": "string"
-    },
-    {
-      "id": "site property",
-      "serviceName": "STORM",
-      "category": "LogviewerServer",
-      "displayName": "logviewer.appender.name",
-      "name": "logviewer.appender.name",
-      "displayType": "string"
-    },
-    */
-    {
-      "id": "site property",
-      "serviceName": "STORM",
-      "category": "Advanced storm-site",
-      "displayName": "worker.childopts",
-      "name": "worker.childopts",
-      "displayType": "multiLine",
-      "filename": "storm-site.xml"
-    },
-  /*********************************************oozie-site for Falcon*****************************/
-    {
-      "id": "site property",
-      "isReconfigurable": true,
-      "serviceName": "FALCON",
-      "category": "Falcon - Oozie integration",
-      "displayName": "oozie.service.ELService.ext.functions.coord-job-submit-instances",
-      "name": "oozie.service.ELService.ext.functions.coord-job-submit-instances",
-      "displayType": "custom",
-      "filename": "oozie-site.xml"
-    },
-    {
-      "id": "site property",
-      "isReconfigurable": true,
-      "serviceName": "FALCON",
-      "category": "Falcon - Oozie integration",
-      "displayName": "oozie.service.ELService.ext.functions.coord-action-create-inst",
-      "name": "oozie.service.ELService.ext.functions.coord-action-create-inst",
-      "displayType": "custom",
-      "filename": "oozie-site.xml"
-    },
-    {
-      "id": "site property",
-      "isReconfigurable": true,
-      "serviceName": "FALCON",
-      "category": "Falcon - Oozie integration",
-      "displayName": "oozie.service.ELService.ext.functions.coord-action-create",
-      "name": "oozie.service.ELService.ext.functions.coord-action-create",
-      "displayType": "custom",
-      "filename": "oozie-site.xml"
-    },
-    {
-      "id": "site property",
-      "isReconfigurable": true,
-      "serviceName": "FALCON",
-      "category": "Falcon - Oozie integration",
-      "displayName": "oozie.service.ELService.ext.functions.coord-job-submit-data",
-      "name": "oozie.service.ELService.ext.functions.coord-job-submit-data",
-      "displayType": "custom",
-      "filename": "oozie-site.xml"
-    },
-    {
-      "id": "site property",
-      "isReconfigurable": true,
-      "serviceName": "FALCON",
-      "category": "Falcon - Oozie integration",
-      "displayName": "oozie.service.ELService.ext.functions.coord-action-start",
-      "name": "oozie.service.ELService.ext.functions.coord-action-start",
-      "displayType": "custom",
-      "filename": "oozie-site.xml"
-    },
-    {
-      "id": "site property",
-      "isReconfigurable": true,
-      "serviceName": "FALCON",
-      "category": "Falcon - Oozie integration",
-      "displayName": "oozie.service.ELService.ext.functions.coord-sla-submit",
-      "name": "oozie.service.ELService.ext.functions.coord-sla-submit",
-      "displayType": "custom",
-      "filename": "oozie-site.xml"
-    },
-    {
-      "id": "site property",
-      "isReconfigurable": true,
-      "serviceName": "FALCON",
-      "category": "Falcon - Oozie integration",
-      "displayName": "oozie.service.ELService.ext.functions.coord-sla-create",
-      "name": "oozie.service.ELService.ext.functions.coord-sla-create",
-      "displayType": "custom",
-      "filename": "oozie-site.xml"
-    },
+  // Runtime properties
+  {
+    "name": "*.domain",
+    "category": "FalconRuntimeSite",
+    "serviceName": "FALCON",
+    "filename": "falcon-runtime.properties.xml"
 
-    // Runtime properties
-    {
-      "id": "site property",
-      "name": "*.domain",
-      "displayName": "*.domain",
-      "category": "FalconRuntimeSite",
-      "serviceName": "FALCON",
-      "filename": "falcon-runtime.properties.xml"
+  },
+  {
+    "name": "*.log.cleanup.frequency.minutes.retention",
+    "category": "FalconRuntimeSite",
+    "serviceName": "FALCON",
+    "filename": "falcon-runtime.properties.xml"
+  },
+  {
+    "name": "*.log.cleanup.frequency.hours.retention",
+    "category": "FalconRuntimeSite",
+    "serviceName": "FALCON",
+    "filename": "falcon-runtime.properties.xml"
+  },
+  {
+    "name": "*.log.cleanup.frequency.days.retention",
+    "category": "FalconRuntimeSite",
+    "serviceName": "FALCON",
+    "filename": "falcon-runtime.properties.xml"
+  },
+  {
+    "name": "*.log.cleanup.frequency.months.retention",
+    "category": "FalconRuntimeSite",
+    "serviceName": "FALCON",
+    "filename": "falcon-runtime.properties.xml"
+  },
 
-    },
-    {
-      "id": "site property",
-      "name": "*.log.cleanup.frequency.minutes.retention",
-      "displayName": "*.log.cleanup.frequency.minutes.retention",
-      "category": "FalconRuntimeSite",
-      "serviceName": "FALCON",
-      "filename": "falcon-runtime.properties.xml"
-    },
-    {
-      "id": "site property",
-      "name": "*.log.cleanup.frequency.hours.retention",
-      "displayName": "*.log.cleanup.frequency.hours.retention",
-      "category": "FalconRuntimeSite",
-      "serviceName": "FALCON",
-      "filename": "falcon-runtime.properties.xml"
-    },
-    {
-      "id": "site property",
-      "name": "*.log.cleanup.frequency.days.retention",
-      "displayName": "*.log.cleanup.frequency.days.retention",
-      "category": "FalconRuntimeSite",
-      "serviceName": "FALCON",
-      "filename": "falcon-runtime.properties.xml"
-    },
-    {
-      "id": "site property",
-      "name": "*.log.cleanup.frequency.months.retention",
-      "displayName": "*.log.cleanup.frequency.months.retention",
-      "category": "FalconRuntimeSite",
-      "serviceName": "FALCON",
-      "filename": "falcon-runtime.properties.xml"
-    },
+  //  Startup properties
 
-    //  Startup properties
+  {
+    "name": "*.domain",
+    "category": "FalconStartupSite",
+    "serviceName": "FALCON",
+    "filename": "falcon-startup.properties.xml"
+  },
+  {
+    "name": "*.workflow.engine.impl",
+    "category": "FalconStartupSite",
+    "serviceName": "FALCON",
+    "filename": "falcon-startup.properties.xml"
+  },
+  {
+    "name": "*.oozie.process.workflow.builder",
+    "category": "FalconStartupSite",
+    "serviceName": "FALCON",
+    "filename": "falcon-startup.properties.xml"
+  },
+  {
+    "name": "*.oozie.feed.workflow.builder",
+    "category": "FalconStartupSite",
+    "serviceName": "FALCON",
+    "filename": "falcon-startup.properties.xml"
+  },
+  {
+    "name": "*.SchedulableEntityManager.impl",
+    "category": "FalconStartupSite",
+    "serviceName": "FALCON",
+    "filename": "falcon-startup.properties.xml"
+  },
+  {
+    "name": "*.ConfigSyncService.impl",
+    "category": "FalconStartupSite",
+    "serviceName": "FALCON",
+    "filename": "falcon-startup.properties.xml"
+  },
+  {
+    "name": "*.ProcessInstanceManager.impl",
+    "category": "FalconStartupSite",
+    "serviceName": "FALCON",
+    "filename": "falcon-startup.properties.xml"
+  },
+  {
+    "name": "*.catalog.service.impl",
+    "category": "FalconStartupSite",
+    "serviceName": "FALCON",
+    "filename": "falcon-startup.properties.xml"
+  },
+  {
+    "name": "*.application.services",
+    "displayType": "multiLine",
+    "category": "FalconStartupSite",
+    "serviceName": "FALCON",
+    "filename": "falcon-startup.properties.xml"
+  },
+  {
+    "name": "*.configstore.listeners",
+    "displayType": "multiLine",
+    "category": "FalconStartupSite",
+    "serviceName": "FALCON",
+    "filename": "falcon-startup.properties.xml"
+  },
+  {
+    "name": "*.broker.impl.class",
+    "category": "FalconStartupSite",
+    "serviceName": "FALCON",
+    "filename": "falcon-startup.properties.xml"
+  },
+  {
+    "name": "*.shared.libs",
+    "category": "FalconStartupSite",
+    "serviceName": "FALCON",
+    "filename": "falcon-startup.properties.xml"
+  },
+  {
+    "name": "*.config.store.uri",
+    "category": "FalconStartupSite",
+    "serviceName": "FALCON",
+    "filename": "falcon-startup.properties.xml"
+  },
+  {
+    "name": "*.system.lib.location",
+    "category": "FalconStartupSite",
+    "serviceName": "FALCON",
+    "filename": "falcon-startup.properties.xml"
+  },
+  {
+    "name": "*.retry.recorder.path",
+    "category": "FalconStartupSite",
+    "serviceName": "FALCON",
+    "filename": "falcon-startup.properties.xml"
+  },
+  {
+    "name": "*.falcon.cleanup.service.frequency",
+    "category": "FalconStartupSite",
+    "serviceName": "FALCON",
+    "filename": "falcon-startup.properties.xml"
+  },
+  {
+    "name": "*.broker.url",
+    "category": "FalconStartupSite",
+    "serviceName": "FALCON",
+    "filename": "falcon-startup.properties.xml"
+  },
+  {
+    "name": "*.broker.ttlInMins",
+    "displayType": "int",
+    "category": "FalconStartupSite",
+    "serviceName": "FALCON",
+    "filename": "falcon-startup.properties.xml"
+  },
+  {
+    "name": "*.entity.topic",
+    "category": "FalconStartupSite",
+    "serviceName": "FALCON",
+    "filename": "falcon-startup.properties.xml"
+  },
+  {
+    "name": "*.max.retry.failure.count",
+    "displayType": "int",
+    "category": "FalconStartupSite",
+    "serviceName": "FALCON",
+    "filename": "falcon-startup.properties.xml"
+  },
+  {
+    "name": "*.internal.queue.size",
+    "displayType": "int",
+    "category": "FalconStartupSite",
+    "serviceName": "FALCON",
+    "filename": "falcon-startup.properties.xml"
+  },
+  {
+    "name": "*.falcon.authentication.type",
+    "category": "FalconStartupSite",
+    "serviceName": "FALCON",
+    "filename": "falcon-startup.properties.xml"
+  },
+  {
+    "name": "*.falcon.http.authentication.type",
+    "category": "FalconStartupSite",
+    "serviceName": "FALCON",
+    "filename": "falcon-startup.properties.xml"
+  },
+  {
+    "name": "*.falcon.http.authentication.token.validity",
+    "displayType": "int",
+    "category": "FalconStartupSite",
+    "serviceName": "FALCON",
+    "filename": "falcon-startup.properties.xml"
+  },
+  {
+    "name": "*.falcon.http.authentication.signature.secret",
+    "category": "FalconStartupSite",
+    "serviceName": "FALCON",
+    "filename": "falcon-startup.properties.xml"
+  },
+  {
+    "name": "*.falcon.http.authentication.simple.anonymous.allowed",
+    "category": "FalconStartupSite",
+    "serviceName": "FALCON",
+    "filename": "falcon-startup.properties.xml"
+  },
+  {
+    "name": "*.falcon.http.authentication.kerberos.name.rules",
+    "category": "FalconStartupSite",
+    "displayType": "multiLine",
+    "serviceName": "FALCON",
+    "filename": "falcon-startup.properties.xml"
+  },
+  {
+    "name": "*.falcon.http.authentication.blacklisted.users",
+    "category": "FalconStartupSite",
+    "serviceName": "FALCON",
+    "filename": "falcon-startup.properties.xml"
+  },
 
-    {
-      "id": "site property",
-      "name": "*.domain",
-      "displayName": "*.domain",
-      "category": "FalconStartupSite",
-      "serviceName": "FALCON",
-      "filename": "falcon-startup.properties.xml"
-    },
-    {
-      "id": "site property",
-      "name": "*.workflow.engine.impl",
-      "displayName": "*.workflow.engine.impl",
-      "category": "FalconStartupSite",
-      "serviceName": "FALCON",
-      "filename": "falcon-startup.properties.xml"
-    },
-    {
-      "id": "site property",
-      "name": "*.oozie.process.workflow.builder",
-      "displayName": "*.oozie.process.workflow.builder",
-      "category": "FalconStartupSite",
-      "serviceName": "FALCON",
-      "filename": "falcon-startup.properties.xml"
-    },
-    {
-      "id": "site property",
-      "name": "*.oozie.feed.workflow.builder",
-      "displayName": "*.oozie.feed.workflow.builder",
-      "category": "FalconStartupSite",
-      "serviceName": "FALCON",
-      "filename": "falcon-startup.properties.xml"
-    },
-    {
-      "id": "site property",
-      "name": "*.SchedulableEntityManager.impl",
-      "displayName": "*.SchedulableEntityManager.impl",
-      "category": "FalconStartupSite",
-      "serviceName": "FALCON",
-      "filename": "falcon-startup.properties.xml"
-    },
-    {
-      "id": "site property",
-      "name": "*.ConfigSyncService.impl",
-      "displayName": "*.ConfigSyncService.impl",
-      "category": "FalconStartupSite",
-      "serviceName": "FALCON",
-      "filename": "falcon-startup.properties.xml"
-    },
-    {
-      "id": "site property",
-      "name": "*.ProcessInstanceManager.impl",
-      "displayName": "*.ProcessInstanceManager.impl",
-      "category": "FalconStartupSite",
-      "serviceName": "FALCON",
-      "filename": "falcon-startup.properties.xml"
-    },
-    {
-      "id": "site property",
-      "name": "*.catalog.service.impl",
-      "displayName": "*.catalog.service.impl",
-      "category": "FalconStartupSite",
-      "serviceName": "FALCON",
-      "filename": "falcon-startup.properties.xml"
-    },
-    {
-      "id": "site property",
-      "name": "*.application.services",
-      "displayName": "*.application.services",
-      "displayType": "multiLine",
-      "category": "FalconStartupSite",
-      "serviceName": "FALCON",
-      "filename": "falcon-startup.properties.xml"
-    },
-    {
-      "id": "site property",
-      "name": "*.configstore.listeners",
-      "displayName": "*.configstore.listeners",
-      "displayType": "multiLine",
-      "category": "FalconStartupSite",
-      "serviceName": "FALCON",
-      "filename": "falcon-startup.properties.xml"
-    },
-    {
-      "id": "site property",
-      "name": "*.broker.impl.class",
-      "displayName": "*.broker.impl.class",
-      "category": "FalconStartupSite",
-      "serviceName": "FALCON",
-      "filename": "falcon-startup.properties.xml"
-    },
-    {
-      "id": "site property",
-      "name": "*.shared.libs",
-      "displayName": "*.shared.libs",
-      "category": "FalconStartupSite",
-      "serviceName": "FALCON",
-      "filename": "falcon-startup.properties.xml"
-    },
-    {
-      "id": "site property",
-      "name": "*.config.store.uri",
-      "displayName": "*.config.store.uri",
-      "category": "FalconStartupSite",
-      "serviceName": "FALCON",
-      "filename": "falcon-startup.properties.xml"
-    },
-    {
-      "id": "site property",
-      "name": "*.system.lib.location",
-      "displayName": "*.system.lib.location",
-      "category": "FalconStartupSite",
-      "serviceName": "FALCON",
-      "filename": "falcon-startup.properties.xml"
-    },
-    {
-      "id": "site property",
-      "name": "*.retry.recorder.path",
-      "displayName": "*.retry.recorder.path",
-      "category": "FalconStartupSite",
-      "serviceName": "FALCON",
-      "filename": "falcon-startup.properties.xml"
-    },
-    {
-      "id": "site property",
-      "name": "*.falcon.cleanup.service.frequency",
-      "displayName": "*.falcon.cleanup.service.frequency",
-      "category": "FalconStartupSite",
-      "serviceName": "FALCON",
-      "filename": "falcon-startup.properties.xml"
-    },
-    {
-      "id": "site property",
-      "name": "*.broker.url",
-      "displayName": "*.broker.url",
-      "category": "FalconStartupSite",
-      "serviceName": "FALCON",
-      "filename": "falcon-startup.properties.xml"
-    },
-    {
-      "id": "site property",
-      "name": "*.broker.ttlInMins",
-      "displayName": "*.broker.ttlInMins",
-      "displayType": "int",
-      "category": "FalconStartupSite",
-      "serviceName": "FALCON",
-      "filename": "falcon-startup.properties.xml"
-    },
-    {
-      "id": "site property",
-      "name": "*.entity.topic",
-      "displayName": "*.entity.topic",
-      "category": "FalconStartupSite",
-      "serviceName": "FALCON",
-      "filename": "falcon-startup.properties.xml"
-    },
-    {
-      "id": "site property",
-      "name": "*.max.retry.failure.count",
-      "displayName": "*.max.retry.failure.count",
-      "displayType": "int",
-      "category": "FalconStartupSite",
-      "serviceName": "FALCON",
-      "filename": "falcon-startup.properties.xml"
-    },
-    {
-      "id": "site property",
-      "name": "*.internal.queue.size",
-      "displayName": "*.internal.queue.size",
-      "displayType": "int",
-      "category": "FalconStartupSite",
-      "serviceName": "FALCON",
-      "filename": "falcon-startup.properties.xml"
-    },
-    {
-      "id": "site property",
-      "name": "*.falcon.authentication.type",
-      "displayName": "*.falcon.authentication.type",
-      "category": "FalconStartupSite",
-      "serviceName": "FALCON",
-      "filename": "falcon-startup.properties.xml"
-    },
-    {
-      "id": "site property",
-      "name": "*.falcon.http.authentication.type",
-      "displayName": "*.falcon.http.authentication.type",
-      "category": "FalconStartupSite",
-      "serviceName": "FALCON",
-      "filename": "falcon-startup.properties.xml"
-    },
-    {
-      "id": "site property",
-      "name": "*.falcon.http.authentication.token.validity",
-      "displayName": "*.falcon.http.authentication.token.validity",
-      "displayType": "int",
-      "category": "FalconStartupSite",
-      "serviceName": "FALCON",
-      "filename": "falcon-startup.properties.xml"
-    },
-    {
-      "id": "site property",
-      "name": "*.falcon.http.authentication.signature.secret",
-      "displayName": "*.falcon.http.authentication.signature.secret",
-      "category": "FalconStartupSite",
-      "serviceName": "FALCON",
-      "filename": "falcon-startup.properties.xml"
-    },
-    {
-      "id": "site property",
-      "name": "*.falcon.http.authentication.simple.anonymous.allowed",
-      "displayName": "*.falcon.http.authentication.simple.anonymous.allowed",
-      "category": "FalconStartupSite",
-      "serviceName": "FALCON",
-      "filename": "falcon-startup.properties.xml"
-    },
-    {
-      "id": "site property",
-      "name": "*.falcon.http.authentication.kerberos.name.rules",
-      "displayName": "*.falcon.http.authentication.kerberos.name.rules",
-      "category": "FalconStartupSite",
-      "serviceName": "FALCON",
-      "filename": "falcon-startup.properties.xml"
-    },
-    {
-      "id": "site property",
-      "name": "*.falcon.http.authentication.blacklisted.users",
-      "displayName": "*.falcon.http.authentication.blacklisted.users",
-      "isRequired": false,
-      "category": "FalconStartupSite",
-      "serviceName": "FALCON",
-      "filename": "falcon-startup.properties.xml"
-    },
+  // Falcon Graph and Storage
+  {
+    "name": "*.falcon.graph.storage.directory",
+    "displayType": "directory",
+    "category": "FalconStartupSite",
+    "serviceName": "FALCON",
+    "filename": "falcon-startup.properties.xml"
+  },
+  {
+    "name": "*.falcon.graph.serialize.path",
+    "displayType": "directory",
+    "category": "FalconStartupSite",
+    "serviceName": "FALCON",
+    "filename": "falcon-startup.properties.xml"
+  },
+  {
+    "name": "*.falcon.graph.preserve.history",
+    "displayType": "checkbox",
+    "category": "FalconStartupSite",
+    "serviceName": "FALCON",
+    "filename": "falcon-startup.properties.xml"
+  },
 
-    // Falcon Graph and Storage
-    {
-      "id": "site property",
-      "name": "*.falcon.graph.blueprints.graph",
-      "displayName": "*.falcon.graph.blueprints.graph",
-      "category": "FalconStartupSite",
-      "serviceName": "FALCON",
-      "filename": "falcon-startup.properties.xml"
-    },
-    {
-      "id": "site property",
-      "name": "*.falcon.graph.storage.directory",
-      "displayName": "*.falcon.graph.storage.directory",
-      "defaultDirectory": "/hadoop/falcon/data/lineage/graphdb",
-      "displayType": "directory",
-      "category": "FalconStartupSite",
-      "serviceName": "FALCON",
-      "filename": "falcon-startup.properties.xml"
-    },
-    {
-      "id": "site property",
-      "name": "*.falcon.graph.storage.backend",
-      "displayName": "*.falcon.graph.storage.backend",
-      "category": "FalconStartupSite",
-      "serviceName": "FALCON",
-      "filename": "falcon-startup.properties.xml"
-    },
-    {
-      "id": "site property",
-      "name": "*.falcon.graph.serialize.path",
-      "displayName": "*.falcon.graph.serialize.path",
-      "defaultDirectory": "/hadoop/falcon/data/lineage",
-      "displayType": "directory",
-      "category": "FalconStartupSite",
-      "serviceName": "FALCON",
-      "filename": "falcon-startup.properties.xml"
-    },
-    {
-      "id": "site property",
-      "name": "*.falcon.graph.preserve.history",
-      "displayName": "*.falcon.graph.preserve.history",
-      "defaultValue": false,
-      "displayType": "checkbox",
-      "category": "FalconStartupSite",
-      "serviceName": "FALCON",
-      "filename": "falcon-startup.properties.xml"
-    },
+/**********************************************webhcat-site***************************************/
+  {
+    "name": "templeton.hive.archive",
+    "serviceName": "HIVE",
+    "filename": "webhcat-site.xml",
+    "category": "Advanced webhcat-site"
+  },
+  {
+    "name": "templeton.pig.archive",
+    "serviceName": "HIVE",
+    "filename": "webhcat-site.xml",
+    "category": "Advanced webhcat-site"
+  },
+  {
+    "name": "templeton.zookeeper.hosts",
+    "displayType": "multiLine",
+    "serviceName": "HIVE",
+    "filename": "webhcat-site.xml",
+    "category": "Advanced webhcat-site"
+  },
+/**********************************************pig.properties*****************************************/
+  {
+    "name": "content",
+    "category": "Advanced pig-properties",
+    "serviceName": "PIG",
+    "filename": "pig-properties.xml"
+  },
 
-  /**********************************************webhcat-site***************************************/
-    {
-      "id": "site property",
-      "name": "templeton.hive.archive",
-      "displayName": "templeton.hive.archive",
-      "isRequired": false,
-      "serviceName": "HIVE",
-      "category": "Advanced webhcat-site"
-    },
-    {
-      "id": "site property",
-      "name": "templeton.pig.archive",
-      "displayName": "templeton.pig.archive",
-      "isRequired": false,
-      "serviceName": "HIVE",
-      "category": "Advanced webhcat-site"
-    },
-    {
-      "id": "site property",
-      "name": "templeton.zookeeper.hosts",
-      "displayName": "templeton.zookeeper.hosts",
-      "displayType": "multiLine",
-      "serviceName": "HIVE",
-      "category": "Advanced webhcat-site"
-    },
-  /**********************************************pig.properties*****************************************/
-    {
-      "id": "site property",
-      "name": "content",
-      "displayName": "content",
-      "value": "",
-      "defaultValue": "",
-      "description": "pig properties",
-      "displayType": "content",
-      "isRequired": false,
-      "showLabel": false,
-      "serviceName": "PIG",
-      "filename": "pig-properties.xml",
-      "category": "Advanced pig-properties"
-    },
+/**********************************************KNOX*****************************************/
+  {
+    "name": "content",
+    "displayType": "content",
+    "serviceName": "KNOX",
+    "filename": "topology.xml",
+    "category": "Advanced topology"
+  },
 
-  /**********************************************KNOX*****************************************/
-    {
-      "id": "site property",
-      "name": "content",
-      "displayName": "content",
-      "value": "",
-      "defaultValue": "",
-      "displayType": "content",
-      "isRequired": false,
-      "showLabel": false,
-      "serviceName": "KNOX",
-      "filename": "topology.xml",
-      "category": "Advanced topology"
-    },
+  {
+    "name": "content",
+    "displayType": "content",
+    "serviceName": "KNOX",
+    "filename": "users-ldif.xml",
+    "category": "Advanced users-ldif"
+  },
+  {
+    "name": "knox_gateway_host",
+    "displayName": "Knox Gateway host",
+    "value": "",
+    "recommendedValue": "",
+    "description": "The hosts that have been assigned to run Knox Gateway",
+    "displayType": "masterHosts",
+    "isOverridable": false,
+    "isRequiredByAgent": false,
+    "serviceName": "KNOX",
+    "filename": "knox-env.xml",
+    "category": "KNOX_GATEWAY",
+    "index": 0
+  },
+  {
+    "name": "knox_master_secret",
+    "serviceName": "KNOX",
+    "filename": "knox-env.xml",
+    "category": "KNOX_GATEWAY"
+  },
+  {
+    "name": "knox_pid_dir",
+    "displayType": "directory",
+    "serviceName": "KNOX",
+    "filename": "knox-env.xml",
+    "category": "Advanced knox-env"
+  },
 
+/********************************************* KAFKA *****************************/
+  {
+    "name": "kafka_broker_hosts",
+    "displayName": "Kafka Broker host",
+    "value": "",
+    "recommendedValue": "",
+    "description": "The host that has been assigned to run Kafka Broker",
+    "displayType": "masterHosts",
+    "isOverridable": false,
+    "isRequiredByAgent": false,
+    "serviceName": "KAFKA",
+    "filename": "kafka-broker.xml",
+    "category": "KAFKA_BROKER",
+    "index": 0
+  },
+  {
+    "name": "log.dirs",
+    "displayType": "directories",
+    "serviceName": "KAFKA",
+    "filename": "kafka-broker.xml",
+    "category": "KAFKA_BROKER",
+    "index": 0
+  },
+  {
+    "name": "port",
+    "displayType": "int",
+    "serviceName": "KAFKA",
+    "filename": "kafka-broker.xml",
+    "category": "KAFKA_BROKER",
+    "index": 0
+  },
     {
-      "id": "site property",
-      "name": "content",
-      "displayName": "content",
-      "value": "",
-      "defaultValue": "",
-      "displayType": "content",
-      "isRequired": false,
-      "showLabel": false,
-      "serviceName": "KNOX",
-      "filename": "users-ldif.xml",
-      "category": "Advanced users-ldif"
-    },
-    {
-      "id": "puppet var",
-      "name": "knox_gateway_host",
-      "displayName": "Knox Gateway host",
-      "value": "",
-      "defaultValue": "",
-      "description": "The host that has been assigned to run Knox Gateway",
-      "displayType": "masterHost",
-      "isOverridable": false,
-      "isVisible": true,
-      "isRequiredByAgent": false,
-      "serviceName": "KNOX",
-      "filename": "knox-env.xml",
-      "category": "KNOX_GATEWAY",
-      "index": 0
-    },
-    {
-      "id": "site property",
-      "name": "knox_master_secret",
-      "displayName": "Knox Master Secret",
-      "value": "",
-      "defaultValue": "",
-      "displayType": "password",
-      "isReconfigurable": false,
-      "isOverridable": false,
-      "isRequired": true,
-      "serviceName": "KNOX",
-      "filename": "knox-env.xml",
-      "category": "KNOX_GATEWAY"
-    },
-    {
-      "id": "puppet var",
-      "name": "knox_pid_dir",
-      "displayName": "Knox PID dir",
-      "value": "",
-      "displayType": "directory",
-      "isReconfigurable": false,
-      "isOverridable": false,
-      "serviceName": "KNOX",
-      "filename": "knox-env.xml",
-      "category": "Advanced knox-env"
-    },
+    "name": "listeners",
+    "displayType": "advanced",
+    "serviceName": "KAFKA",
+    "filename": "kafka-broker.xml",
+    "category": "KAFKA_BROKER"
+  },
+  {
+    "name": "log.roll.hours",
+    "displayType": "advanced",
+    "serviceName": "KAFKA",
+    "filename": "kafka-broker.xml",
+    "category": "KAFKA_BROKER",
+    "index": 0
+  },
+  {
+    "name": "log.retention.hours",
+    "displayType": "advanced",
+    "serviceName": "KAFKA",
+    "filename": "kafka-broker.xml",
+    "category": "KAFKA_BROKER",
+    "index": 0
+  },
+  {
+    "name": "zookeeper.connect",
+    "displayType": "advanced",
+    "serviceName": "KAFKA",
+    "filename": "kafka-broker.xml",
+    "category": "KAFKA_BROKER",
+    "index": 0
+  },
+  {
+    "name": "kafka_pid_dir",
+    "displayType": "directory",
+    "serviceName": "KAFKA",
+    "filename": "kafka-env.xml",
+    "category": "Advanced kafka-env",
+    "index": 0
+  },
 
-  /********************************************* KAFKA *****************************/
-    {
-      "id": "puppet var",
-      "name": "kafka_broker_hosts",
-      "displayName": "Kafka Broker host",
-      "value": "",
-      "defaultValue": "",
-      "description": "The host that has been assigned to run Kafka Broker",
-      "displayType": "masterHosts",
-      "isOverridable": false,
-      "isVisible": true,
-      "isRequiredByAgent": false,
-      "serviceName": "KAFKA",
-      "filename": "kafka-broker.xml",
-      "category": "KAFKA_BROKER",
-      "index": 0
-    },
-    {
-      "id": "site property",
-      "name": "log.dirs",
-      "displayName": "log.dirs",
-      "value": "",
-      "defaultValue": "",
-      "defaultDirectory": "/kafka-logs",
-      "displayType": "directories",
-      "serviceName": "KAFKA",
-      "filename": "kafka-broker.xml",
-      "category": "KAFKA_BROKER",
-      "index": 0
-    },
-    {
-      "id": "site property",
-      "name": "port",
-      "displayName": "port",
-      "value": "",
-      "defaultValue": "",
-      "displayType": "int",
-      "serviceName": "KAFKA",
-      "filename": "kafka-broker.xml",
-      "category": "KAFKA_BROKER",
-      "index": 0
-    },
-    {
-      "id": "site property",
-      "name": "log.roll.hours",
-      "displayName": "log.roll.hours",
-      "value": "",
-      "defaultValue": "",
-      "displayType": "advanced",
-      "serviceName": "KAFKA",
-      "filename": "kafka-broker.xml",
-      "category": "KAFKA_BROKER",
-      "index": 0
-    },
-    {
-      "id": "site property",
-      "name": "log.retention.hours",
-      "displayName": "log.retention.hours",
-      "value": "",
-      "defaultValue": "",
-      "displayType": "advanced",
-      "serviceName": "KAFKA",
-      "filename": "kafka-broker.xml",
-      "category": "KAFKA_BROKER",
-      "index": 0
-    },
-    {
-      "id": "site property",
-      "name": "zookeeper.connect",
-      "displayName": "zookeeper.connect",
-      "value": "",
-      "defaultValue": "",
-      "displayType": "advanced",
-      "serviceName": "KAFKA",
-      "filename": "kafka-broker.xml",
-      "category": "KAFKA_BROKER",
-      "index": 0
-    },
-    {
-      "id": "site property",
-      "name": "kafka_pid_dir",
-      "displayName": "Kafka PID dir",
-      "value": "",
-      "defaultValue": "",
-      "isReconfigurable": false,
-      "isOverridable": false,
-      "displayType": "directory",
-      "serviceName": "KAFKA",
-      "filename": "kafka-broker.xml",
-      "category": "Advanced kafka-env",
-      "index": 0
-    },
+/********************************************* ACCUMULO *****************************/
+  {
+    "name": "accumulo_instance_name",
+    "displayType": "string",
+    "serviceName": "ACCUMULO",
+    "filename": "accumulo-env.xml",
+    "category": "General"
+  },
+  {
+    "name": "accumulo_root_password",
+    "serviceName": "ACCUMULO",
+    "filename": "accumulo-env.xml",
+    "category": "General"
+  },
+  {
+    "name": "trace.user",
+    "displayType": "string",
+    "serviceName": "ACCUMULO",
+    "filename": "accumulo-site.xml",
+    "category": "General"
+  },
+  {
+    "name": "trace_password",
+    "serviceName": "ACCUMULO",
+    "filename": "accumulo-env.xml",
+    "category": "General"
+  },
+  {
+    "name": "instance_secret",
+    "displayType": "password",
+    "serviceName": "ACCUMULO",
+    "filename": "accumulo-env.xml",
+    "category": "General"
+  },
+  {
+    "name": "server_content",
+    "displayType": "content",
+    "serviceName": "ACCUMULO",
+    "filename": "accumulo-env.xml",
+    "category": "Advanced accumulo-env"
+  },
+  {
+    "name": "accumulo_master_heapsize",
+    "displayType": "int",
+    "serviceName": "ACCUMULO",
+    "filename": "accumulo-env.xml",
+    "category": "Advanced accumulo-env"
+  },
+  {
+    "name": "accumulo_tserver_heapsize",
+    "displayType": "int",
+    "serviceName": "ACCUMULO",
+    "filename": "accumulo-env.xml",
+    "category": "Advanced accumulo-env"
+  },
+  {
+    "name": "accumulo_monitor_heapsize",
+    "displayType": "int",
+    "serviceName": "ACCUMULO",
+    "filename": "accumulo-env.xml",
+    "category": "Advanced accumulo-env"
+  },
+  {
+    "name": "accumulo_gc_heapsize",
+    "displayType": "int",
+    "serviceName": "ACCUMULO",
+    "filename": "accumulo-env.xml",
+    "category": "Advanced accumulo-env"
+  },
+  {
+    "name": "accumulo_other_heapsize",
+    "displayType": "int",
+    "serviceName": "ACCUMULO",
+    "filename": "accumulo-env.xml",
+    "category": "Advanced accumulo-env"
+  },
+  {
+    "name": "accumulo_log_dir",
+    "displayType": "directory",
+    "serviceName": "ACCUMULO",
+    "filename": "accumulo-env.xml",
+    "category": "Advanced accumulo-env"
+  },
+  {
+    "name": "accumulo_pid_dir",
+    "displayType": "directory",
+    "serviceName": "ACCUMULO",
+    "filename": "accumulo-env.xml",
+    "category": "Advanced accumulo-env"
+  },
+  {
+    "name": "accumulo_monitor_bind_all",
+    "displayType": "checkbox",
+    "serviceName": "ACCUMULO",
+    "filename": "accumulo-env.xml",
+    "category": "Advanced accumulo-env"
+  },
+  {
+    "name": "instance.volumes",
+    "displayType": "string",
+    "serviceName": "ACCUMULO",
+    "filename": "accumulo-site.xml",
+    "category": "Advanced accumulo-site",
+    "index": 0
+  },
+  {
+    "name": "instance.zookeeper.host",
+    "displayType": "string",
+    "serviceName": "ACCUMULO",
+    "filename": "accumulo-site.xml",
+    "category": "Advanced accumulo-site",
+    "index": 1
+  },
+  {
+    "name": "instance.zookeeper.timeout",
+    "displayType": "string",
+    "serviceName": "ACCUMULO",
+    "filename": "accumulo-site.xml",
+    "category": "Advanced accumulo-site",
+    "index": 2
+  },
+  {
+    "name": "master.port.client",
+    "displayType": "int",
+    "serviceName": "ACCUMULO",
+    "filename": "accumulo-site.xml",
+    "category": "Advanced accumulo-site",
+    "index": 3
+  },
+  {
+    "name": "tserver.port.client",
+    "displayType": "int",
+    "serviceName": "ACCUMULO",
+    "filename": "accumulo-site.xml",
+    "category": "Advanced accumulo-site",
+    "index": 4
+  },
+  {
+    "name": "monitor.port.client",
+    "displayType": "int",
+    "serviceName": "ACCUMULO",
+    "filename": "accumulo-site.xml",
+    "category": "Advanced accumulo-site",
+    "index": 5
+  },
+  {
+    "name": "monitor.port.log4j",
+    "displayType": "int",
+    "serviceName": "ACCUMULO",
+    "filename": "accumulo-site.xml",
+    "category": "Advanced accumulo-site",
+    "index": 6
+  },
+  {
+    "name": "gc.port.client",
+    "displayType": "int",
+    "serviceName": "ACCUMULO",
+    "filename": "accumulo-site.xml",
+    "category": "Advanced accumulo-site",
+    "index": 7
+  },
+  {
+    "name": "trace.port.client",
+    "displayType": "int",
+    "serviceName": "ACCUMULO",
+    "filename": "accumulo-site.xml",
+    "category": "Advanced accumulo-site",
+    "index": 8
+  },
+  {
+    "name": "tserver.memory.maps.native.enabled",
+    "displayType": "checkbox",
+    "serviceName": "ACCUMULO",
+    "filename": "accumulo-site.xml",
+    "category": "Advanced accumulo-site",
+    "index": 9
+  },
+  {
+    "name": "general.classpaths",
+    "displayType": "content",
+    "serviceName": "ACCUMULO",
+    "filename": "accumulo-site.xml",
+    "category": "Advanced accumulo-site",
+    "index": 10
+  },
 
+/*******************************************kerberos***********************************/
+  {
+    "name": "kdc_type",
+    "displayType": "masterHost",
+    "serviceName": "KERBEROS",
+    "filename": "kerberos-env.xml",
+    "category": "KDC",
+    "index": 0
+  },
+  {
+    "name": "kdc_host",
+    "displayType": "supportTextConnection",
+    "serviceName": "KERBEROS",
+    "filename": "kerberos-env.xml",
+    "category": "KDC",
+    "index": 1
+  },
+  {
+    "name": "realm",
+    "displayType": "host",
+    "serviceName": "KERBEROS",
+    "filename": "kerberos-env.xml",
+    "category": "KDC",
+    "index": 2
+  },
+  {
+    "name": "ldap_url",
+    "displayType": "host",
+    "serviceName": "KERBEROS",
+    "filename": "kerberos-env.xml",
+    "category": "KDC",
+    "index": 3
+  },
+  {
+    "name": "container_dn",
+    "serviceName": "KERBEROS",
+    "filename": "kerberos-env.xml",
+    "category": "KDC",
+    "index": 4
+  },
+  {
+    "name": "manage_identities",
+    "displayType": "checkbox",
+    "serviceName": "KERBEROS",
+    "filename": "kerberos-env.xml",
+    "category": "Advanced kerberos-env",
+    "index" : 0
+  },
+  {
+    "name": "install_packages",
+    "displayType": "checkbox",
+    "serviceName": "KERBEROS",
+    "filename": "kerberos-env.xml",
+    "category": "Advanced kerberos-env",
+    "index" : 1
+  },
+  {
+    "name": "executable_search_paths",
+    "displayType": "multiline",
+    "serviceName": "KERBEROS",
+    "filename": "kerberos-env.xml",
+    "category": "Advanced kerberos-env",
+    "index" : 2
+  },
+  {
+    "name": "encryption_types",
+    "serviceName": "KERBEROS",
+    "filename": "kerberos-env.xml",
+    "displayType": "multiLine",
+    "category": "Advanced kerberos-env",
+    "index" : 3
+  },
+  {
+    "name": "password_length",
+    "displayType": "int",
+    "serviceName": "KERBEROS",
+    "filename": "kerberos-env.xml",
+    "category": "Advanced kerberos-env",
+    "index" : 4
+  },
+  {
+    "name": "password_min_lowercase_letters",
+    "displayType": "int",
+    "serviceName": "KERBEROS",
+    "filename": "kerberos-env.xml",
+    "category": "Advanced kerberos-env",
+    "index" : 5
+  },
+  {
+    "name": "password_min_uppercase_letters",
+    "displayType": "int",
+    "serviceName": "KERBEROS",
+    "filename": "kerberos-env.xml",
+    "category": "Advanced kerberos-env",
+    "index" : 6
+  },
+  {
+    "name": "password_min_digits",
+    "displayType": "int",
+    "serviceName": "KERBEROS",
+    "filename": "kerberos-env.xml",
+    "category": "Advanced kerberos-env",
+    "index" : 7
+  },
+  {
+    "name": "password_min_punctuation",
+    "displayType": "int",
+    "serviceName": "KERBEROS",
+    "filename": "kerberos-env.xml",
+    "category": "Advanced kerberos-env",
+    "index" : 8
+  },
+  {
+    "name": "password_min_whitespace",
+    "displayType": "int",
+    "serviceName": "KERBEROS",
+    "filename": "kerberos-env.xml",
+    "category": "Advanced kerberos-env",
+    "index" : 9
+  },
+  {
+    "name": "service_check_principal_name",
+    "serviceName": "KERBEROS",
+    "filename": "kerberos-env.xml",
+    "category": "Advanced kerberos-env",
+    "index" : 10
+  },
+  {
+    "name": "ad_create_attributes_template",
+    "displayType": "content",
+    "serviceName": "KERBEROS",
+    "filename": "kerberos-env.xml",
+    "category": "Advanced kerberos-env",
+    "index" : 11
+  },
+  {
+    "name": "kdc_create_attributes",
+    "serviceName": "KERBEROS",
+    "filename": "kerberos-env.xml",
+    "category": "Advanced kerberos-env",
+    "index" : 12
+  },
+  {
+    "name": "case_insensitive_username_rules",
+    "displayType": "checkbox",
+    "serviceName": "KERBEROS",
+    "filename": "kerberos-env.xml",
+    "category": "Advanced kerberos-env",
+    "index" : 13
+  },
+  {
+    "name": "domains",
+    "serviceName": "KERBEROS",
+    "filename": "krb5-conf.xml",
+    "category": "KDC",
+    "index": 5
+  },
+  {
+    "name": "admin_server_host",
+    "displayType": "host",
+    "serviceName": "KERBEROS",
+    "filename": "kerberos-env.xml",
+    "category": "Kadmin",
+    "index": 0
+  },
+  {
+    "name": "admin_principal",
+    "displayName": "Admin principal",
+    "description": "Admin principal used to create principals and export key tabs (e.g. admin/admin@EXAMPLE.COM).",
+    "isOverridable": false,
+    "isRequiredByAgent": false,
+    "serviceName": "KERBEROS",
+    "filename": "krb5-conf.xml",
+    "category": "Kadmin",
+    "index": 1
+  },
+  {
+    "name": "admin_password",
+    "displayName": "Admin password",
+    "displayType": "password",
+    "isOverridable": false,
+    "isRequiredByAgent": false,
+    "serviceName": "KERBEROS",
+    "filename": "krb5-conf.xml",
+    "category": "Kadmin",
+    "index": 2
+  },
+  {
+    "name": "manage_krb5_conf",
+    "displayType": "checkbox",
+    "dependentConfigPattern": "CATEGORY",
+    "serviceName": "KERBEROS",
+    "filename": "krb5-conf.xml",
+    "category": "Advanced krb5-conf",
+    "index": 0
+  },
+  {
+    "name": "conf_dir",
+    "displayType": "directory",
+    "serviceName": "KERBEROS",
+    "filename": "krb5-conf.xml",
+    "category": "Advanced krb5-conf",
+    "index": 1
+  },
+  {
+    "name": "content",
+    "displayType": "content",
+    "serviceName": "KERBEROS",
+    "filename": "krb5-conf.xml",
+    "category": "Advanced krb5-conf",
+    "index": 2
+  },
+/********************************************* flume-agent *****************************/
+  {
+    "name": "content",
+    "displayType": "content",
+    "serviceName": "FLUME",
+    "category": "FLUME_HANDLER",
+    "filename": "flume-conf.xml"
+  },
+  {
+    "name": "flume_conf_dir",
+    "displayType": "directory",
+    "isOverridable": false,
+    "serviceName": "FLUME",
+    "filename": "flume-env.xml",
+    "category": "Advanced flume-env",
+    "index": 0
+  },
+  {
+    "name": "flume_log_dir",
+    "displayType": "directory",
+    "serviceName": "FLUME",
+    "filename": "flume-env.xml",
+    "category": "Advanced flume-env",
+    "index": 1
+  },
 
-  /********************************************* flume-agent *****************************/
-    {
-      "id": "site property",
-      "name": "content",
-      "displayName": "content",
-      "showLabel": false,
-      "isRequired": false,
-      "displayType": "content",
-      "serviceName": "FLUME",
-      "category": "FLUME_HANDLER",
-      "filename": "flume-conf.xml"
-    },
-    {
-      "id": "puppet var",
-      "name": "flume_conf_dir",
-      "displayName": "Flume Conf Dir",
-      "description": "Location to save configuration files",
-      "defaultValue": "/etc/flume/conf",
-      "isReconfigurable": false,
-      "displayType": "directory",
-      "isOverridable": false,
-      "isVisible": true,
-      "serviceName": "FLUME",
-      "filename": "flume-env.xml",
-      "category": "Advanced flume-env",
-      "index": 0
-    },
-    {
-      "id": "puppet var",
-      "name": "flume_log_dir",
-      "displayName": "Flume Log Dir",
-      "description": "Location to save log files",
-      "defaultValue": "/var/log/flume",
-      "isReconfigurable": false,
-      "displayType": "directory",
-      "isOverridable": false,
-      "isVisible": true,
-      "serviceName": "FLUME",
-      "filename": "flume-env.xml",
-      "category": "Advanced flume-env",
-      "index": 1
-    },
-  /**********************************************HDFS***************************************/
-    {
-      "id": "puppet var",
-      "name": "namenode_host",
-      "displayName": "NameNode hosts",
-      "value": "",
-      "defaultValue": "",
-      "description": "The hosts that has been assigned to run NameNode",
-      "displayType": "masterHosts",
-      "isOverridable": false,
-      "isVisible": true,
-      "isRequiredByAgent": false,
-      "serviceName": "HDFS",
-      "filename": "hadoop-env.xml",
-      "category": "NAMENODE",
-      "index": 0
-    },
-    {
-      "id": "puppet var",
-      "name": "namenode_heapsize",
-      "displayName": "NameNode Java heap size",
-      "description": "Initial and maximum Java heap size for NameNode (Java options -Xms and -Xmx).  This also applies to the Secondary NameNode.",
-      "defaultValue": "1024",
-      "displayType": "int",
-      "unit": "MB",
-      "isOverridable": false,
-      "isVisible": true,
-      "serviceName": "HDFS",
-      "filename": "hadoop-env.xml",
-      "category": "NAMENODE",
-      "index": 2
-    },
-    {
-      "id": "puppet var",
-      "name": "namenode_opt_newsize",
-      "displayName": "NameNode new generation size",
-      "description": "Default size of Java new generation for NameNode (Java option -XX:NewSize).  This also applies to the Secondary NameNode.",
-      "defaultValue": "200",
-      "displayType": "int",
-      "unit": "MB",
-      "isOverridable": false,
-      "isVisible": true,
-      "serviceName": "HDFS",
-      "filename": "hadoop-env.xml",
-      "category": "NAMENODE",
-      "index": 3
-    },
-    {
-      "id": "puppet var",
-      "name": "namenode_opt_permsize",
-      "displayName": "NameNode permanent generation size",
-      "description": "Default size of Java permanent generation for NameNode (Java option -XX:PermSize).  This also applies to the Secondary NameNode.",
-      "defaultValue": "128",
-      "displayType": "int",
-      "unit": "MB",
-      "isOverridable": false,
-      "isVisible": true,
-      "serviceName": "HDFS",
-      "filename": "hadoop-env.xml",
-      "category": "NAMENODE",
-      "index": 5
-    },
-    {
-      "id": "puppet var",
-      "name": "namenode_opt_maxpermsize",
-      "displayName": "NameNode maximum permanent generation size",
-      "description": "Maximum size of Java permanent generation for NameNode (Java option -XX:MaxPermSize).",
-      "defaultValue": "256",
-      "displayType": "int",
-      "unit": "MB",
-      "isOverridable": false,
-      "isVisible": true,
-      "serviceName": "HDFS",
-      "filename": "hadoop-env.xml",
-      "category": "NAMENODE",
-      "index": 6
-    },
-    {
-      "id": "puppet var",
-      "name": "namenode_opt_maxnewsize",
-      "displayName": "NameNode maximum new generation size",
-      "description": "Maximum size of Java new generation for NameNode (Java option -XX:MaxnewSize).",
-      "defaultValue": "200",
-      "displayType": "int",
-      "unit": "MB",
-      "isOverridable": false,
-      "isVisible": true,
-      "serviceName": "HDFS",
-      "filename": "hadoop-env.xml",
-      "category": "NAMENODE",
-      "index": 4
-    },
-    {
-      "id": "puppet var",
-      "name": "snamenode_host",
-      "displayName": "SNameNode host",
-      "value": "",
-      "defaultValue": "",
-      "description": "The host that has been assigned to run SecondaryNameNode",
-      "displayType": "masterHost",
-      "isOverridable": false,
-      "isRequiredByAgent": false,
-      "isVisible": true,
-      "serviceName": "HDFS",
-      "filename": "hadoop-env.xml",
-      "category": "SECONDARY_NAMENODE",
-      "index": 0
-    },
-    {
-      "id": "puppet var",
-      "name": "datanode_hosts", //not in the schema. For UI purpose
-      "displayName": "DataNode hosts",
-      "value": "",
-      "defaultValue": "",
-      "description": "The hosts that have been assigned to run DataNode",
-      "displayType": "slaveHosts",
-      "isRequired": false,
-      "isOverridable": false,
-      "isVisible": true,
-      "isRequiredByAgent": false,
-      "serviceName": "HDFS",
-      "filename": "hadoop-env.xml",
-      "category": "DATANODE",
-      "index": 0
-    },
-    {
-      "id": "puppet var",
-      "name": "dtnode_heapsize",
-      "displayName": "DataNode maximum Java heap size",
-      "description": "Maximum Java heap size for DataNode (Java option -Xmx)",
-      "defaultValue": "1024",
-      "displayType": "int",
-      "unit": "MB",
-      "isVisible": true,
-      "serviceName": "HDFS",
-      "filename": "hadoop-env.xml",
-      "category": "DATANODE",
-      "index": 2
-    },
-    {
-      "id": "puppet var",
-      "name": "hadoop_heapsize",
-      "displayName": "Hadoop maximum Java heap size",
-      "description": "Maximum Java heap size for daemons such as Balancer (Java option -Xmx)",
-      "defaultValue": "1024",
-      "displayType": "int",
-      "unit": "MB",
-      "isVisible": true,
-      "serviceName": "HDFS",
-      "filename": "hadoop-env.xml",
-      "category": "General",
-      "index": 1
-    },
-    {
-      "id": "puppet var",
-      "name": "hdfs_log_dir_prefix",
-      "displayName": "Hadoop Log Dir Prefix",
-      "description": "The parent directory for Hadoop log files.  The HDFS log directory will be ${hadoop_log_dir_prefix} / ${hdfs_user} and the MapReduce log directory will be ${hadoop_log_dir_prefix} / ${mapred_user}.",
-      "defaultValue": "/var/log/hadoop",
-      "isReconfigurable": false,
-      "displayType": "directory",
-      "isOverridable": false,
-      "isVisible": true,
-      "serviceName": "HDFS",
-      "filename": "hadoop-env.xml",
-      "category": "Advanced hadoop-env"
-    },
-    {
-      "id": "puppet var",
-      "name": "hadoop_pid_dir_prefix",
-      "displayName": "Hadoop PID Dir Prefix",
-      "description": "The parent directory in which the PID files for Hadoop processes will be created.  The HDFS PID directory will be ${hadoop_pid_dir_prefix} / ${hdfs_user} and the MapReduce PID directory will be ${hadoop_pid_dir_prefix} / ${mapred_user}.",
-      "defaultValue": "/var/run/hadoop",
-      "isReconfigurable": false,
-      "displayType": "directory",
-      "isOverridable": false,
-      "isVisible": true,
-      "serviceName": "HDFS",
-      "filename": "hadoop-env.xml",
-      "category": "Advanced hadoop-env"
-    },
-    {
-      "id": "puppet var",
-      "name": "hadoop_root_logger",
-      "displayName": "Hadoop Root Logger",
-      "description": "Hadoop logging options",
-      "defaultValue": "INFO,RFA",
-      "displayType": "string",
-      "isOverridable": false,
-      "isVisible": true,
-      "serviceName": "HDFS",
-      "filename": "hadoop-env.xml",
-      "category": "Advanced hadoop-env"
-    },
-    {
-      "id": "puppet var",
-      "name": "security_enabled",
-      "displayName": "Hadoop Security",
-      "description": "Enable hadoop security",
-      "defaultValue": 'false',
-      "isRequired": false,
-      "displayType": "checkbox",
-      "isOverridable": false,
-      "isVisible": false,
-      "serviceName": "MISC",
-      "filename": "cluster-env.xml"
-    },
-    {
-      "id": "puppet var",
-      "name": "kerberos_domain",
-      "displayName": "Kerberos realm",
-      "description": "Kerberos realm",
-      "defaultValue": 'EXAMPLE.COM',
-      "isRequired": false,
-      "isOverridable": false,
-      "isVisible": false,
-      "serviceName": "MISC",
-      "filename": "cluster-env.xml"
-    },
-    {
-      "id": "puppet var",
-      "name": "tez_tar_source",
-      "displayName": "Tez tarball source",
-      "description": "Source file path that uses dynamic variables and regex to copy the file to HDFS.",
-      "defaultValue": '',
-      "isRequired": true,
-      "isOverridable": false,
-      "isVisible": false,
-      "isEditable": false,
-      "serviceName": "MISC",
-      "filename": "cluster-env.xml"
-    },
-    {
-      "id": "puppet var",
-      "name": "tez_tar_destination_folder",
-      "displayName": "Tez tarball destination folder",
-      "description": "Destination HDFS folder for the file.",
-      "defaultValue": '',
-      "isRequired": true,
-      "isOverridable": false,
-      "isVisible": false,
-      "isEditable": false,
-      "serviceName": "MISC",
-      "filename": "cluster-env.xml"
-    },
-    {
-      "id": "puppet var",
-      "name": "hive_tar_source",
-      "displayName": "Hive tarball source",
-      "description": "Source file path that uses dynamic variables and regex to copy the file to HDFS.",
-      "defaultValue": '',
-      "isRequired": true,
-      "isOverridable": false,
-      "isVisible": false,
-      "isEditable": false,
-      "serviceName": "MISC",
-      "filename": "cluster-env.xml"
-    },
-    {
-      "id": "puppet var",
-      "name": "hive_tar_destination_folder",
-      "displayName": "Hive tarball destination folder",
-      "description": "Destination HDFS folder for the file.",
-      "defaultValue": '',
-      "isRequired": true,
-      "isOverridable": false,
-      "isVisible": false,
-      "isEditable": false,
-      "serviceName": "MISC",
-      "filename": "cluster-env.xml"
-    },
-    {
-      "id": "puppet var",
-      "name": "pig_tar_source",
-      "displayName": "Pig tarball source",
-      "description": "Source file path that uses dynamic variables and regex to copy the file to HDFS.",
-      "defaultValue": '',
-      "isRequired": true,
-      "isOverridable": false,
-      "isVisible": false,
-      "isEditable": false,
-      "serviceName": "MISC",
-      "filename": "cluster-env.xml"
-    },
-    {
-      "id": "puppet var",
-      "name": "pig_tar_destination_folder",
-      "displayName": "Pig tarball destination folder",
-      "description": "Destination HDFS folder for the file.",
-      "defaultValue": '',
-      "isRequired": true,
-      "isOverridable": false,
-      "isVisible": false,
-      "isEditable": false,
-      "serviceName": "MISC",
-      "filename": "cluster-env.xml"
-    },
-    {
-      "id": "puppet var",
-      "name": "hadoop-streaming_tar_source",
-      "displayName": "hadoop-streaming.jar source",
-      "description": "Source file path that uses dynamic variables and regex to copy the file to HDFS.",
-      "defaultValue": '',
-      "isRequired": true,
-      "isOverridable": false,
-      "isVisible": false,
-      "isEditable": false,
-      "serviceName": "MISC",
-      "filename": "cluster-env.xml"
-    },
-    {
-      "id": "puppet var",
-      "name": "hadoop-streaming_tar_destination_folder",
-      "displayName": "hadoop-streaming.jar destination folder",
-      "description": "Destination HDFS folder for the file.",
-      "defaultValue": '',
-      "isRequired": true,
-      "isOverridable": false,
-      "isVisible": false,
-      "isEditable": false,
-      "serviceName": "MISC",
-      "filename": "cluster-env.xml"
-    },
-    {
-      "id": "puppet var",
-      "name": "sqoop_tar_source",
-      "displayName": "Sqoop tarball source",
-      "description": "Source file path that uses dynamic variables and regex to copy the file to HDFS.",
-      "defaultValue": '',
-      "isRequired": true,
-      "isOverridable": false,
-      "isVisible": false,
-      "isEditable": false,
-      "serviceName": "MISC",
-      "filename": "cluster-env.xml"
-    },
-    {
-      "id": "puppet var",
-      "name": "sqoop_tar_destination_folder",
-      "displayName": "Sqoop tarball destination folder",
-      "description": "Destination HDFS folder for the file.",
-      "defaultValue": '',
-      "isRequired": true,
-      "isOverridable": false,
-      "isVisible": false,
-      "isEditable": false,
-      "serviceName": "MISC",
-      "filename": "cluster-env.xml"
-    },
-    {
-      "id": "puppet var",
-      "name": "mapreduce_tar_source",
-      "displayName": "Mapreduce tarball source",
-      "description": "Source file path that uses dynamic variables and regex to copy the file to HDFS.",
-      "defaultValue": '',
-      "isRequired": true,
-      "isOverridable": false,
-      "isVisible": false,
-      "isEditable": false,
-      "serviceName": "MISC",
-      "filename": "cluster-env.xml"
-    },
-    {
-      "id": "puppet var",
-      "name": "mapreduce_tar_destination_folder",
-      "displayName": "Mapreduce tarball destination folder",
-      "description": "Destination HDFS folder for the file.",
-      "defaultValue": '',
-      "isRequired": true,
-      "isOverridable": false,
-      "isVisible": false,
-      "isEditable": false,
-      "serviceName": "MISC",
-      "filename": "cluster-env.xml"
-    },
+  //***************************************** GLUSTERFS stack********************************************
+  {
+    "name": "fs.glusterfs.impl",
+    "displayType": "string",
+    "filename": "core-site.xml",
+    "serviceName": "GLUSTERFS",
+    "category": "General"
+  },
+  {
+    "name": "fs.AbstractFileSystem.glusterfs.impl",
+    "displayType": "string",
+    "filename": "core-site.xml",
+    "serviceName": "GLUSTERFS",
+    "category": "General"
+  },
 
-  /**********************************************MAPREDUCE2***************************************/
-    {
-      "id": "puppet var",
-      "name": "hs_host",
-      "displayName": "History Server",
-      "description": "History Server",
-      "defaultValue": "",
-      "isOverridable": false,
-      "displayType": "masterHost",
-      "isRequiredByAgent": false,
-      "isVisible": true,
-      "serviceName": "MAPREDUCE2",
-      "filename": "mapred-env.xml",
-      "category": "HISTORYSERVER",
-      "index": 0
-    },
-    {
-      "id": "puppet var",
-      "name": "jobhistory_heapsize",
-      "displayName": "History Server heap size",
-      "description": "History Server heap size",
-      "defaultValue": "900",
-      "unit": "MB",
-      "isOverridable": true,
-      "displayType": "int",
-      "isVisible": true,
-      "serviceName": "MAPREDUCE2",
-      "filename": "mapred-env.xml",
-      "category": "HISTORYSERVER",
-      "index": 1
-    },
-    {
-      "id": "puppet var",
-      "name": "mapred_log_dir_prefix",
-      "displayName": "Mapreduce Log Dir Prefix",
-      "description": "",
-      "defaultValue": "/var/log/hadoop-mapreduce",
-      "displayType": "directory",
-      "isOverridable": false,
-      "isVisible": true,
-      "isReconfigurable": false,
-      "serviceName": "MAPREDUCE2",
-      "filename": "mapred-env.xml",
-      "category": "Advanced mapred-env"
-    },
-    {
-      "id": "puppet var",
-      "name": "mapred_pid_dir_prefix",
-      "displayName": "Mapreduce PID Dir Prefix",
-      "description": "",
-      "defaultValue": "/var/run/hadoop-mapreduce",
-      "displayType": "directory",
-      "isOverridable": false,
-      "isVisible": true,
-      "isReconfigurable": false,
-      "serviceName": "MAPREDUCE2",
-      "filename": "mapred-env.xml",
-      "category": "Advanced mapred-env"
-    },
-  /**********************************************YARN***************************************/
-    {
-      "id": "puppet var",
-      "name": "yarn_heapsize",
-      "displayName": "YARN Java heap size",
-      "description": "Max heapsize for all YARN components",
-      "defaultValue": "1024",
-      "isOverridable": true,
-      "displayType": "int",
-      "unit": "MB",
-      "isVisible": true,
-      "serviceName": "YARN",
-      "filename": "yarn-env.xml",
-      "category": "General",
-      "index": 0
-    },
-    {
-      "id": "puppet var",
-      "name": "rm_host",
-      "displayName": "ResourceManager",
-      "description": "ResourceManager",
-      "defaultValue": "",
-      "isOverridable": false,
-      "displayType": "masterHost",
-      "isRequiredByAgent": false,
-      "isVisible": true,
-      "serviceName": "YARN",
-      "filename": "yarn-env.xml",
-      "category": "RESOURCEMANAGER",
-      "index": 0
-    },
-    {
-      "id": "puppet var",
-      "name": "resourcemanager_heapsize",
-      "displayName": "ResourceManager Java heap size",
-      "description": "Max heapsize for ResourceManager",
-      "defaultValue": "1024",
-      "isOverridable": false,
-      "displayType": "int",
-      "unit": "MB",
-      "isVisible": true,
-      "serviceName": "YARN",
-      "filename": "yarn-env.xml",
-      "category": "RESOURCEMANAGER",
-      "index": 1
-    },
-    {
-      "id": "puppet var",
-      "name": "nm_hosts",
-      "displayName": "NodeManager",
-      "description": "List of NodeManager Hosts.",
-      "defaultValue": "",
-      "isOverridable": false,
-      "displayType": "slaveHosts",
-      "isRequiredByAgent": false,
-      "isVisible": true,
-      "serviceName": "YARN",
-      "filename": "yarn-env.xml",
-      "category": "NODEMANAGER",
-      "index": 0
-    },
-    {
-      "id": "puppet var",
-      "name": "nodemanager_heapsize",
-      "displayName": "NodeManager Java heap size",
-      "description": "Max heapsize for NodeManager",
-      "defaultValue": "1024",
-      "isOverridable": true,
-      "displayType": "int",
-      "unit": "MB",
-      "isVisible": true,
-      "serviceName": "YARN",
-      "filename": "yarn-env.xml",
-      "category": "NODEMANAGER",
-      "index": 0
-    },
-    {
-      "id": "puppet var",
-      "name": "yarn_log_dir_prefix",
-      "displayName": "YARN Log Dir Prefix",
-      "description": "",
-      "defaultValue": "/var/log/hadoop-yarn",
-      "displayType": "directory",
-      "isOverridable": false,
-      "isReconfigurable": false,
-      "isVisible": true,
-      "serviceName": "YARN",
-      "filename": "yarn-env.xml",
-      "category": "Advanced yarn-env"
-    },
-    {
-      "id": "puppet var",
-      "name": "yarn_pid_dir_prefix",
-      "displayName": "YARN PID Dir Prefix",
-      "description": "",
-      "defaultValue": "/var/run/hadoop-yarn",
-      "displayType": "directory",
-      "isOverridable": false,
-      "isVisible": true,
-      "isReconfigurable": false,
-      "serviceName": "YARN",
-      "filename": "yarn-env.xml",
-      "category": "Advanced yarn-env"
-    },
-    {
-      "id": "puppet var",
-      "name": "min_user_id",
-      "displayName": "Minimum user ID for submitting job",
-      "isOverridable": true,
-      "displayType": "int",
-      "isVisible": true,
-      "serviceName": "YARN",
-      "filename": "yarn-env.xml",
-      "category": "Advanced yarn-env"
-    },
-    {
-      "id": "puppet var",
-      "name": "ats_host",
-      "displayName": "App Timeline Server",
-      "description": "Application Timeline Server Host",
-      "defaultValue": "",
-      "isOverridable": false,
-      "displayType": "masterHost",
-      "isRequiredByAgent": false,
-      "isVisible": true,
-      "serviceName": "YARN",
-      "filename": "yarn-env.xml",
-      "category": "APP_TIMELINE_SERVER",
-      "index": 0
-    },
-    {
-      "id": "puppet var",
-      "name": "apptimelineserver_heapsize",
-      "displayName": "AppTimelineServer Java heap size",
-      "description": "AppTimelineServer Java heap size",
-      "defaultValue": "1024",
-      "isOverridable": false,
-      "displayType": "int",
-      "unit": "MB",
-      "isVisible": true,
-      "serviceName": "YARN",
-      "filename": "yarn-env.xml",
-      "category": "APP_TIMELINE_SERVER",
-      "index": 1
-    },
-  /**********************************************HBASE***************************************/
-    {
-      "id": "puppet var",
-      "name": "hbasemaster_host",
-      "displayName": "HBase Master hosts",
-      "value": "",
-      "defaultValue": "",
-      "description": "The host that has been assigned to run HBase Master",
-      "displayType": "masterHosts",
-      "isOverridable": false,
-      "isRequiredByAgent": false,
-      "isVisible": true,
-      "serviceName": "HBASE",
-      "filename": "hbase-env.xml",
-      "category": "HBASE_MASTER",
-      "index": 0
-    },
-    {
-      "id": "puppet var",
-      "name": "hbase_master_heapsize",
-      "displayName": "HBase Master Maximum Java heap size",
-      "description": "Maximum Java heap size for HBase master (Java option -Xmx)",
-      "defaultValue": "1024",
-      "displayType": "int",
-      "unit": "MB",
-      "isOverridable": true,
-      "isVisible": true,
-      "serviceName": "HBASE",
-      "filename": "hbase-env.xml",
-      "category": "HBASE_MASTER",
-      "index": 1
-    },
-    {
-      "id": "puppet var",
-      "name": "regionserver_hosts",
-      "displayName": "RegionServer hosts",
-      "value": "",
-      "defaultValue": "",
-      "description": "The hosts that have been assigned to run RegionServer",
-      "displayType": "slaveHosts",
-      "isOverridable": false,
-      "isRequiredByAgent": false,
-      "isVisible": true,
-      "isRequired": false,
-      "serviceName": "HBASE",
-      "filename": "hbase-env.xml",
-      "category": "HBASE_REGIONSERVER",
-      "index": 0
-    },
-    {
-      "id": "puppet var",
-      "name": "hbase_regionserver_heapsize",
-      "displayName": "RegionServers maximum Java heap size",
-      "description": "Maximum Java heap size for RegionServers (Java option -Xmx)",
-      "defaultValue": "1024",
-      "displayType": "int",
-      "unit": "MB",
-      "isVisible": true,
-      "serviceName": "HBASE",
-      "filename": "hbase-env.xml",
-      "category": "HBASE_REGIONSERVER",
-      "index": 1
-    },
-    {
-      "id": "puppet var",
-      "name": "hbase_regionserver_xmn_max",
-      "displayName": "RegionServers maximum value for -Xmn",
-      "displayType": "int",
-      "unit": "MB",
-      "isVisible": true,
-      "serviceName": "HBASE",
-      "category": "HBASE_REGIONSERVER",
-      "index": 6
-    },
-    {
-      "id": "puppet var",
-      "name": "hbase_regionserver_xmn_ratio",
-      "displayName": "RegionServers -Xmn in -Xmx ratio",
-      "displayType": "float",
-      "isVisible": true,
-      "serviceName": "HBASE",
-      "category": "HBASE_REGIONSERVER",
-      "index": 7
-    },
-    {
-      "id": "puppet var",
-      "name": "hbase_log_dir",
-      "displayName": "HBase Log Dir",
-      "description": "Directory for HBase logs",
-      "defaultValue": "/var/log/hbase",
-      "isReconfigurable": false,
-      "displayType": "directory",
-      "isOverridable": false,
-      "isVisible": true,
-      "serviceName": "HBASE",
-      "filename": "hbase-env.xml",
-      "category": "Advanced hbase-env"
-    },
-    {
-      "id": "puppet var",
-      "name": "hbase_pid_dir",
-      "displayName": "HBase PID Dir",
-      "description": "Directory in which the pid files for HBase processes will be created",
-      "defaultValue": "/var/run/hbase",
-      "isReconfigurable": false,
-      "displayType": "directory",
-      "isOverridable": false,
-      "isVisible": true,
-      "serviceName": "HBASE",
-      "filename": "hbase-env.xml",
-      "category": "Advanced hbase-env"
-    },
-     //***************************************** GLUSTERFS stack********************************************
-    {
-      "id": "site property",
-      "name": "fs.glusterfs.impl",
-      "displayName": "GlusterFS fs impl",
-      "displayType": "string",
-      "filename": "core-site.xml",
-      "serviceName": "GLUSTERFS",
-      "category": "General"
-    },
-    {
-      "id": "site property",
-      "name": "fs.AbstractFileSystem.glusterfs.impl",
-      "displayName": "GlusterFS Abstract File System Implementation",
-      "displayType": "string",
-      "filename": "core-site.xml",
-      "serviceName": "GLUSTERFS",
-      "category": "General"
-    },
-  /**********************************************GLUSTERFS***************************************/
-    {
-      "id": "puppet var",
-      "name": "fs_glusterfs_default_name",
-      "displayName": "GlusterFS default fs name 1.x Hadoop",
-      "description": "GlusterFS default filesystem name (glusterfs://{MasterFQDN}:9000)",
-      "defaultValue": "glusterfs:///localhost:8020",
-      "displayType": "string",
-      "isVisible": true,
-      "serviceName": "GLUSTERFS",
-      "filename": "hadoop-env.xml",
-      "category": "General Hadoop"
-    },
-    {
-      "id": "puppet var",
-      "name": "glusterfs_defaultFS_name",
-      "displayName": "GlusterFS default fs name 2.x Hadoop",
-      "description": "GlusterFS default filesystem name (glusterfs:///)",
-      "defaultValue": "glusterfs:///localhost:8020",
-      "displayType": "string",
-      "isVisible": true,
-      "serviceName": "GLUSTERFS",
-      "filename": "hadoop-env.xml",
-      "category": "General Hadoop"
-    },
-    {
-      "id": "puppet var",
-      "name": "hadoop_heapsize",
-      "displayName": "Hadoop maximum Java heap size",
-      "description": "Maximum Java heap size for daemons such as Balancer (Java option -Xmx)",
-      "defaultValue": "1024",
-      "displayType": "int",
-      "unit": "MB",
-      "isVisible": true,
-      "serviceName": "GLUSTERFS",
-      "filename": "hadoop-env.xml",
-      "category": "General Hadoop",
-      "index": 1
-    },
-    {
-      "id": "puppet var",
-      "name": "hdfs_log_dir_prefix",
-      "displayName": "Hadoop Log Dir Prefix",
-      "description": "The parent directory for Hadoop log files.  The HDFS log directory will be ${hadoop_log_dir_prefix} / ${hdfs_user} and the MapReduce log directory will be ${hadoop_log_dir_prefix} / ${mapred_user}.",
-      "defaultValue": "/var/log/hadoop",
-      "isReconfigurable": false,
-      "displayType": "directory",
-      "isOverridable": false,
-      "isVisible": false,
-      "serviceName": "GLUSTERFS",
-      "filename": "hadoop-env.xml",
-      "category": "General Hadoop"
-    },
-    {
-      "id": "puppet var",
-      "name": "hadoop_pid_dir_prefix",
-      "displayName": "Hadoop PID Dir Prefix",
-      "description": "The parent directory in which the PID files for Hadoop processes will be created.  The HDFS PID directory will be ${hadoop_pid_dir_prefix} / ${hdfs_user} and the MapReduce PID directory will be ${hadoop_pid_dir_prefix} / ${mapred_user}.",
-      "defaultValue": "/var/run/hadoop",
-      "isReconfigurable": false,
-      "displayType": "directory",
-      "isOverridable": false,
-      "isVisible": false,
-      "serviceName": "GLUSTERFS",
-      "filename": "hadoop-env.xml",
-      "category": "General Hadoop"
-    },
-    {
-      "id": "puppet var",
-      "name": "namenode_heapsize",
-      "displayName": "Name Node Heap Size",
-      "description": "Name Node Heap Size, default jvm memory setting",
-      "defaultValue": "1024",
-      "isReconfigurable": false,
-      "displayType": "int",
-      "isOverridable": false,
-      "isVisible": false,
-      "serviceName": "GLUSTERFS",
-      "filename": "hadoop-env.xml",
-      "category": "General Hadoop"
-    },
-    {
-      "id": "puppet var",
-      "name": "namenode_opt_newsize",
-      "displayName": "NameNode new generation size",
-      "description": "Default size of Java new generation for NameNode (Java option -XX:NewSize).  This also applies to the Secondary NameNode.",
-      "defaultValue": "200",
-      "displayType": "int",
-      "unit": "MB",
-      "isOverridable": false,
-      "isVisible": false,
-      "serviceName": "GLUSTERFS",
-      "filename": "hadoop-env.xml",
-      "category": "General Hadoop"
-    },
-    {
-      "id": "puppet var",
-      "name": "namenode_opt_maxnewsize",
-      "displayName": "NameNode maximum new generation size",
-      "description": "Maximum size of Java new generation for NameNode (Java option -XX:MaxnewSize).",
-      "defaultValue": "200",
-      "displayType": "int",
-      "unit": "MB",
-      "isOverridable": false,
-      "isVisible": false,
-      "serviceName": "GLUSTERFS",
-      "filename": "hadoop-env.xml",
-      "category": "General Hadoop"
-    },
-    {
-      "id": "puppet var",
-      "name": "namenode_opt_permsize",
-      "displayName": "NameNode permanent generation size",
-      "description": "Default size of Java permanent generation for NameNode (Java option -XX:PermSize).  This also applies to the Secondary NameNode.",
-      "defaultValue": "128",
-      "displayType": "int",
-      "unit": "MB",
-      "isOverridable": false,
-      "isVisible": false,
-      "serviceName": "GLUSTERFS",
-      "filename": "hadoop-env.xml",
-      "category": "General Hadoop"
-    },
-    {
-      "id": "puppet var",
-      "name": "namenode_opt_maxpermsize",
-      "displayName": "NameNode maximum permanent generation size",
-      "description": "Maximum size of Java permanent generation for NameNode (Java option -XX:MaxPermSize).",
-      "defaultValue": "256",
-      "displayType": "int",
-      "unit": "MB",
-      "isOverridable": false,
-      "isVisible": false,
-      "serviceName": "GLUSTERFS",
-      "filename": "hadoop-env.xml",
-      "category": "General Hadoop"
-    },
-    {
-      "id": "puppet var",
-      "name": "dtnode_heapsize",
-      "displayName": "DataNode maximum Java heap size",
-      "description": "Maximum Java heap size for DataNode (Java option -Xmx)",
-      "defaultValue": "1024",
-      "displayType": "int",
-      "unit": "MB",
-      "isVisible": false,
-      "serviceName": "GLUSTERFS",
-      "filename": "hadoop-env.xml",
-      "category": "General Hadoop"
-    },
-    {
-      "id": "puppet var",
-      "name": "glusterfs_user",
-      "displayName": "glusterfs user",
-      "description": "glusterfs user",
-      "defaultValue": "root",
-      "displayType": "string",
-      "isVisible": false,
-      "serviceName": "GLUSTERFS",
-      "filename": "hadoop-env.xml",
-      "category": "General Hadoop"
-    },
-    {
-      "id": "puppet var",
-      "name": "namenode_host",
-      "displayName": "NameNode Host",
-      "description": "NameNode Host.",
-      "defaultValue": "",
-      "displayType": "string",
-      "isVisible": false,
-      "serviceName": "GLUSTERFS",
-      "filename": "hadoop-env.xml",
-      "category": "General Hadoop"
-    },
-    {
-      "id": "puppet var",
-      "name": "snamenode_host",
-      "displayName": "Secondary NameNode Host",
-      "description": "Secondary NameNode Host.",
-      "defaultValue": "",
-      "displayType": "string",
-      "isVisible": false,
-      "serviceName": "GLUSTERFS",
-      "filename": "hadoop-env.xml",
-      "category": "General Hadoop"
-    },
-  /**********************************************HIVE***************************************/
-    {
-      "id": "puppet var",
-      "name": "hivemetastore_host",
-      "displayName": "Hive Metastore host",
-      "value": "",
-      "defaultValue": "",
-      "description": "The host that has been assigned to run Hive Metastore",
-      "displayType": "masterHost",
-      "isOverridable": false,
-      "isRequiredByAgent": false,
-      "isVisible": true,
-      "serviceName": "HIVE",
-      "filename": "hive-env.xml",
-      "category": "HIVE_METASTORE",
-      "index": 0
-    },
-    // for existing MySQL
-    {
-      "id": "puppet var",
-      "name": "hive_existing_mysql_database",
-      "displayName": "Database Type",
-      "value": "",
-      "defaultValue": "MySQL",
-      "description": "Using an existing MySQL database for Hive Metastore",
-      "displayType": "masterHost",
-      "isOverridable": false,
-      "isVisible": false,
-      "isReconfigurable": false,
-      "serviceName": "HIVE",
-      "filename": "hive-env.xml",
-      "category": "HIVE_METASTORE",
-      "index": 1
-    },
-    // for existing PostgreSQL
-    {
-      "id": "puppet var",
-      "name": "hive_existing_postgresql_database",
-      "displayName": "Database Type",
-      "value": "",
-      "defaultValue": "PostgreSQL",
-      "description": "Using an existing PostgreSQL database for Hive Metastore",
-      "displayType": "masterHost",
-      "isOverridable": false,
-      "isVisible": false,
-      "isReconfigurable": false,
-      "serviceName": "HIVE",
-      "filename": "hive-env.xml",
-      "category": "HIVE_METASTORE",
-      "index": 1
-    },
-    // for existing Oracle
-    {
-      "id": "puppet var",
-      "name": "hive_existing_oracle_database",
-      "displayName": "Database Type",
-      "value": "",
-      "defaultValue": "Oracle",
-      "description": "Using an existing Oracle database for Hive Metastore",
-      "displayType": "masterHost",
-      "isVisible": false,
-      "isOverridable": false,
-      "isReconfigurable": false,
-      "serviceName": "HIVE",
-      "filename": "hive-env.xml",
-      "category": "HIVE_METASTORE",
-      "index": 1
-    },
-    // for new MySQL
-    {
-      "id": "puppet var",
-      "name": "hive_ambari_database",
-      "displayName": "Database Type",
-      "value": "",
-      "defaultValue": "MySQL",
-      "description": "MySQL will be installed by Ambari",
-      "displayType": "masterHost",
-      "isOverridable": false,
-      "isVisible": false,
-      "serviceName": "HIVE",
-      "filename": "hive-env.xml",
-      "category": "HIVE_METASTORE",
-      "index": 1
-    },
-    {
-      "id": "puppet var",
-      "name": "hive_database",
-      "displayName": "Hive Database",
-      "value": "",
-      "defaultValue": "New MySQL Database",
-      "options": [
-        {
-          displayName: 'New MySQL Database',
-          foreignKeys: ['hive_ambari_database', 'hive_ambari_host']
-        },
-        {
-          displayName: 'Existing MySQL Database',
-          foreignKeys: ['hive_existing_mysql_database', 'hive_existing_mysql_host']
-        },
-        {
-          displayName: 'Existing PostgreSQL Database',
-          foreignKeys: ['hive_existing_postgresql_database', 'hive_existing_postgresql_host']
-        },
-        {
-          displayName: 'Existing Oracle Database',
-          foreignKeys: ['hive_existing_oracle_database', 'hive_existing_oracle_host'],
-          hidden: !App.supports.hiveOozieExtraDatabases
-        }
-      ],
-      "description": "MySQL will be installed by Ambari",
-      "displayType": "radio button",
-      "isReconfigurable": false,
-      "radioName": "hive-database",
-      "isOverridable": false,
-      "isVisible": true,
-      "serviceName": "HIVE",
-      "filename": "hive-env.xml",
-      "category": "HIVE_METASTORE",
-      "index": 2
-    },
-    {
-      "id": "puppet var",
-      "name": "hive_hostname",
-      "displayName": "Database Host",
-      "description": "Specify the host on which the database is hosted",
-      "defaultValue": "",
-      "isReconfigurable": true,
-      "displayType": "host",
-      "isOverridable": false,
-      "isVisible": false,
-      "isObserved": true,
-      "serviceName": "HIVE",
-      "filename": "hive-env.xml",
-      "category": "HIVE_METASTORE",
-      "index": 3
-    },
-    {
-      "id": "puppet var",
-      "name": "hive_existing_mysql_host",
-      "displayName": "Database Host",
-      "description": "Specify the host on which the existing database is hosted",
-      "defaultValue": "",
-      "isReconfigurable": false,
-      "displayType": "host",
-      "isOverridable": false,
-      "isRequiredByAgent": false,
-      "isVisible": false,
-      "isObserved": true,
-      "serviceName": "HIVE",
-      "filename": "hive-env.xml",
-      "category": "HIVE_METASTORE",
-      "index": 3
-    },
-    {
-      "id": "puppet var",
-      "name": "hive_existing_postgresql_host",
-      "displayName": "Database Host",
-      "description": "Specify the host on which the existing database is hosted",
-      "defaultValue": "",
-      "isReconfigurable": false,
-      "displayType": "host",
-      "isOverridable": false,
-      "isRequiredByAgent": false,
-      "isVisible": false,
-      "isObserved": true,
-      "serviceName": "HIVE",
-      "filename": "hive-env.xml",
-      "category": "HIVE_METASTORE",
-      "index": 3
-    },
-    {
-      "id": "puppet var",
-      "name": "hive_existing_oracle_host",
-      "displayName": "Database Host",
-      "description": "Specify the host on which the existing database is hosted",
-      "defaultValue": "",
-      "displayType": "host",
-      "isOverridable": false,
-      "isRequiredByAgent": false,
-      "isVisible": false,
-      "isObserved": true,
-      "serviceName": "HIVE",
-      "filename": "hive-env.xml",
-      "category": "HIVE_METASTORE",
-      "index": 3
-    },
-    {
-      "id": "puppet var",
-      "name": "hive_ambari_host",
-      "value": "",
-      "defaultValue": "",
-      "displayName": "Database Host",
-      "description": "Host on which the database will be created by Ambari",
-      "isReconfigurable": false,
-      "displayType": "masterHost",
-      "isRequiredByAgent": false,
-      "isOverridable": false,
-      "isVisible": false,
-      "serviceName": "HIVE",
-      "filename": "hive-env.xml",
-      "category": "HIVE_METASTORE",
-      "index": 3
-    },
-    {
-      "id": "puppet var",
-      "name": "hive_metastore_port",
-      "displayName": "Hive metastore port",
-      "description": "",
-      "defaultValue": "9083",
-      "isReconfigurable": false,
-      "displayType": "int",
-      "isOverridable": false,
-      "isVisible": false,
-      "serviceName": "HIVE",
-      "filename": "hive-env.xml",
-      "category": "Advanced hive-env"
-    },
-    {
-      "id": "puppet var",
-      "name": "hive_lib",
-      "displayName": "Hive library",
-      "description": "",
-      "defaultValue": "/usr/lib/hive/lib/",
-      "isReconfigurable": false,
-      "displayType": "directory",
-      "isVisible": false,
-      "isRequiredByAgent": false, // Make this to true when we expose the property on ui by making "isVisible": true
-      "serviceName": "HIVE",
-      "filename": "hive-env.xml",
-      "category": "Advanced hive-env"
-    },
-    {
-      "id": "puppet var",
-      "name": "hive_dbroot",
-      "displayName": "Hive db directory",
-      "description": "",
-      "defaultValue": "/usr/lib/hive/lib",
-      "isReconfigurable": false,
-      "displayType": "directory",
-      "isVisible": false,
-      "isRequiredByAgent": false, // Make this to true when we expose the property on ui by making "isVisible": true
-      "serviceName": "HIVE",
-      "filename": "hive-env.xml",
-      "category": "Advanced hive-env"
-    },
-    {
-      "id": "puppet var",
-      "name": "hive_log_dir",
-      "displayName": "Hive Log Dir",
-      "description": "Directory for Hive log files",
-      "defaultValue": "/var/log/hive",
-      "isReconfigurable": false,
-      "displayType": "directory",
-      "isOverridable": false,
-      "isVisible": true,
-      "serviceName": "HIVE",
-      "filename": "hive-env.xml",
-      "category": "Advanced hive-env"
-    },
-    {
-      "id": "puppet var",
-      "name": "hive_pid_dir",
-      "displayName": "Hive PID Dir",
-      "description": "Directory in which the PID files for Hive processes will be created",
-      "defaultValue": "/var/run/hive",
-      "isReconfigurable": false,
-      "displayType": "directory",
-      "isOverridable": false,
-      "isVisible": true,
-      "serviceName": "HIVE",
-      "filename": "hive-env.xml",
-      "category": "Advanced hive-env"
-    },
-  /**********************************************HIVE***************************************/
-    {
-      "id": "puppet var",
-      "name": "webhcatserver_host",
-      "displayName": "WebHCat Server host",
-      "value": "",
-      "defaultValue": "",
-      "description": "The host that has been assigned to run WebHCat Server",
-      "displayType": "masterHost",
-      "isOverridable": false,
-      "isVisible": true,
-      "isRequiredByAgent": false,
-      "serviceName": "HIVE",
-      "filename": "webhcat-env.xml",
-      "category": "WEBHCAT_SERVER"
-    },
-    {
-      "id": "puppet var",
-      "name": "hcat_log_dir",
-      "displayName": "WebHCat Log Dir",
-      "description": "Directory for WebHCat log files",
-      "defaultValue": "/var/log/webhcat",
-      "isReconfigurable": false,
-      "displayType": "directory",
-      "isOverridable": false,
-      "isVisible": true,
-      "serviceName": "HIVE",
-      "filename": "webhcat-env.xml",
-      "category": "Advanced webhcat-env"
-    },
-    {
-      "id": "puppet var",
-      "name": "hcat_pid_dir",
-      "displayName": "WebHCat PID Dir",
-      "description": "Directory in which the PID files for WebHCat processes will be created",
-      "defaultValue": "/var/run/webhcat",
-      "isReconfigurable": false,
-      "displayType": "directory",
-      "isOverridable": false,
-      "isVisible": true,
-      "serviceName": "HIVE",
-      "filename": "webhcat-env.xml",
-      "category": "Advanced webhcat-env"
-    },
-    {
-      "id": "puppet var",
-      "name": "hive_database_name",
-      "displayName": "hive_database_name",
-      "defaultValue": "",
-      "isReconfigurable": false,
-      "isOverridable": false,
-      "isVisible": false,
-      "serviceName": "HIVE",
-      "filename": "hive-env.xml",
-      "category": "Advanced hive-env"
-    },
-    {
-      "id": "puppet var",
-      "name": "hive_database_type",
-      "displayName": "hive_database_type",
-      "defaultValue": "",
-      "isReconfigurable": false,
-      "isOverridable": false,
-      "isVisible": false,
-      "serviceName": "HIVE",
-      "filename": "hive-env.xml",
-      "category": "Advanced hive-env"
-    },
-  /**********************************************OOZIE***************************************/
-    {
-      "id": "puppet var",
-      "name": "oozieserver_host",
-      "displayName": "Oozie Server host",
-      "value": "",
-      "defaultValue": "",
-      "description": "The host that has been assigned to run Oozie Server",
-      "displayType": "masterHost",
-      "isOverridable": false,
-      "isVisible": true,
-      "isRequiredByAgent": false,
-      "serviceName": "OOZIE",
-      "filename": "oozie-env.xml",
-      "category": "OOZIE_SERVER",
-      "index": 0
-    },
-    // for existing Oracle
-    {
-      "id": "puppet var",
-      "name": "oozie_existing_oracle_database",
-      "displayName": "Database Type",
-      "value": "",
-      "defaultValue": "Oracle",
-      "description": "Using an existing Oracle database for Oozie Metastore",
-      "displayType": "masterHost",
-      "isVisible": false,
-      "isObserved": true,
-      "isReconfigurable": false,
-      "isOverridable": false,
-      "serviceName": "OOZIE",
-      "filename": "oozie-env.xml",
-      "category": "OOZIE_SERVER",
-      "index": 1
-    },
-    // for existing PostgreSQL
-    {
-      "id": "puppet var",
-      "name": "oozie_existing_postgresql_database",
-      "displayName": "Database Type",
-      "value": "",
-      "defaultValue": "PostgreSQL",
-      "description": "Using an existing PostgreSQL database for Oozie Metastore",
-      "displayType": "masterHost",
-      "isOverridable": false,
-      "isVisible": false,
-      "isReconfigurable": false,
-      "serviceName": "OOZIE",
-      "filename": "oozie-env.xml",
-      "category": "OOZIE_SERVER",
-      "index": 1
-    },
-    // for new MySQL
-    {
-      "id": "puppet var",
-      "name": "oozie_ambari_database",
-      "displayName": "Database Type",
-      "value": "",
-      "defaultValue": "MySQL",
-      "description": "MySQL will be installed by Ambari",
-      "displayType": "masterHost",
-      "isVisible": false,
-      "isOverridable": false,
-      "serviceName": "OOZIE",
-      "filename": "oozie-env.xml",
-      "category": "OOZIE_SERVER",
-      "index": 1
-    },
-    // for current derby
-    {
-      "id": "puppet var",
-      "name": "oozie_derby_database",
-      "displayName": "Database Type",
-      "value": "",
-      "defaultValue": "Derby",
-      "description": "Using current Derby database for Oozie Metastore",
-      "displayType": "masterHost",
-      "isVisible": false,
-      "isReconfigurable": false,
-      "isOverridable": false,
-      "serviceName": "OOZIE",
-      "filename": "oozie-env.xml",
-      "category": "OOZIE_SERVER",
-      "index": 1
-    },
-    // for existing MySQL oozie
-    {
-      "id": "puppet var",
-      "name": "oozie_existing_mysql_database",
-      "displayName": "Database Type",
-      "value": "",
-      "defaultValue": "MySQL",
-      "description": "Using an existing MySQL database for Oozie Metastore",
-      "displayType": "masterHost",
-      "isVisible": false,
-      "isReconfigurable": false,
-      "isOverridable": false,
-      "serviceName": "OOZIE",
-      "filename": "oozie-env.xml",
-      "category": "OOZIE_SERVER",
-      "index": 1
-    },
-    {
-      "id": "puppet var",
-      "name": "oozie_database",
-      "displayName": "Oozie Database",
-      "value": "",
-      "defaultValue": "New Derby Database",
-      "options": [
-        {
-          displayName: 'New Derby Database',
-          foreignKeys: ['oozie_derby_database']
-        },
-        /*{
-         displayName: 'New MySQL Database',
-         foreignKeys: ['oozie_ambari_database', 'oozie_ambari_host'],
-         hidden: !App.supports.hiveOozieExtraDatabases
-         },*/
-        {
-          displayName: 'Existing MySQL Database',
-          foreignKeys: ['oozie_existing_mysql_database', 'oozie_existing_mysql_host'],
-          hidden: !App.supports.hiveOozieExtraDatabases
-        },
-        {
-          displayName: 'Existing PostgreSQL Database',
-          foreignKeys: ['oozie_existing_postgresql_database', 'oozie_existing_postgresql_host'],
-          hidden: !App.supports.hiveOozieExtraDatabases
-        },
-        {
-          displayName: 'Existing Oracle Database',
-          foreignKeys: ['oozie_existing_oracle_database', 'oozie_existing_oracle_host'],
-          hidden: !App.supports.hiveOozieExtraDatabases
-        }
-      ],
-      "description": "Current Derby Database will be installed by Ambari",
-      "displayType": "radio button",
-      "isReconfigurable": false,
-      "isOverridable": false,
-      "radioName": "oozie-database",
-      "isVisible": true,
-      "serviceName": "OOZIE",
-      "filename": "oozie-env.xml",
-      "category": "OOZIE_SERVER",
-      "index": 2
-    },
-    {
-      "id": "puppet var",
-      "name": "oozie_data_dir",
-      "displayName": "Oozie Data Dir",
-      "description": "Data directory in which the Oozie DB exists",
-      "defaultValue": "",
-      "defaultDirectory": "/hadoop/oozie/data",
-      "isReconfigurable": true,
-      "displayType": "directory",
-      "isOverridable": false,
-      "isVisible": true,
-      "isRequired": false,
-      "serviceName": "OOZIE",
-      "filename": "oozie-env.xml",
-      "category": "OOZIE_SERVER",
-      "index": 9
-    },
-    {
-      "id": "puppet var",
-      "name": "oozie_hostname",
-      "defaultValue": "",
-      "displayName": "Database Host",
-      "description": "The host where the Oozie database is located",
-      "isReconfigurable": true,
-      "isOverridable": false,
-      "displayType": "host",
-      "isVisible": false,
-      "serviceName": "OOZIE",
-      "filename": "oozie-env.xml",
-      "category": "OOZIE_SERVER",
-      "index": 3
-    },
-    {
-      "id": "puppet var",
-      "name": "oozie_existing_mysql_host",
-      "displayName": "Database Host",
-      "description": "Specify the host on which the existing database is hosted",
-      "defaultValue": "",
-      "isOverridable": false,
-      "displayType": "host",
-      "isVisible": false,
-      "isObserved": true,
-      "serviceName": "OOZIE",
-      "filename": "oozie-env.xml",
-      "category": "OOZIE_SERVER",
-      "index": 3
-    },
-    {
-      "id": "puppet var",
-      "name": "oozie_existing_postgresql_host",
-      "displayName": "Database Host",
-      "description": "Specify the host on which the existing database is hosted",
-      "defaultValue": "",
-      "isOverridable": false,
-      "displayType": "host",
-      "isVisible": false,
-      "isObserved": true,
-      "serviceName": "OOZIE",
-      "filename": "oozie-env.xml",
-      "category": "OOZIE_SERVER",
-      "index": 3
-    },
-    {
-      "id": "puppet var",
-      "name": "oozie_existing_oracle_host",
-      "displayName": "Database Host",
-      "description": "Specify the host on which the existing database is hosted",
-      "defaultValue": "",
-      "isOverridable": false,
-      "displayType": "host",
-      "isVisible": false,
-      "isObserved": true,
-      "serviceName": "OOZIE",
-      "filename": "oozie-env.xml",
-      "category": "OOZIE_SERVER",
-      "index": 3
-    },
-    {
-      "id": "puppet var",
-      "name": "oozie_ambari_host",
-      "value": "",
-      "defaultValue": "",
-      "displayName": "Database Host",
-      "description": "Host on which the database will be created by Ambari",
-      "isReconfigurable": false,
-      "isOverridable": false,
-      "displayType": "masterHost",
-      "isVisible": false,
-      "isRequiredByAgent": false,
-      "serviceName": "OOZIE",
-      "filename": "oozie-env.xml",
-      "category": "OOZIE_SERVER"
-    },
-    {
-      "id": "puppet var",
-      "name": "oozie_log_dir",
-      "displayName": "Oozie Log Dir",
-      "description": "Directory for oozie logs",
-      "defaultValue": "/var/log/oozie",
-      "isReconfigurable": false,
-      "displayType": "directory",
-      "isOverridable": false,
-      "isVisible": true,
-      "serviceName": "OOZIE",
-      "filename": "oozie-env.xml",
-      "category": "Advanced oozie-env"
-    },
-    {
-      "id": "puppet var",
-      "name": "oozie_pid_dir",
-      "displayName": "Oozie PID Dir",
-      "description": "Directory in which the pid files for oozie processes will be created",
-      "defaultValue": "/var/run/oozie",
-      "isReconfigurable": false,
-      "displayType": "directory",
-      "isOverridable": false,
-      "isVisible": true,
-      "serviceName": "OOZIE",
-      "filename": "oozie-env.xml",
-      "category": "Advanced oozie-env"
-    },
-    {
-      "id": "puppet var",
-      "name": "oozie_admin_port",
-      "displayName": "Oozie Server Admin Port",
-      "isReconfigurable": true,
-      "displayType": "int",
-      "isOverridable": false,
-      "isVisible": true,
-      "serviceName": "OOZIE",
-      "filename": "oozie-env.xml",
-      "category": "Advanced oozie-env"
-    },
-  /**********************************************NAGIOS***************************************/
-    {
-      "id": "puppet var",
-      "name": "nagios_web_login",
-      "displayName": "Nagios Admin username",
-      "description": "Nagios Web UI Admin username",
-      "defaultValue": "nagiosadmin",
-      "isReconfigurable": false,
+/***************************************** ECS stack********************************************/
+  {
+    "name": "hdfs_log_dir_prefix",
+    "displayType": "directory",
+    "serviceName": "ECS",
+    "filename": "hadoop-env.xml",
+    "category": "General Hadoop"
+  },
+
+/**********************************************GLUSTERFS***************************************/
+  {
+    "name": "hadoop_heapsize",
+    "displayType": "int",
+    "serviceName": "GLUSTERFS",
+    "filename": "hadoop-env.xml",
+    "category": "General Hadoop",
+    "index": 1
+  },
+  {
+    "name": "hdfs_log_dir_prefix",
+    "displayType": "directory",
+    "serviceName": "GLUSTERFS",
+    "filename": "hadoop-env.xml",
+    "category": "General Hadoop"
+  },
+  {
+    "name": "hadoop_pid_dir_prefix",
+    "displayType": "directory",
+    "serviceName": "GLUSTERFS",
+    "filename": "hadoop-env.xml",
+    "category": "General Hadoop"
+  },
+  {
+    "name": "namenode_heapsize",
+    "displayType": "int",
+    "serviceName": "GLUSTERFS",
+    "filename": "hadoop-env.xml",
+    "category": "General Hadoop"
+  },
+  {
+    "name": "namenode_opt_newsize",
+    "displayType": "int",
+    "serviceName": "GLUSTERFS",
+    "filename": "hadoop-env.xml",
+    "category": "General Hadoop"
+  },
+  {
+    "name": "namenode_opt_maxnewsize",
+    "displayType": "int",
+    "serviceName": "GLUSTERFS",
+    "filename": "hadoop-env.xml",
+    "category": "General Hadoop"
+  },
+  {
+    "name": "namenode_opt_permsize",
+    "displayType": "int",
+    "serviceName": "GLUSTERFS",
+    "filename": "hadoop-env.xml",
+    "category": "General Hadoop"
+  },
+  {
+    "name": "namenode_opt_maxpermsize",
+    "displayType": "int",
+    "serviceName": "GLUSTERFS",
+    "filename": "hadoop-env.xml",
+    "category": "General Hadoop"
+  },
+  {
+    "name": "dtnode_heapsize",
+    "displayType": "int",
+    "serviceName": "GLUSTERFS",
+    "filename": "hadoop-env.xml",
+    "category": "General Hadoop"
+  },
+  {
+    "name": "glusterfs_user",
+    "displayType": "string",
+    "serviceName": "GLUSTERFS",
+    "filename": "hadoop-env.xml",
+    "category": "General Hadoop"
+  },
+  {
+    "name": "namenode_host",
+    "displayType": "string",
+    "serviceName": "GLUSTERFS",
+    "filename": "hadoop-env.xml",
+    "category": "General Hadoop"
+  },
+  {
+    "name": "snamenode_host",
+    "displayType": "string",
+    "serviceName": "GLUSTERFS",
+    "filename": "hadoop-env.xml",
+    "category": "General Hadoop"
+  },
+
+/**********************************************ZOOKEEPER***************************************/
+  {
+    "name": "zookeeperserver_hosts",
+    "displayName": "ZooKeeper Server hosts",
+    "value": "",
+    "recommendedValue": "",
+    "description": "The host that has been assigned to run ZooKeeper Server",
+    "displayType": "masterHosts",
+    "isVisible": true,
+    "isRequiredByAgent": false,
+    "isOverridable": false,
+    "isRequired": false,
+    "serviceName": "ZOOKEEPER",
+    "filename": "zookeeper-env.xml",
+    "category": "ZOOKEEPER_SERVER",
+    "index": 0
+  },
+  {
+    "name": "dataDir",
+    "displayType": "directory",
+    "serviceName": "ZOOKEEPER",
+    "filename": "zoo.cfg.xml",
+    "category": "ZOOKEEPER_SERVER",
+    "index": 1
+  },
+  {
+    "name": "tickTime",
+    "displayType": "int",
+    "serviceName": "ZOOKEEPER",
+    "filename": "zoo.cfg.xml",
+    "category": "ZOOKEEPER_SERVER",
+    "index": 2
+  },
+  {
+    "name": "initLimit",
+    "displayType": "int",
+    "serviceName": "ZOOKEEPER",
+    "filename": "zoo.cfg.xml",
+    "category": "ZOOKEEPER_SERVER",
+    "index": 3
+  },
+  {
+    "name": "syncLimit",
+    "displayType": "int",
+    "serviceName": "ZOOKEEPER",
+    "filename": "zoo.cfg.xml",
+    "category": "ZOOKEEPER_SERVER",
+    "index": 4
+  },
+  {
+    "name": "clientPort",
+    "displayType": "int",
+    "serviceName": "ZOOKEEPER",
+    "filename": "zoo.cfg.xml",
+    "category": "ZOOKEEPER_SERVER",
+    "index": 5
+  },
+  {
+    "name": "zk_log_dir",
+    "displayType": "directory",
+    "serviceName": "ZOOKEEPER",
+    "filename": "zookeeper-env.xml",
+    "category": "Advanced zookeeper-env",
+    "index": 0
+  },
+  {
+    "name": "zk_pid_dir",
+    "displayType": "directory",
+    "serviceName": "ZOOKEEPER",
+    "filename": "zookeeper-env.xml",
+    "category": "Advanced zookeeper-env",
+    "index": 1
+  },
+/**********************************************FALCON***************************************/
+  {
+    "name": "falconserver_host",
+    "displayName": "Falcon Server",
+    "description": "The host that has been assigned to run Falcon Server",
+    "recommendedValue": "falcon",
+    "displayType": "masterHost",
+    "isRequiredByAgent": false,
+    "serviceName": "FALCON",
+    "filename": "falcon-env.xml",
+    "category": "FALCON_SERVER"
+  },
+  {
+    "name": "falcon_port",
+    "displayType": "int",
+    "serviceName": "FALCON",
+    "filename": "falcon-env.xml",
+    "category": "FALCON_SERVER"
+  },
+  {
+    "name": "falcon_local_dir",
+    "displayType": "directory",
+    "serviceName": "FALCON",
+    "filename": "falcon-env.xml",
+    "category": "FALCON_SERVER"
+  },
+  {
+    "name": "falcon_store_uri",
+    "displayType": "string",
+    "serviceName": "FALCON",
+    "filename": "falcon-env.xml",
+    "category": "FALCON_SERVER"
+  },
+  {
+    "name": "falcon_log_dir",
+    "displayType": "directory",
+    "serviceName": "FALCON",
+    "filename": "falcon-env.xml",
+    "category": "Advanced falcon-env"
+  },
+  {
+    "name": "falcon_pid_dir",
+    "displayType": "directory",
+    "serviceName": "FALCON",
+    "filename": "falcon-env.xml",
+    "category": "Advanced falcon-env"
+  },
+  {
+    "name": "falcon.embeddedmq",
+    "displayType": "string",
+    "serviceName": "FALCON",
+    "filename": "falcon-env.xml",
+    "category": "Advanced falcon-env"
+  },
+  {
+    "name": "falcon.embeddedmq.data",
+    "displayType": "directory",
+    "serviceName": "FALCON",
+    "filename": "falcon-env.xml",
+    "category": "Advanced falcon-env"
+  },
+  {
+    "name": "falcon.emeddedmq.port",
+    "displayType": "string",
+    "serviceName": "FALCON",
+    "filename": "falcon-env.xml",
+    "category": "Advanced falcon-env"
+  },
+/**********************************************STORM***************************************/
+  {
+    "name": "storm_log_dir",
+    "displayType": "directory",
+    "serviceName": "STORM",
+    "filename": "storm-env.xml",
+    "category": "Advanced storm-env"
+  },
+  {
+    "name": "storm_pid_dir",
+    "displayType": "directory",
+    "serviceName": "STORM",
+    "filename": "storm-env.xml",
+    "category": "Advanced storm-env"
+  },
+  {
+    "name": "stormuiserver_host",
+    "displayName": "Storm UI Server host",
+    "description": "The host that has been assigned to run Storm UI Server",
+    "recommendedValue": "",
+    "displayType": "masterHost",
+    "isReconfigurable": false,
+    "isRequiredByAgent": false,
+    "serviceName": "STORM",
+    "filename": "storm-env.xml",
+    "category": "STORM_UI_SERVER"
+  },
+  {
+    "name": "drpcserver_host",
+    "displayName": "DRPC Server host",
+    "description": "The host that has been assigned to run DRPC Server",
+    "recommendedValue": "",
+    "displayType": "masterHost",
+    "isReconfigurable": false,
+    "isRequiredByAgent": false,
+    "serviceName": "STORM",
+    "filename": "storm-env.xml",
+    "category": "DRPC_SERVER"
+  },
+  {
+    "name": "supervisor_hosts",
+    "displayName": "Supervisor hosts",
+    "description": "The host that has been assigned to run Supervisor",
+    "recommendedValue": "",
+    "isRequired": false,
+    "displayType": "slaveHosts",
+    "isReconfigurable": false,
+    "isRequiredByAgent": false,
+    "serviceName": "STORM",
+    "filename": "storm-env.xml",
+    "isOverridable": false,
+    "category": "SUPERVISOR"
+  },
+  {
+    "name": "storm_rest_api_host",
+    "displayName": "Storm REST API host",
+    "description": "The host that has been assigned to run Storm REST API Server",
+    "recommendedValue": "",
+    "displayType": "masterHost",
+    "isReconfigurable": false,
+    "isRequiredByAgent": false,
+    "serviceName": "STORM",
+    "filename": "storm-env.xml",
+    "isOverridable": false,
+    "category": "STORM_REST_API"
+  },
+/**********************************************MISC***************************************/
+  {
+    "name": "ignore_groupsusers_create",
+    "displayType": "checkbox",
+    "filename": "cluster-env.xml",
+    "category": "Users and Groups"
+  },
+  {
+    "name": "override_uid",
+    "displayType": "checkbox",
+    "filename": "cluster-env.xml",
+    "category": "Users and Groups"
+  },
+  /******************************************Alert Notification***************************/
+  {
+    "name": "create_notification",
+    "displayName": "Create Notification",
+    "isOverridable": false,
+    "isVisible": false,
+    "serviceName": "MISC",
+    "category": "Notifications",
+    "recommendedValue": "no",
+    "filename": "alert_notification"
+  },
+  {
+    "name": "mail.smtp.host",
+    "displayName": "SMTP Host",
+    "displayType": "host",
+    "isRequired": false,
+    "isReconfigurable": true,
+    "isOverridable": false,
+    "isVisible": true,
+    "serviceName": "MISC",
+    "category": "Notifications",
+    "rowStyleClass": "indent-1",
+    "filename": "alert_notification"
+  },
+  {
+    "name": "mail.smtp.port",
+    "displayName": "SMTP Port",
+    "displayType": "int",
+    "isRequired": false,
+    "isReconfigurable": true,
+    "isOverridable": false,
+    "isVisible": true,
+    "serviceName": "MISC",
+    "category": "Notifications",
+    "rowStyleClass": "indent-1",
+    "filename": "alert_notification"
+  },
+  {
+    "name": "mail.smtp.from",
+    "displayName": "FROM Email Address",
+    "displayType": "email",
+    "isRequired": false,
+    "isReconfigurable": true,
+    "isOverridable": false,
+    "isVisible": true,
+    "serviceName": "MISC",
+    "category": "Notifications",
+    "rowStyleClass": "indent-1",
+    "filename": "alert_notification"
+  },
+  {
+    "name": "ambari.dispatch.recipients",
+    "displayName": " TO Email Address",
+    "displayType": "email",
+    "isRequired": false,
+    "isReconfigurable": true,
+    "isOverridable": false,
+    "isVisible": true,
+    "serviceName": "MISC",
+    "category": "Notifications",
+    "rowStyleClass": "indent-1",
+    "filename": "alert_notification"
+  },
+  {
+    "name": "smtp_use_auth",
+    "displayName": "SMTP server requires authentication",
+    "displayType": "checkbox",
+    "isRequired": false,
+    "isReconfigurable": true,
+    "isOverridable": false,
+    "recommendedValue": true,
+    "isVisible": true,
+    "serviceName": "MISC",
+    "category": "Notifications",
+    "rowStyleClass": "indent-1",
+    "filename": "alert_notification"
+  },
+  {
+    "name": "ambari.dispatch.credential.username",
+    "displayName": "SMTP Username",
+    "displayType": "string",
+    "isRequired": false,
+    "isReconfigurable": true,
+    "isOverridable": false,
+    "isVisible": true,
+    "serviceName": "MISC",
+    "category": "Notifications",
+    "rowStyleClass": "indent-2",
+    "filename": "alert_notification"
+  },
+  {
+    "name": "ambari.dispatch.credential.password",
+    "displayName": "SMTP Password",
+    "displayType": "string",
+    "isRequired": false,
+    "isReconfigurable": true,
+    "isOverridable": false,
+    "isVisible": true,
+    "serviceName": "MISC",
+    "category": "Notifications",
+    "rowStyleClass": "indent-2",
+    "filename": "alert_notification"
+  },
+  {
+    "name": "mail.smtp.starttls.enable",
+    "isRequired": false,
+    "isReconfigurable": true,
+    "isOverridable": false,
+    "isVisible": false,
+    "serviceName": "MISC",
+    "category": "Notifications",
+    "rowStyleClass": "indent-1",
+    "filename": "alert_notification"
+  },
+  {
+    "name": "mail.smtp.startssl.enable",
+    "isRequired": false,
+    "isReconfigurable": true,
+    "isOverridable": false,
+    "isVisible": false,
+    "serviceName": "MISC",
+    "category": "Notifications",
+    "rowStyleClass": "indent-1",
+    "filename": "alert_notification"
+  },
+/************************************************AMBARI_METRICS******************************************/
+  {
+    "name": "timeline.metrics.service.operation.mode",
+    "displayType": "string",
+    "serviceName": "AMBARI_METRICS",
+    "filename": "ams-site.xml",
+    "category": "General",
+    "index": 1
+  },
+  {
+    "name": "metrics_collector_log_dir",
+    "displayType": "string",
+    "serviceName": "AMBARI_METRICS",
+    "filename": "ams-env.xml",
+    "category": "General",
+    "index": 2
+  },
+  {
+    "name": "metrics_collector_pid_dir",
+    "displayType": "string",
+    "serviceName": "AMBARI_METRICS",
+    "filename": "ams-env.xml",
+    "category": "General",
+    "index": 3
+  },
+  {
+    "name": "metrics_monitor_log_dir",
+    "displayType": "string",
+    "serviceName": "AMBARI_METRICS",
+    "filename": "ams-env.xml",
+    "category": "General",
+    "index": 4
+  },
+  {
+    "name": "metrics_monitor_pid_dir",
+    "displayType": "string",
+    "serviceName": "AMBARI_METRICS",
+    "filename": "ams-env.xml",
+    "category": "General",
+    "index": 5
+  },
+  {
+    "name": "timeline.metrics.aggregator.checkpoint.dir",
+    "displayType": "directory",
+    "serviceName": "AMBARI_METRICS",
+    "filename": "ams-site.xml",
+    "category": "MetricCollector",
+    "index": 17
+  },
+  {
+    "name": "timeline.metrics.cluster.aggregator.hourly.checkpointCutOffMultiplier",
+    "displayType": "int",
+    "serviceName": "AMBARI_METRICS",
+    "filename": "ams-site.xml",
+    "category": "MetricCollector",
+    "index": 16
+  },
+  {
+    "name": "timeline.metrics.cluster.aggregator.hourly.disabled",
+    "displayType": "string",
+    "serviceName": "AMBARI_METRICS",
+    "filename": "ams-site.xml",
+    "category": "MetricCollector",
+    "index": 14
+  },
+  {
+    "name": "timeline.metrics.cluster.aggregator.hourly.interval",
+    "displayType": "int",
+    "serviceName": "AMBARI_METRICS",
+    "filename": "ams-site.xml",
+    "category": "MetricCollector",
+    "index": 15
+  },
+  {
+    "name": "timeline.metrics.cluster.aggregator.minute.checkpointCutOffMultiplier",
+    "displayType": "int",
+    "serviceName": "AMBARI_METRICS",
+    "filename": "ams-site.xml",
+    "category": "MetricCollector",
+    "index": 13
+  },
+  {
+    "name": "timeline.metrics.cluster.aggregator.minute.disabled",
+    "displayType": "string",
+    "serviceName": "AMBARI_METRICS",
+    "filename": "ams-site.xml",
+    "category": "MetricCollector",
+    "index": 10
+  },
+  {
+    "name": "timeline.metrics.cluster.aggregator.minute.interval",
+    "displayType": "int",
+    "serviceName": "AMBARI_METRICS",
+    "filename": "ams-site.xml",
+    "category": "MetricCollector",
+    "index": 11
+  },
+  {
+    "name": "timeline.metrics.cluster.aggregator.minute.timeslice.interval",
+    "displayType": "int",
+    "serviceName": "AMBARI_METRICS",
+    "filename": "ams-site.xml",
+    "category": "MetricCollector",
+    "index": 12
+  },
+  {
+    "name": "timeline.metrics.host.aggregator.hourly.checkpointCutOffMultiplier",
+    "displayType": "int",
+    "serviceName": "AMBARI_METRICS",
+    "filename": "ams-site.xml",
+    "category": "MetricCollector",
+    "index": 9
+  },
+  {
+    "name": "timeline.metrics.host.aggregator.hourly.disabled",
+    "displayType": "string",
+    "serviceName": "AMBARI_METRICS",
+    "filename": "ams-site.xml",
+    "category": "MetricCollector",
+    "index": 7
+  },
+  {
+    "name": "timeline.metrics.host.aggregator.hourly.interval",
+    "displayType": "int",
+    "serviceName": "AMBARI_METRICS",
+    "filename": "ams-site.xml",
+    "category": "MetricCollector",
+    "index": 8
+  },
+  {
+    "name": "timeline.metrics.host.aggregator.minute.checkpointCutOffMultiplier",
+    "displayType": "int",
+    "serviceName": "AMBARI_METRICS",
+    "filename": "ams-site.xml",
+    "category": "MetricCollector",
+    "index": 6
+  },
+  {
+    "name": "timeline.metrics.host.aggregator.minute.disabled",
+    "displayType": "string",
+    "serviceName": "AMBARI_METRICS",
+    "filename": "ams-site.xml",
+    "category": "MetricCollector",
+    "index": 4
+  },
+  {
+    "name": "timeline.metrics.host.aggregator.minute.interval",
+    "displayType": "int",
+    "serviceName": "AMBARI_METRICS",
+    "filename": "ams-site.xml",
+    "category": "MetricCollector",
+    "index": 5
+  },
+  {
+    "name": "timeline.metrics.service.checkpointDelay",
+    "displayType": "int",
+    "serviceName": "AMBARI_METRICS",
+    "filename": "ams-site.xml",
+    "category": "MetricCollector",
+    "index": 1
+  },
+  {
+    "name": "timeline.metrics.service.default.result.limit",
+    "displayType": "int",
+    "serviceName": "AMBARI_METRICS",
+    "filename": "ams-site.xml",
+    "category": "MetricCollector",
+    "index": 2
+  },
+  {
+    "name": "timeline.metrics.service.resultset.fetchSize",
+    "displayType": "int",
+    "serviceName": "AMBARI_METRICS",
+    "filename": "ams-site.xml",
+    "category": "MetricCollector",
+    "index": 3
+  },
+  {
+    "name": "ams.zookeeper.keytab",
+    "serviceName": "AMBARI_METRICS",
+    "category": "Advanced ams-hbase-security-site",
+    "filename": "ams-hbase-security-site.xml"
+  },
+  {
+    "name": "ams.zookeeper.principal",
+    "serviceName": "AMBARI_METRICS",
+    "category": "Advanced ams-hbase-security-site",
+    "filename": "ams-hbase-security-site.xml"
+  },
+  {
+    "name": "hadoop.security.authentication",
+    "serviceName": "AMBARI_METRICS",
+    "category": "Advanced ams-hbase-security-site",
+    "filename": "ams-hbase-security-site.xml"
+  },
+  {
+    "name": "hbase.coprocessor.master.classes",
+    "serviceName": "AMBARI_METRICS",
+    "category": "Advanced ams-hbase-security-site",
+    "filename": "ams-hbase-security-site.xml"
+  },
+  {
+    "name": "hbase.coprocessor.region.classes",
+    "serviceName": "AMBARI_METRICS",
+    "category": "Advanced ams-hbase-security-site",
+    "filename": "ams-hbase-security-site.xml"
+  },
+  {
+    "name": "hbase.master.kerberos.principal",
+    "serviceName": "AMBARI_METRICS",
+    "category": "Advanced ams-hbase-security-site",
+    "filename": "ams-hbase-security-site.xml"
+  },
+  {
+    "name": "hbase.master.keytab.file",
+    "serviceName": "AMBARI_METRICS",
+    "category": "Advanced ams-hbase-security-site",
+    "filename": "ams-hbase-security-site.xml"
+  },
+  {
+    "name": "hbase.myclient.keytab",
+    "serviceName": "AMBARI_METRICS",
+    "category": "Advanced ams-hbase-security-site",
+    "filename": "ams-hbase-security-site.xml"
+  },
+  {
+    "name": "hbase.myclient.principal",
+    "serviceName": "AMBARI_METRICS",
+    "category": "Advanced ams-hbase-security-site",
+    "filename": "ams-hbase-security-site.xml"
+  },
+  {
+    "name": "hbase.regionserver.kerberos.principal",
+    "serviceName": "AMBARI_METRICS",
+    "category": "Advanced ams-hbase-security-site",
+    "filename": "ams-hbase-security-site.xml"
+  },
+  {
+    "name": "hbase.regionserver.keytab.file",
+    "serviceName": "AMBARI_METRICS",
+    "category": "Advanced ams-hbase-security-site",
+    "filename": "ams-hbase-security-site.xml"
+  },
+  {
+    "name": "hbase.security.authentication",
+    "serviceName": "AMBARI_METRICS",
+    "category": "Advanced ams-hbase-security-site",
+    "filename": "ams-hbase-security-site.xml"
+  },
+  {
+    "name": "hbase.security.authorization",
+    "serviceName": "AMBARI_METRICS",
+    "category": "Advanced ams-hbase-security-site",
+    "filename": "ams-hbase-security-site.xml"
+  },
+  {
+    "name": "hbase.zookeeper.property.authProvider.1",
+    "serviceName": "AMBARI_METRICS",
+    "category": "Advanced ams-hbase-security-site",
+    "filename": "ams-hbase-security-site.xml"
+  },
+  {
+    "name": "hbase.zookeeper.property.jaasLoginRenew",
+    "serviceName": "AMBARI_METRICS",
+    "category": "Advanced ams-hbase-security-site",
+    "filename": "ams-hbase-security-site.xml"
+  },
+  {
+    "name": "hbase.zookeeper.property.kerberos.removeHostFromPrincipal",
+    "serviceName": "AMBARI_METRICS",
+    "category": "Advanced ams-hbase-security-site",
+    "filename": "ams-hbase-security-site.xml"
+  },
+  {
+    "name": "hbase.zookeeper.property.kerberos.removeRealmFromPrincipal",
+    "serviceName": "AMBARI_METRICS",
+    "category": "Advanced ams-hbase-security-site",
+    "filename": "ams-hbase-security-site.xml"
+  },
+  {
+    "name": "zookeeper.znode.parent",
+    "serviceName": "AMBARI_METRICS",
+    "category": "Advanced ams-hbase-security-site",
+    "filename": "ams-hbase-security-site.xml"
+  },
+/************************************************Kerberos Descriptor******************************************/
+  {
+    "name": "smokeuser_principal_name",
+    "displayName": "Smoke user principal",
+    "category": "Ambari Principals",
+    "filename": "cluster-env.xml",
+    "index": 1
+  },
+  {
+    "name": "smokeuser_keytab",
+    "displayName": "Smoke user keytab",
+    "category": "Ambari Principals",
+    "filename": "cluster-env.xml",
+    "index": 2
+  },
+  {
+    "name": "hdfs_principal_name",
+    "displayName": "HDFS user principal",
+    "category": "Ambari Principals",
+    "filename": "hadoop-env.xml",
+    "index": 3
+  },
+  {
+    "name": "hdfs_user_keytab",
+    "displayName": "HDFS user keytab",
+    "category": "Ambari Principals",
+    "filename": "hadoop-env.xml",
+    "index": 4
+  },
+  {
+    "name": "hbase_principal_name",
+    "displayName": "HBase user principal",
+    "category": "Ambari Principals",
+    "filename": "hbase-env.xml",
+    "index": 5
+  },
+  {
+    "name": "hbase_user_keytab",
+    "displayName": "HBase user keytab",
+    "category": "Ambari Principals",
+    "filename": "hbase-env.xml",
+    "index": 6
+  },
+  {
+    "name": "accumulo_principal_name",
+    "displayName": "Accumulo user principal",
+    "category": "Ambari Principals",
+    "filename": "accumulo-env.xml",
+    "index": 7
+  },
+  {
+    "name": "accumulo_user_keytab",
+    "displayName": "Accumulo user keytab",
+    "category": "Ambari Principals",
+    "filename": "accumulo-env.xml",
+    "index": 8
+  },
+  {
+    "name": "spark.history.kerberos.principal",
+    "displayName": "Spark user principal",
+    "category": "Ambari Principals",
+    "filename": "spark-env.xml",
+    "index": 9
+  },
+  {
+    "name": "spark.history.kerberos.keytab",
+    "displayName": "Spark user keytab",
+    "category": "Ambari Principals",
+    "filename": "spark-env.xml",
+    "index": 10
+  },
+  {
+    "name": "storm_principal_name",
+    "displayName": "Storm user principal",
+    "category": "Ambari Principals",
+    "filename": "storm-env.xml",
+    "index": 11
+  },
+  {
+    "name": "storm_keytab",
+    "displayName": "Storm user keytab",
+    "category": "Ambari Principals",
+    "filename": "storm-env.xml",
+    "index": 12
+  }
+];
+
+if (App.get('isHadoopWindowsStack')) {
+  var excludedWindowsConfigs = [
+    'dfs.client.read.shortcircuit',
+    'knox_pid_dir',
+    'ignore_groupsusers_create',
+    'hive_database',
+    'oozie_database',
+    'override_hbase_uid'
+  ];
+
+  hdp2properties = hdp2properties.filter(function (item) {
+    return !excludedWindowsConfigs.contains(item.name);
+  });
+
+  hdp2properties.push(
+    {
+      "name": "hadoop.user.name",
       "displayType": "user",
-      "isOverridable": false,
-      "isVisible": true,
-      "serviceName": "NAGIOS",
-      "category": "General",
-      "filename": "nagios-env.xml",
-      "index": 0
-    },
-    {
-      "id": "puppet var",
-      "name": "nagios_web_password",
-      "displayName": "Nagios Admin password",
-      "description": "Nagios Web UI Admin password",
-      "defaultValue": "",
-      "isReconfigurable": true,
-      "displayType": "password",
-      "isOverridable": false,
-      "isVisible": true,
-      "serviceName": "NAGIOS",
-      "filename": "nagios-env.xml",
-      "category": "General",
-      "index": 1
-    },
-    {
-      "id": "puppet var",
-      "name": "nagios_contact",
-      "displayName": "Hadoop Admin email",
-      "description": "Hadoop Administrator email for alert notification",
-      "defaultValue": "",
-      "displayType": "email",
-      "isOverridable": false,
-      "isVisible": true,
-      "serviceName": "NAGIOS",
-      "filename": "nagios-env.xml",
-      "category": "General",
-      "index": 2
-    },
-  /**********************************************ZOOKEEPER***************************************/
-    {
-      "id": "puppet var",
-      "name": "zookeeperserver_hosts",
-      "displayName": "ZooKeeper Server hosts",
-      "value": "",
-      "defaultValue": "",
-      "description": "The host that has been assigned to run ZooKeeper Server",
-      "displayType": "masterHosts",
-      "isVisible": true,
-      "isRequiredByAgent": false,
-      "isOverridable": false,
-      "isRequired": false,
-      "serviceName": "ZOOKEEPER",
-      "filename": "zookeeper-env.xml",
-      "category": "ZOOKEEPER_SERVER",
-      "index": 0
-    },
-    {
-      "id": "puppet var",
-      "name": "dataDir",
-      "displayName": "ZooKeeper directory",
-      "description": "Data directory for ZooKeeper",
-      "defaultValue": "",
-      "defaultDirectory": "/hadoop/zookeeper",
-      "isReconfigurable": true,
-      "displayType": "directory",
-      "isVisible": true,
-      "serviceName": "ZOOKEEPER",
-      "filename": "zoo.cfg.xml",
-      "category": "ZOOKEEPER_SERVER",
-      "index": 1
-    },
-    {
-      "id": "puppet var",
-      "name": "tickTime",
-      "displayName": "Length of single Tick",
-      "description": "The length of a single tick in milliseconds, which is the basic time unit used by ZooKeeper",
-      "defaultValue": "2000",
-      "displayType": "int",
-      "unit": "ms",
-      "isOverridable": false,
-      "isVisible": true,
-      "serviceName": "ZOOKEEPER",
-      "filename": "zoo.cfg.xml",
-      "category": "ZOOKEEPER_SERVER",
-      "index": 2
-    },
-    {
-      "id": "puppet var",
-      "name": "initLimit",
-      "displayName": "Ticks to allow for sync at Init",
-      "description": "Amount of time, in ticks to allow followers to connect and sync to a leader",
-      "defaultValue": "10",
-      "displayType": "int",
-      "isOverridable": false,
-      "isVisible": true,
-      "serviceName": "ZOOKEEPER",
-      "filename": "zoo.cfg.xml",
-      "category": "ZOOKEEPER_SERVER",
-      "index": 3
-    },
-    {
-      "id": "puppet var",
-      "name": "syncLimit",
-      "displayName": "Ticks to allow for sync at Runtime",
-      "description": "Amount of time, in ticks to allow followers to connect",
-      "defaultValue": "5",
-      "displayType": "int",
-      "isOverridable": false,
-      "isVisible": true,
-      "serviceName": "ZOOKEEPER",
-      "filename": "zoo.cfg.xml",
-      "category": "ZOOKEEPER_SERVER",
-      "index": 4
-    },
-    {
-      "id": "puppet var",
-      "name": "clientPort",
-      "displayName": "Port for running ZK Server",
-      "description": "Port for running ZooKeeper server",
-      "defaultValue": "2181",
-      "displayType": "int",
-      "isOverridable": false,
-      "isVisible": true,
-      "serviceName": "ZOOKEEPER",
-      "filename": "zoo.cfg.xml",
-      "category": "ZOOKEEPER_SERVER",
-      "index": 5
-    },
-    {
-      "id": "puppet var",
-      "name": "zk_log_dir",
-      "displayName": "ZooKeeper Log Dir",
-      "description": "Directory for ZooKeeper log files",
-      "defaultValue": "/var/log/zookeeper",
-      "isReconfigurable": false,
-      "displayType": "directory",
-      "isOverridable": false,
-      "isVisible": true,
-      "serviceName": "ZOOKEEPER",
-      "filename": "zookeeper-env.xml",
-      "category": "Advanced zookeeper-env",
-      "index": 0
-    },
-    {
-      "id": "puppet var",
-      "name": "zk_pid_dir",
-      "displayName": "ZooKeeper PID Dir",
-      "description": "Directory in which the pid files for zookeeper processes will be created",
-      "defaultValue": "/var/run/zookeeper",
-      "isReconfigurable": false,
-      "displayType": "directory",
-      "isOverridable": false,
-      "isVisible": true,
-      "serviceName": "ZOOKEEPER",
-      "filename": "zookeeper-env.xml",
-      "category": "Advanced zookeeper-env",
-      "index": 1
-    },
-  /**********************************************GANGLIA***************************************/
-    {
-      "id": "puppet var",
-      "name": "ganglia_conf_dir",
-      "displayName": "Ganglia conf directory",
-      "description": "",
-      "defaultValue": "/etc/ganglia/hdp",
-      "isReconfigurable": false,
-      "displayType": "directory",
-      "isVisible": false,
-      "isRequiredByAgent": false,
-      "serviceName": "GANGLIA",
-      "filename": "ganglia-env.xml",
-      "category": "Advanced ganglia-env"
-    },
-  /**********************************************FALCON***************************************/
-    {
-      "id": "puppet var",
-      "name": "falconserver_host",
-      "displayName": "Falcon Server",
-      "description": "The host that has been assigned to run Falcon Server",
-      "defaultValue": "falcon",
-      "displayType": "masterHost",
-      "isVisible": true,
-      "isRequiredByAgent": false,
-      "serviceName": "FALCON",
-      "filename": "falcon-env.xml",
-      "category": "FALCON_SERVER"
-    },
-    {
-      "id": "puppet var",
-      "name": "falcon_port",
-      "displayName": "Falcon server port",
-      "description": "Port the Falcon Server listens on",
-      "defaultValue": "15000",
-      "isReconfigurable": true,
-      "displayType": "int",
-      "isVisible": true,
-      "isRequiredByAgent": true,
-      "serviceName": "FALCON",
-      "filename": "falcon-env.xml",
-      "category": "FALCON_SERVER"
-    },
-    {
-      "id": "puppet var",
-      "name": "falcon_local_dir",
-      "displayName": "Falcon data directory",
-      "description": "Directory where Falcon data, such as activemq data, is stored",
-      "defaultValue": "/hadoop/falcon",
-      "isReconfigurable": true,
-      "displayType": "directory",
-      "isVisible": true,
-      "isRequiredByAgent": true,
-      "serviceName": "FALCON",
-      "filename": "falcon-env.xml",
-      "category": "FALCON_SERVER"
-    },
-    {
-      "id": "puppet var",
-      "name": "falcon_store_uri",
-      "displayName": "Falcon store URI",
-      "description": "Directory where entity definitions are stored",
-      "defaultValue": "file:///hadoop/falcon/store",
-      "isReconfigurable": true,
-      "displayType": "string",
-      "isVisible": true,
-      "isRequiredByAgent": true,
-      "serviceName": "FALCON",
-      "filename": "falcon-env.xml",
-      "category": "FALCON_SERVER"
-    },
-    {
-      "id": "puppet var",
-      "name": "falcon_log_dir",
-      "displayName": "Falcon Log Dir",
-      "description": "Directory for Falcon logs",
-      "defaultValue": "/var/log/falcon",
-      "displayType": "directory",
-      "isOverridable": false,
-      "isVisible": true,
-      "isRequiredByAgent": true,
-      "isReconfigurable": false,
-      "serviceName": "FALCON",
-      "filename": "falcon-env.xml",
-      "category": "Advanced falcon-env"
-    },
-    {
-      "id": "puppet var",
-      "name": "falcon_pid_dir",
-      "displayName": "Falcon PID Dir",
-      "description": "Directory in which the pid files for Falcon processes will be created",
-      "defaultValue": "/var/run/falcon",
-      "displayType": "directory",
-      "isOverridable": false,
-      "isVisible": true,
-      "isRequiredByAgent": true,
-      "isReconfigurable": false,
-      "serviceName": "FALCON",
-      "filename": "falcon-env.xml",
-      "category": "Advanced falcon-env"
-    },
-    {
-      "id": "puppet var",
-      "name": "falcon.embeddedmq",
-      "displayName": "falcon.embeddedmq",
-      "description": "Whether embeddedmq is enabled or not.",
-      "defaultValue": "true",
-      "displayType": "string",
-      "isOverridable": false,
-      "isVisible": true,
-      "isRequiredByAgent": true,
-      "isReconfigurable": true,
-      "serviceName": "FALCON",
-      "filename": "falcon-env.xml",
-      "category": "Advanced falcon-env"
-    },
-    {
-      "id": "puppet var",
-      "name": "falcon.embeddedmq.data",
-      "displayName": "falcon.embeddedmq.data",
-      "description": "Directory in which embeddedmq data is stored.",
-      "defaultValue": "/hadoop/falcon/embeddedmq/data",
-      "displayType": "directory",
-      "isOverridable": false,
-      "isVisible": true,
-      "isRequiredByAgent": true,
-      "isReconfigurable": true,
-      "serviceName": "FALCON",
-      "filename": "falcon-env.xml",
-      "category": "Advanced falcon-env"
-    },
-    {
-      "id": "puppet var",
-      "name": "falcon.emeddedmq.port",
-      "displayName": "falcon.emeddedmq.port",
-      "description": "Port that embeddedmq will listen on.",
-      "defaultValue": "61616",
-      "displayType": "string",
-      "isOverridable": false,
-      "isVisible": true,
-      "isRequiredByAgent": true,
-      "isReconfigurable": true,
-      "serviceName": "FALCON",
-      "filename": "falcon-env.xml",
-      "category": "Advanced falcon-env"
-    },
-  /**********************************************STORM***************************************/
-    {
-      "id": "puppet var",
-      "name": "storm_log_dir",
-      "displayName": "storm_log_dir",
-      "description": "Storm log directory",
-      "defaultValue": "/var/log/storm",
-      "displayType": "directory",
-      "isReconfigurable": true,
-      "isVisible": true,
-      "isRequiredByAgent": true,
-      "serviceName": "STORM",
-      "filename": "storm-env.xml",
-      "category": "Advanced storm-env"
-    },
-    {
-      "id": "puppet var",
-      "name": "storm_pid_dir",
-      "displayName": "storm_pid_dir",
-      "description": "Storm PID directory",
-      "defaultValue": "/var/run/storm",
-      "displayType": "directory",
-      "isReconfigurable": true,
-      "isVisible": true,
-      "isRequiredByAgent": true,
-      "serviceName": "STORM",
-      "filename": "storm-env.xml",
-      "category": "Advanced storm-env"
-    },
-    {
-      "id": "puppet var",
-      "name": "stormuiserver_host",
-      "displayName": "Storm UI Server host",
-      "description": "The host that has been assigned to run Storm UI Server",
-      "defaultValue": "",
-      "displayType": "masterHost",
-      "isReconfigurable": false,
-      "isVisible": true,
-      "isRequiredByAgent": false,
-      "serviceName": "STORM",
-      "filename": "storm-env.xml",
-      "category": "STORM_UI_SERVER"
-    },
-    {
-      "id": "puppet var",
-      "name": "drpcserver_host",
-      "displayName": "DRPC Server host",
-      "description": "The host that has been assigned to run DRPC Server",
-      "defaultValue": "",
-      "displayType": "masterHost",
-      "isReconfigurable": false,
-      "isVisible": true,
-      "isRequiredByAgent": false,
-      "serviceName": "STORM",
-      "filename": "storm-env.xml",
-      "category": "DRPC_SERVER"
-    },
-    {
-      "id": "puppet var",
-      "name": "supervisor_hosts",
-      "displayName": "Supervisor hosts",
-      "description": "The host that has been assigned to run Supervisor",
-      "defaultValue": "",
-      "displayType": "slaveHosts",
-      "isReconfigurable": false,
-      "isVisible": true,
-      "isRequiredByAgent": false,
-      "serviceName": "STORM",
-      "filename": "storm-env.xml",
-      "isOverridable": false,
-      "category": "SUPERVISOR"
-    },
-    {
-      "id": "puppet var",
-      "name": "storm_rest_api_host",
-      "displayName": "Storm REST API host",
-      "description": "The host that has been assigned to run Storm REST API Server",
-      "defaultValue": "",
-      "displayType": "masterHost",
-      "isReconfigurable": false,
-      "isVisible": true,
-      "isRequiredByAgent": false,
-      "serviceName": "STORM",
-      "filename": "storm-env.xml",
-      "isOverridable": false,
-      "category": "STORM_REST_API"
-    },
-  /**********************************************MISC***************************************/
-    {
-      "id": "puppet var",
-      "name": "hbase_conf_dir",
-      "displayName": "HBase conf dir",
-      "description": "",
-      "defaultValue": "/etc/hbase",
-      "isRequired": false,
-      "displayType": "directory",
-      "isVisible": false,
-      "isRequiredByAgent": false,
       "serviceName": "MISC",
-      "filename": "hbase-env.xml",
-      "category": "General",
-      "belongsToService": []
-    },
-    {
-      "id": "puppet var",
-      "name": "proxyuser_group",
-      "displayName": "Proxy group for Hive, WebHCat, Oozie and Falcon",
-      "description": "",
-      "defaultValue": "users",
-      "isReconfigurable": false,
-      "displayType": "user",
-      "isOverridable": false,
-      "isVisible": true,
-      "filename": "core-site.xml",
-      "serviceName": "MISC",
+      "filename": "cluster-env.xml",
       "category": "Users and Groups",
-      "belongsToService": ["HIVE", "OOZIE", "FALCON"],
-      "index": 18
+      "belongsToService": ["HDFS"],
+      "index": 0
     },
     {
-      "id": "puppet var",
-      "name": "ganglia_runtime_dir",
-      "displayName": "Ganglia runtime directory",
-      "description": "",
-      "defaultValue": "/var/run/ganglia/hdp",
-      "isReconfigurable": false,
-      "displayType": "directory",
-      "isVisible": false,
+      "name": "hadoop.user.password",
       "serviceName": "MISC",
-      "filename": "ganglia-env.xml",
-      "category": "General",
-      "belongsToService": []
-    },
-    {
-      "id": "puppet var",
-      "name": "hdfs_user",
-      "displayName": "HDFS User",
-      "description": "User to run HDFS as",
-      "defaultValue": "hdfs",
-      "isReconfigurable": false,
-      "displayType": "user",
-      "isOverridable": false,
-      "isVisible": true,
-      "serviceName": "MISC",
-      "filename": "hadoop-env.xml",
+      "filename": "cluster-env.xml",
       "category": "Users and Groups",
       "belongsToService": ["HDFS"],
       "index": 1
     },
     {
-      "id": "puppet var",
-      "name": "mapred_user",
-      "displayName": "MapReduce User",
-      "description": "User to run MapReduce as",
-      "defaultValue": "mapred",
-      "isReconfigurable": false,
-      "displayType": "user",
-      "isOverridable": false,
-      "isVisible": true,
-      "serviceName": "MISC",
-      "filename": "mapred-env.xml",
-      "category": "Users and Groups",
-      "belongsToService": ["MAPREDUCE2"],
+      "name": "hive_database",
+      "options": [
+        {
+          displayName: 'Existing MSSQL Server database with SQL authentication',
+          foreignKeys: ['hive_existing_mssql_server_database', 'hive_existing_mssql_server_host'],
+          hidden: false
+        },
+        {
+          displayName: 'Existing MSSQL Server database with integrated authentication',
+          foreignKeys: ['hive_existing_mssql_server_2_database', 'hive_existing_mssql_server_2_host'],
+          hidden: false
+        }
+      ],
+      "displayType": "radio button",
+      "radioName": "hive-database",
+      "serviceName": "HIVE",
+      "filename": "hive-env.xml",
+      "category": "HIVE_METASTORE",
       "index": 2
     },
     {
-      "id": "puppet var",
-      "name": "yarn_user",
-      "displayName": "YARN User",
-      "description": "User to run YARN as",
-      "defaultValue": "yarn",
-      "isReconfigurable": false,
-      "displayType": "user",
-      "isOverridable": false,
-      "isVisible": true,
-      "serviceName": "MISC",
-      "filename": "yarn-env.xml",
-      "category": "Users and Groups",
-      "belongsToService": ["YARN"],
-      "index": 3
-    },
-    {
-      "id": "puppet var",
-      "name": "hbase_user",
-      "displayName": "HBase User",
-      "description": "User to run HBase as",
-      "defaultValue": "hbase",
-      "isReconfigurable": false,
-      "displayType": "user",
-      "isOverridable": false,
-      "isVisible": true,
-      "serviceName": "MISC",
-      "filename": "hbase-env.xml",
-      "category": "Users and Groups",
-      "belongsToService": ["HBASE"],
-      "index": 4
-    },
-    {
-      "id": "puppet var",
-      "name": "hive_user",
-      "displayName": "Hive User",
-      "description": "User to run Hive as",
-      "defaultValue": "hive",
-      "isReconfigurable": false,
-      "displayType": "user",
-      "isOverridable": false,
-      "isVisible": true,
-      "serviceName": "MISC",
-      "filename": "hive-env.xml",
-      "category": "Users and Groups",
-      "belongsToService": ["HIVE"],
-      "index": 5
-    },
-    {
-      "id": "puppet var",
-      "name": "hcat_user",
-      "displayName": "HCat User",
-      "description": "User to run HCatalog as",
-      "defaultValue": "hcat",
-      "isReconfigurable": false,
-      "displayType": "user",
-      "isOverridable": false,
-      "isVisible": true,
-      "serviceName": "MISC",
-      "filename": "hive-env.xml",
-      "category": "Users and Groups",
-      "belongsToService": ["HIVE"],
-      "index": 6
-    },
-    {
-      "id": "puppet var",
-      "name": "webhcat_user",
-      "displayName": "WebHCat User",
-      "description": "User to run WebHCat as",
-      "defaultValue": "hcat",
-      "isReconfigurable": false,
-      "displayType": "user",
-      "isOverridable": false,
-      "isVisible": true,
-      "serviceName": "MISC",
-      "filename": "webhcat-env.xml",
-      "category": "Users and Groups",
-      "belongsToService": ["HIVE"],
-      "index": 7
-    },
-    {
-      "id": "puppet var",
-      "name": "oozie_user",
-      "displayName": "Oozie User",
-      "description": "User to run Oozie as",
-      "defaultValue": "oozie",
-      "isReconfigurable": false,
-      "displayType": "user",
-      "isOverridable": false,
-      "isVisible": true,
-      "serviceName": "MISC",
+      "name": "oozie_database",
+      "recommendedValue": "Existing MSSQL Server database with SQL authentication",
+      "options": [
+        {
+          displayName: 'Existing MSSQL Server database with SQL authentication',
+          foreignKeys: ['oozie_existing_mssql_server_database', 'oozie_existing_mssql_server_host'],
+          hidden: false
+        },
+        {
+          displayName: 'Existing MSSQL Server database with integrated authentication',
+          foreignKeys: ['oozie_existing_mssql_server_2_database', 'oozie_existing_mssql_server_2_host'],
+          hidden: false
+        }
+      ],
+      "displayType": "radio button",
+      "radioName": "oozie-database",
+      "serviceName": "OOZIE",
       "filename": "oozie-env.xml",
-      "category": "Users and Groups",
-      "belongsToService": ["OOZIE"],
-      "index": 8
-    },
-    {
-      "id": "puppet var",
-      "name": "falcon_user",
-      "displayName": "Falcon User",
-      "description": "User to run Falcon as",
-      "defaultValue": "falcon",
-      "isReconfigurable": false,
-      "displayType": "user",
-      "isOverridable": false,
-      "isVisible": true,
-      "serviceName": "MISC",
-      "filename": "falcon-env.xml",
-      "category": "Users and Groups",
-      "belongsToService": ["FALCON"],
-      "index": 10
-    },
-    {
-      "id": "puppet var",
-      "name": "storm_user",
-      "displayName": "Storm User",
-      "description": "User to run Storm as",
-      "defaultValue": "storm",
-      "isReconfigurable": false,
-      "displayType": "user",
-      "isOverridable": false,
-      "isVisible": true,
-      "serviceName": "MISC",
-      "filename": "storm-env.xml",
-      "category": "Users and Groups",
-      "belongsToService": ["STORM"],
-      "index": 9
-    },
-    {
-      "id": "puppet var",
-      "name": "zk_user",
-      "displayName": "ZooKeeper User",
-      "description": "User to run ZooKeeper as",
-      "defaultValue": "zookeeper",
-      "isReconfigurable": false,
-      "displayType": "user",
-      "isOverridable": false,
-      "isVisible": true,
-      "serviceName": "MISC",
-      "filename": "zookeeper-env.xml",
-      "category": "Users and Groups",
-      "belongsToService": ["ZOOKEEPER"],
-      "index": 11
-    },
-    {
-      "id": "puppet var",
-      "name": "flume_user",
-      "displayName": "Flume User",
-      "description": "User to run Flume as",
-      "defaultValue": "flume",
-      "isReconfigurable": false,
-      "displayType": "user",
-      "isOverridable": false,
-      "isVisible": true,
-      "serviceName": "MISC",
-      "filename": "flume-env.xml",
-      "category": "Users and Groups",
-      "belongsToService": ["FLUME"],
-      "index": 12
-    },
-    {
-      "id": "puppet var",
-      "name": "gmetad_user",
-      "displayName": "Ganglia User",
-      "description": "The user used to run Ganglia",
-      "defaultValue": "nobody",
-      "isReconfigurable": false,
-      "displayType": "user",
-      "isOverridable": false,
-      "isVisible": true,
-      "serviceName": "MISC",
-      "filename": "ganglia-env.xml",
-      "category": "Users and Groups",
-      "belongsToService": ["GANGLIA"],
-      "index": 13
-    },
-    {
-      "id": "puppet var",
-      "name": "gmond_user",
-      "displayName": "Gmond User",
-      "description": "The user used to run gmond for Ganglia",
-      "defaultValue": "nobody",
-      "isReconfigurable": false,
-      "displayType": "advanced",
-      "isOverridable": false,
-      "isVisible": false,
-      "serviceName": "MISC",
-      "filename": "ganglia-env.xml",
-      "category": "Users and Groups",
-      "belongsToService": []
-    },
-    {
-      "id": "puppet var",
-      "name": "nagios_user",
-      "displayName": "Nagios User",
-      "description": "User to run Nagios as",
-      "defaultValue": "nagios",
-      "isReconfigurable": false,
-      "displayType": "user",
-      "isOverridable": false,
-      "isVisible": true,
-      "serviceName": "MISC",
-      "filename": "nagios-env.xml",
-      "category": "Users and Groups",
-      "belongsToService": ["NAGIOS"],
-      "index": 14
-    },
-    {
-      "id": "puppet var",
-      "name": "nagios_group",
-      "displayName": "Nagios Group",
-      "description": "Nagios Group",
-      "defaultValue": "nagios",
-      "isReconfigurable": false,
-      "displayType": "user",
-      "isOverridable": false,
-      "isVisible": true,
-      "serviceName": "MISC",
-      "filename": "nagios-env.xml",
-      "category": "Users and Groups",
-      "belongsToService": ["NAGIOS"],
-      "index": 13
-    },
-    {
-      "id": "puppet var",
-      "name": "smokeuser",
-      "displayName": "Smoke Test User",
-      "description": "The user used to run service smoke tests",
-      "defaultValue": "ambari-qa",
-      "isReconfigurable": false,
-      "displayType": "user",
-      "isOverridable": false,
-      "isVisible": App.supports.customizeSmokeTestUser,
-      "serviceName": "MISC",
-      "filename": "cluster-env.xml",
-      "category": "Users and Groups",
-      "index": 16
-    },
-    {
-      "id": "puppet var",
-      "name": "tez_user",
-      "displayName": "Tez User",
-      "description": "User to run Tez as",
-      "defaultValue": "tez",
-      "isReconfigurable": false,
-      "displayType": "user",
-      "isOverridable": false,
-      "isVisible": true,
-      "serviceName": "MISC",
-      "filename": "tez-env.xml",
-      "category": "Users and Groups",
-      "belongsToService": ["TEZ"],
-      "index": 15
-    },
-    {
-      "id": "puppet var",
-      "name": "user_group",
-      "displayName": "Hadoop Group",
-      "description": "Group that the users specified above belong to",
-      "defaultValue": "hadoop",
-      "isReconfigurable": false,
-      "displayType": "user",
-      "isOverridable": false,
-      "isVisible": true,
-      "serviceName": "MISC",
-      "filename": "cluster-env.xml",
-      "category": "Users and Groups",
-      "index": 17
-    },
-    {
-      "id": "puppet var",
-      "name": "sqoop_user",
-      "displayName": "Sqoop User",
-      "isReconfigurable": false,
-      "displayType": "user",
-      "isOverridable": false,
-      "isVisible": true,
-      "serviceName": "MISC",
-      "filename": "sqoop-env.xml",
-      "category": "Users and Groups",
-      "belongsToService": ["SQOOP"],
-      "index": 17
-    },
-    {
-      "id": "puppet var",
-      "name": "knox_user",
-      "displayName": "Knox User",
-      "isReconfigurable": false,
-      "displayType": "user",
-      "isOverridable": false,
-      "isVisible": true,
-      "serviceName": "MISC",
-      "filename": "knox-env.xml",
-      "category": "Users and Groups",
-      "belongsToService": ["KNOX"],
-      "index": 18
-    },
-    {
-      "id": "puppet var",
-      "name": "knox_group",
-      "displayName": "Knox Group",
-      "description": "Knox Group",
-      "defaultValue": "knox",
-      "isReconfigurable": false,
-      "displayType": "user",
-      "isOverridable": false,
-      "isVisible": true,
-      "serviceName": "MISC",
-      "filename": "knox-env.xml",
-      "category": "Users and Groups",
-      "belongsToService": ["KNOX"],
-      "index": 19
-    },
-    {
-      "id": "puppet var",
-      "name": "kafka_user",
-      "displayName": "Kafka User",
-      "isReconfigurable": false,
-      "displayType": "user",
-      "isOverridable": false,
-      "isVisible": true,
-      "serviceName": "MISC",
-      "filename": "kafka-env.xml",
-      "category": "Users and Groups",
-      "belongsToService": ["KAFKA"],
-      "index": 20
-    },
-    {
-      "id": "puppet var",
-      "name": "rrdcached_base_dir",
-      "displayName": "Ganglia rrdcached base directory",
-      "description": "Default directory for saving the rrd files on ganglia server",
-      "defaultValue": "/var/lib/ganglia/rrds",
-      "displayType": "directory",
-      "isReconfigurable": true,
-      "isOverridable": false,
-      "isVisible": true,
-      "serviceName": "GANGLIA",
-      "filename": "nagios-env.xml",
-      "category": "General",
-      "belongsToService": ["GANGLIA"]
-    },
-    {
-      "id": "puppet var",
-      "name": "ignore_groupsusers_create",
-      "displayName": "Skip group modifications during install",
-      "displayType": "checkbox",
-      "isReconfigurable": true,
-      "isOverridable": false,
-      "isVisible": true,
-      "serviceName": "MISC",
-      "filename": "cluster-env.xml",
-      "category": "Users and Groups"
+      "category": "OOZIE_SERVER",
+      "index": 2
     }
-  ]
+  );
+}
+
+var atsProperties = [
+  {
+    "name": "yarn.timeline-service.enabled",
+    "category": "APP_TIMELINE_SERVER",
+    "displayType": "checkbox",
+    "serviceName": "YARN",
+    "filename": "yarn-site.xml"
+  },
+  {
+    "name": "yarn.timeline-service.leveldb-timeline-store.path",
+    "category": "APP_TIMELINE_SERVER",
+    "displayType": "directory",
+    "serviceName": "YARN",
+    "filename": "yarn-site.xml"
+  },
+  {
+    "name": "yarn.timeline-service.leveldb-timeline-store.ttl-interval-ms",
+    "displayType": "int",
+    "category": "APP_TIMELINE_SERVER",
+    "serviceName": "YARN",
+    "filename": "yarn-site.xml"
+  },
+  {
+    "name": "yarn.timeline-service.store-class",
+    "category": "APP_TIMELINE_SERVER",
+    "serviceName": "YARN",
+    "filename": "yarn-site.xml"
+  },
+  {
+    "name": "yarn.timeline-service.ttl-enable",
+    "displayType": "checkbox",
+    "category": "APP_TIMELINE_SERVER",
+    "serviceName": "YARN",
+    "filename": "yarn-site.xml"
+  },
+  {
+    "name": "yarn.timeline-service.ttl-ms",
+    "displayType": "int",
+    "category": "APP_TIMELINE_SERVER",
+    "serviceName": "YARN",
+    "filename": "yarn-site.xml"
+  },
+  {
+    "name": "yarn.timeline-service.generic-application-history.store-class",
+    "category": "APP_TIMELINE_SERVER",
+    "serviceName": "YARN",
+    "filename": "yarn-site.xml"
+  },
+  {
+    "name": "yarn.timeline-service.webapp.address",
+    "displayType": "string",
+    "category": "APP_TIMELINE_SERVER",
+    "serviceName": "YARN",
+    "filename": "yarn-site.xml"
+  },
+  {
+    "name": "yarn.timeline-service.webapp.https.address",
+    "displayType": "string",
+    "category": "APP_TIMELINE_SERVER",
+    "serviceName": "YARN",
+    "filename": "yarn-site.xml"
+  },
+  {
+    "name": "yarn.timeline-service.address",
+    "displayType": "string",
+    "category": "APP_TIMELINE_SERVER",
+    "serviceName": "YARN",
+    "filename": "yarn-site.xml"
+  }
+];
+
+if (!App.get('isHadoop20Stack')) {
+  hdp2properties.pushObjects(atsProperties);
+}
+
+module.exports =
+{
+  "configProperties": hdp2properties
 };

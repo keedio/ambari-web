@@ -109,10 +109,17 @@ describe('App.StackService', function () {
     var testCases = [
       {
         serviceName: 'HDFS',
+        isInstallable: true,
         result: false
       },
       {
         serviceName: 'MAPREDUCE2',
+        isInstallable: true,
+        result: true
+      },
+      {
+        serviceName: 'KERBEROS',
+        isInstallable: false,
         result: true
       }
     ];
@@ -120,6 +127,7 @@ describe('App.StackService', function () {
     testCases.forEach(function (test) {
       it('service name - ' + test.serviceName, function () {
         ss.set('serviceName', test.serviceName);
+        ss.set('isInstallable', test.isInstallable);
         ss.propertyDidChange('isHiddenOnSelectServicePage');
         expect(ss.get('isHiddenOnSelectServicePage')).to.equal(test.result);
       });
@@ -131,10 +139,6 @@ describe('App.StackService', function () {
       {
         serviceName: 'HDFS',
         result: false
-      },
-      {
-        serviceName: 'NAGIOS',
-        result: true
       },
       {
         serviceName: 'GANGLIA',
@@ -190,6 +194,24 @@ describe('App.StackService', function () {
     });
   });
 
+  describe('#hasNonMastersWithCustomAssignment', function () {
+    it('No serviceComponents', function () {
+      ss.set('serviceComponents', []);
+      ss.propertyDidChange('hasNonMastersWithCustomAssignment');
+      expect(ss.get('hasNonMastersWithCustomAssignment')).to.be.false;
+    });
+    it('All non-master serviceComponents are required on all hosts', function () {
+      ss.set('serviceComponents', [Em.Object.create({isMaster: true}), Em.Object.create({isSlave: true, cardinality: 'ALL'}), Em.Object.create({isClient: true, cardinality: 'ALL'})]);
+      ss.propertyDidChange('hasNonMastersWithCustomAssignment');
+      expect(ss.get('hasNonMastersWithCustomAssignment')).to.be.false;
+    });
+    it('Has non-master serviceComponents not required on all hosts', function () {
+      ss.set('serviceComponents', [Em.Object.create({isSlave: true}), Em.Object.create({isClient: true})]);
+      ss.propertyDidChange('hasNonMastersWithCustomAssignment');
+      expect(ss.get('hasNonMastersWithCustomAssignment')).to.be.true;
+    });
+  });
+
   describe('#isClientOnlyService', function () {
     it('Has not only client serviceComponents', function () {
       ss.set('serviceComponents', [Em.Object.create({isSlave: true}), Em.Object.create({isClient: true})]);
@@ -233,32 +255,6 @@ describe('App.StackService', function () {
       expect(ss.get('customReviewHandler')).to.eql({
         "Database": "loadHiveDbValue"
       });
-    });
-  });
-
-  describe('#defaultsProviders', function () {
-    it('service name is HDFS', function () {
-      ss.set('serviceName', 'HDFS');
-      ss.propertyDidChange('defaultsProviders');
-      expect(ss.get('defaultsProviders')).to.be.undefined;
-    });
-    it('service name is HIVE', function () {
-      ss.set('serviceName', 'HIVE');
-      ss.propertyDidChange('defaultsProviders');
-      expect(ss.get('defaultsProviders')).to.not.be.empty;
-    });
-  });
-
-  describe('#configsValidator', function () {
-    it('service name is HDFS', function () {
-      ss.set('serviceName', 'HDFS');
-      ss.propertyDidChange('configsValidator');
-      expect(ss.get('configsValidator')).to.be.undefined;
-    });
-    it('service name is HIVE', function () {
-      ss.set('serviceName', 'HIVE');
-      ss.propertyDidChange('configsValidator');
-      expect(ss.get('configsValidator')).to.not.be.empty;
     });
   });
 

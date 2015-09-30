@@ -123,67 +123,6 @@ describe('App.MainServiceController', function () {
 
   });
 
-  describe('#isAllServicesInstalled', function() {
-
-    beforeEach(function() {
-      sinon.stub(App.StackService, 'find', function() {
-        return [
-          {serviceName: 's1'},
-          {serviceName: 's2'},
-          {serviceName: 'HUE'}
-        ];
-      });
-      mainServiceController.set('content', {});
-    });
-
-    afterEach(function() {
-      App.StackService.find.restore();
-    });
-
-    it('should be false if content is not loaded', function() {
-      expect(mainServiceController.get('isAllServicesInstalled')).to.be.false;
-    });
-
-    var tests = Em.A([
-      {
-        hue: false,
-        content: ['', ''],
-        m: 'no hue',
-        e: true
-      },
-      {
-        hue: false,
-        content: [''],
-        m: 'no hue (2)',
-        e: false
-      },
-      {
-        hue: true,
-        content: ['', '', ''],
-        m: 'hue',
-        e: true
-      },
-      {
-        hue: false,
-        content: ['', ''],
-        m: 'hue (2)',
-        e: true
-      }
-    ]).forEach(function(test) {
-        it(test.m, function() {
-          mainServiceController.reopen({content: {content: test.content}});
-          sinon.stub(App, 'get', function(k) {
-            if ('supports.hue' == k) return test.hue;
-            return Em.get(App, k);
-          });
-          var r = mainServiceController.get('isAllServicesInstalled');
-          App.get.restore();
-          expect(r).to.equal(test.e);
-        });
-      });
-
-  });
-
   describe('#cluster', function() {
 
     var tests = Em.A([
@@ -202,7 +141,7 @@ describe('App.MainServiceController', function () {
     ]).forEach(function(test) {
         it(test.m, function() {
           sinon.stub(App.router, 'get', function(k) {
-            if ('clusterController.isLoaded' === k) return test.isLoaded;
+            if ('clusterController.isClusterDataLoaded' === k) return test.isLoaded;
             return Em.get(App.router, k);
           });
           sinon.stub(App.Cluster, 'find', function() {
@@ -277,6 +216,56 @@ describe('App.MainServiceController', function () {
 
   });
 
+  describe('#startStopAllService', function() {
+    var event = { target: document.createElement("BUTTON") };
+
+    beforeEach(function() {
+      sinon.stub(mainServiceController, 'allServicesCall', Em.K);
+      sinon.spy(Em.I18n, "t");
+    });
+
+    afterEach(function() {
+      mainServiceController.allServicesCall.restore();
+      Em.I18n.t.restore();
+    });
+
+    it ("should confirm stop if state is INSTALLED", function() {
+      mainServiceController.startStopAllService(event, "INSTALLED");
+      expect(Em.I18n.t.calledWith('services.service.stopAll.confirmMsg')).to.be.ok;
+      expect(Em.I18n.t.calledWith('services.service.stop.confirmButton')).to.be.ok;
+    });
+
+    it ("should check last checkpoint for NN before confirming stop", function() {
+      var mainServiceItemController = App.MainServiceItemController.create({});
+      sinon.stub(mainServiceItemController, 'checkNnLastCheckpointTime', function() {
+        return true;
+      });
+      sinon.stub(App.router, 'get', function(k) {
+        if ('mainServiceItemController' === k) {
+          return mainServiceItemController;
+        }
+        return Em.get(App.router, k);
+      });
+      sinon.stub(App.Service, 'find', function() {
+        return [{
+          serviceName: "HDFS",
+          workStatus: "STARTED"
+        }];
+      });
+      mainServiceController.startStopAllService(event, "INSTALLED");
+      expect(mainServiceItemController.checkNnLastCheckpointTime.calledOnce).to.equal(true);
+      mainServiceItemController.checkNnLastCheckpointTime.restore();
+      App.router.get.restore();
+      App.Service.find.restore();
+    });
+
+    it ("should confirm start if state is not INSTALLED", function() {
+      mainServiceController.startStopAllService(event, "STARTED");
+      expect(Em.I18n.t.calledWith('services.service.startAll.confirmMsg')).to.be.ok;
+      expect(Em.I18n.t.calledWith('services.service.start.confirmButton')).to.be.ok;
+    });
+  });
+
   describe('#allServicesCall', function() {
 
     beforeEach(function() {
@@ -303,16 +292,6 @@ describe('App.MainServiceController', function () {
       var data = JSON.parse(params.data);
       expect(data.Body.ServiceInfo.state).to.equal(state);
       expect(data.RequestInfo.context).to.equal(App.BackgroundOperationsController.CommandContexts.START_ALL_SERVICES);
-    });
-
-  });
-
-  describe('#allServicesCallSuccessCallback', function() {
-
-    it('should set status to FAIL', function() {
-      var params = {query: Em.Object.create({status: ''})};
-      mainServiceController.allServicesCallSuccessCallback({Requests: {id: 1}}, {}, params);
-      expect(params.query.get('status')).to.equal('SUCCESS');
     });
 
   });

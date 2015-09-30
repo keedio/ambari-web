@@ -23,33 +23,89 @@ require('views/main/menu');
 var mainMenuView = App.MainMenuView.create();
 describe('App.MainMenuView', function () {
 
-  describe('#content', function () {
-    var supportsMirroring;
+  describe('#itemViewClass', function () {
+
     beforeEach(function () {
-      supportsMirroring = Em.get('App.supports.mirroring');
-      Em.set('App.supports.mirroring', false);
-      sinon.stub(App, 'get').returns(false);
-      sinon.stub(App.router, 'get')
-        .withArgs('clusterController.isLoaded').returns(true)
-        .withArgs('loggedIn').returns(true);
-    });
-    afterEach(function () {
-      Em.set('App.supports.mirroring', supportsMirroring);
-      App.get.restore();
-      App.router.get.restore();
-    });
-
-    it('menu should be populated if cluster installation is completed', function () {
-      App.get.withArgs('router.clusterInstallCompleted').returns(true);
-      App.router.notifyPropertyChange('clusterInstallCompleted');
-      expect(mainMenuView.get('content').length > 0).to.be.true;
+      mainMenuView.reopen({
+        content: [
+          mainMenuView.get('itemViewClass').create({
+            content: {
+              routing: 'dashboard'
+            }
+          }),
+          mainMenuView.get('itemViewClass').create({
+            content: {
+              routing: 'admin'
+            }
+          })
+        ]
+      });
     });
 
-    it('menu should not be populated if cluster installation is not completed', function () {
-      App.get.withArgs('router.clusterInstallCompleted').returns(false);
-      App.router.notifyPropertyChange('clusterInstallCompleted');
-      expect(mainMenuView.get('content').length > 0).to.be.false;
+    describe('#dropdownCategories', function () {
+
+      var cases = [
+        {
+          itemName: 'dashboard',
+          dropdownCategories: [],
+          title: 'not Admin item'
+        },
+        {
+          itemName: 'admin',
+          isHadoopWindowsStack: true,
+          dropdownCategories: [
+            {
+              name: 'stackAndUpgrade',
+              url: 'stack',
+              label: Em.I18n.t('admin.stackUpgrade.title')
+            },
+            {
+              name: 'adminServiceAccounts',
+              url: 'serviceAccounts',
+              label: Em.I18n.t('common.serviceAccounts')
+            }
+          ],
+          title: 'Admin item, HDPWIN'
+        },
+        {
+          itemName: 'admin',
+          isHadoopWindowsStack: false,
+          dropdownCategories: [
+            {
+              name: 'stackAndUpgrade',
+              url: 'stack',
+              label: Em.I18n.t('admin.stackUpgrade.title')
+            },
+            {
+              name: 'adminServiceAccounts',
+              url: 'serviceAccounts',
+              label: Em.I18n.t('common.serviceAccounts')
+            },
+            {
+              name: 'kerberos',
+              url: 'kerberos/',
+              label: Em.I18n.t('common.kerberos')
+            }
+          ],
+          title: 'Admin item, not HDPWIN'
+        }
+      ];
+
+      afterEach(function () {
+        App.get.restore();
+      });
+
+      cases.forEach(function (item) {
+        it(item.title, function () {
+          sinon.stub(App, 'get').withArgs('isHadoopWindowsStack').returns(item.isHadoopWindowsStack);
+          var menuItem = mainMenuView.get('content').findProperty('content.routing', item.itemName);
+          menuItem.propertyDidChange('dropdownCategories');
+          expect(menuItem.get('dropdownCategories')).to.eql(item.dropdownCategories);
+        });
+      });
+
     });
 
   });
+
 });

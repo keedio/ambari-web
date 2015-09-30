@@ -18,10 +18,13 @@
 
 
 var App = require('app');
+var stringUtils = require('utils/string_utils');
 
 App.InstallerController = App.WizardController.extend({
 
   name: 'installerController',
+
+  isCheckInProgress: false,
 
   totalSteps: 11,
 
@@ -63,7 +66,6 @@ App.InstallerController = App.WizardController.extend({
     'installOptions',
     'allHostNamesPattern',
     'serviceComponents',
-    'advancedServiceConfig',
     'clientInfo',
     'selectedServiceNames',
     'serviceConfigGroups',
@@ -84,7 +86,7 @@ App.InstallerController = App.WizardController.extend({
     this.get('isStepDisabled').setEach('value', true);
     this.get('isStepDisabled').pushObject(Ember.Object.create({
       step: 0,
-      value: false
+      value: true
     }));
   },
   /**
@@ -102,10 +104,6 @@ App.InstallerController = App.WizardController.extend({
     return jQuery.extend({}, this.get('clusterStatusTemplate'));
   },
 
-  getInstallOptions: function () {
-    return jQuery.extend({}, this.get('installOptionsTemplate'));
-  },
-
   getHosts: function () {
     return [];
   },
@@ -117,7 +115,7 @@ App.InstallerController = App.WizardController.extend({
   removeHosts: function (hosts) {
     var dbHosts = this.getDBProperty('hosts');
     hosts.forEach(function (_hostInfo) {
-      var host = _hostInfo.hostName;
+      var host = _hostInfo.name;
       delete dbHosts[host];
     });
     this.setDBProperty('hosts', dbHosts);
@@ -213,7 +211,7 @@ App.InstallerController = App.WizardController.extend({
           diskInfo: host.disk_info,
           diskTotal: disksOverallCapacity / (1024 * 1024),
           diskFree: diskFree / (1024 * 1024),
-          hostComponents: host.hostComponents
+          hostComponents: host.hostComponents || []
         }
       ))
     }
@@ -235,6 +233,10 @@ App.InstallerController = App.WizardController.extend({
   loadStacks: function () {
     var stacks = this.get('content.stacks');
     var dfd = $.Deferred();
+    App.StackConfigProperty.find().clear();
+    App.Section.find().clear();
+    App.SubSection.find().clear();
+    App.Tab.find().clear();
     if (stacks && stacks.get('length')) {
       App.set('currentStackVersion', App.Stack.find().findProperty('isSelected').get('id'));
       dfd.resolve(true);
@@ -283,8 +285,14 @@ App.InstallerController = App.WizardController.extend({
         error: 'loadStacksVersionsErrorCallback'
       }));
     }, this);
+    this.set('loadStacksRequestsCounter', requests.length);
     return requests;
   },
+
+  /**
+   * Counter for counting number of successful requests to load stack versions
+   */
+  loadStacksRequestsCounter: 0,
 
   /**
    * Parse loaded data and create array of stacks objects
@@ -301,16 +309,18 @@ App.InstallerController = App.WizardController.extend({
       }, this);
     }
     App.stackMapper.map(data);
-    if (!isStacksExistInDb) {
-      var defaultStackVersion = App.Stack.find().findProperty('id', App.defaultStackVersion);
-      if (defaultStackVersion) {
-        defaultStackVersion.set('isSelected', true)
-      } else {
-        App.Stack.find().objectAt(0).set('isSelected', true);
+    if (!this.decrementProperty('loadStacksRequestsCounter')) {
+      if (!isStacksExistInDb) {
+        var defaultStackVersion = App.Stack.find().findProperty('id', App.defaultStackVersion);
+        if (defaultStackVersion) {
+          defaultStackVersion.set('isSelected', true)
+        } else {
+          App.Stack.find().objectAt(0).set('isSelected', true);
+        }
       }
+      this.set('content.stacks', App.Stack.find());
+      App.set('currentStackVersion', App.Stack.find().findProperty('isSelected').get('id'));
     }
-    this.set('content.stacks', App.Stack.find());
-    App.set('currentStackVersion', App.Stack.find().findProperty('isSelected').get('id'));
   },
 
   /**
@@ -333,8 +343,11 @@ App.InstallerController = App.WizardController.extend({
   },
   getServerVersion: function () {
     return App.ajax.send({
-      name: 'ambari.service.load_server_version',
+      name: 'ambari.service',
       sender: this,
+      data: {
+        fields: '?fields=RootServiceComponents/component_version,RootServiceComponents/properties/server.os_family&minimal_response=true'
+      },
       success: 'getServerVersionSuccessCallback',
       error: 'getServerVersionErrorCallback'
     });
@@ -349,7 +362,7 @@ App.InstallerController = App.WizardController.extend({
     } else {
       this.set('isServerClientVersionMismatch', false);
     }
-    App.set('isManagedMySQLForHiveEnabled', App.config.isManagedMySQLForHiveAllowed(data.RootServiceComponents.properties['server.os_type']));
+    App.set('isManagedMySQLForHiveEnabled', App.config.isManagedMySQLForHiveAllowed(data.RootServiceComponents.properties['server.os_family']));
   },
   getServerVersionErrorCallback: function () {
     console.log('ERROR: Cannot load Ambari server version');
@@ -380,9 +393,11 @@ App.InstallerController = App.WizardController.extend({
     });
     this.set('content.services', App.StackService.find());
     this.set('content.selectedServiceNames', selectedServiceNames);
-    this.setDBProperty('selectedServiceNames', selectedServiceNames);
     this.set('content.installedServiceNames', installedServiceNames);
-    this.setDBProperty('installedServiceNames', installedServiceNames);
+    this.setDBProperties({
+      selectedServiceNames: selectedServiceNames,
+      installedServiceNames: installedServiceNames
+    });
   },
 
   /**
@@ -414,8 +429,9 @@ App.InstallerController = App.WizardController.extend({
    * Load master component hosts data for using in required step controllers
    */
   loadMasterComponentHosts: function () {
-    var masterComponentHosts = this.getDBProperty('masterComponentHosts'),
-      hosts = this.getDBProperty('hosts'),
+    var props = this.getDBProperties(['masterComponentHosts', 'hosts']);
+    var masterComponentHosts = props.masterComponentHosts,
+      hosts = props.hosts || {},
       host_names = Em.keys(hosts);
     if (Em.isNone(masterComponentHosts)) {
       masterComponentHosts = [];
@@ -433,10 +449,6 @@ App.InstallerController = App.WizardController.extend({
     this.set("content.masterComponentHosts", masterComponentHosts);
   },
 
-  loadRecommendations: function () {
-    this.set("content.recommendations", this.getDBProperty('recommendations'));
-  },
-
   loadCurrentHostGroups: function () {
     this.set("content.recommendationsHostGroups", this.getDBProperty('recommendationsHostGroups'));
   },
@@ -449,8 +461,9 @@ App.InstallerController = App.WizardController.extend({
    * Load master component hosts data for using in required step controllers
    */
   loadSlaveComponentHosts: function () {
-    var slaveComponentHosts = this.getDBProperty('slaveComponentHosts'),
-      hosts = this.getDBProperty('hosts'),
+    var props = this.getDBProperties(['slaveComponentHosts', 'hosts']);
+    var slaveComponentHosts = props.slaveComponentHosts,
+      hosts = props.hosts || {},
       host_names = Em.keys(hosts);
     if (!Em.isNone(slaveComponentHosts)) {
       slaveComponentHosts.forEach(function (component) {
@@ -475,8 +488,6 @@ App.InstallerController = App.WizardController.extend({
     var serviceConfigProperties = this.getDBProperty('serviceConfigProperties');
     this.set('content.serviceConfigProperties', serviceConfigProperties);
     console.log("InstallerController.loadServiceConfigProperties: loaded config ", serviceConfigProperties);
-
-    this.set('content.advancedServiceConfig', this.getDBProperty('advancedServiceConfig'));
   },
   /**
    * Generate clients list for selected services and save it to model
@@ -514,9 +525,12 @@ App.InstallerController = App.WizardController.extend({
       selectedStack.get('operatingSystems').forEach(function (os) {
         if (os.get('isSelected')) {
           os.get('repositories').forEach(function (repo) {
-            repo.set('errorTitle', '');
-            repo.set('errorContent', '');
-            repo.set('validation', App.Repository.validation['INPROGRESS']);
+            repo.setProperties({
+              errorTitle: '',
+              errorContent: '',
+              validation: App.Repository.validation['INPROGRESS']
+            });
+            this.set('content.isCheckInProgress', true);
             App.ajax.send({
               name: 'wizard.advanced_repositories.valid_url',
               sender: this,
@@ -558,6 +572,7 @@ App.InstallerController = App.WizardController.extend({
     }
     this.set('validationCnt', this.get('validationCnt') - 1);
     if (!this.get('validationCnt')) {
+      this.set('content.isCheckInProgress', false);
       data.dfd.resolve();
     }
   },
@@ -572,11 +587,14 @@ App.InstallerController = App.WizardController.extend({
       var os = selectedStack.get('operatingSystems').findProperty('id', params.osId);
       var repo = os.get('repositories').findProperty('repoId', params.repoId);
       if (repo) {
-        repo.set('validation', App.Repository.validation['INVALID']);
-        repo.set('errorTitle', request.status + ":" + request.statusText);
-        repo.set('errorContent', $.parseJSON(request.responseText) ? $.parseJSON(request.responseText).message : "");
+        repo.setProperties({
+          validation: App.Repository.validation['INVALID'],
+          errorTitle: request.status + ":" + request.statusText,
+          errorContent: $.parseJSON(request.responseText) ? $.parseJSON(request.responseText).message : ""
+        });
       }
     }
+    this.set('content.isCheckInProgress', false);
     params.dfd.reject();
   },
 
@@ -593,7 +611,15 @@ App.InstallerController = App.WizardController.extend({
       {
         type: 'async',
         callback: function () {
-          return this.loadStacks();
+          var dfd = $.Deferred();
+
+          this.loadStacks().always(function() {
+            App.router.get('clusterController').loadAmbariProperties().always(function() {
+              dfd.resolve();
+            });
+          });
+
+          return dfd.promise();
         }
       },
       {
@@ -641,6 +667,7 @@ App.InstallerController = App.WizardController.extend({
       {
         type: 'sync',
         callback: function () {
+          this.setSkipSlavesStep(App.StackService.find().filterProperty('isSelected'), 6);
           this.loadMasterComponentHosts();
           this.loadConfirmedHosts();
           this.loadRecommendations();
@@ -659,12 +686,13 @@ App.InstallerController = App.WizardController.extend({
     ],
     '7': [
       {
-        type: 'sync',
+        type: 'async',
         callback: function () {
           this.loadServiceConfigGroups();
           this.loadServiceConfigProperties();
           this.loadCurrentHostGroups();
           this.loadRecommendationsConfigs();
+          return this.loadConfigThemes();
         }
       }
     ]
@@ -695,12 +723,7 @@ App.InstallerController = App.WizardController.extend({
 
   setStepsEnable: function () {
     for (var i = 0; i <= this.totalSteps; i++) {
-      var step = this.get('isStepDisabled').findProperty('step', i);
-      if (i <= this.get('currentStep')) {
-        step.set('value', false);
-      } else {
-        step.set('value', true);
-      }
+      this.get('isStepDisabled').findProperty('step', i).set('value', i > this.get('currentStep'));
     }
   }.observes('currentStep'),
 
@@ -709,6 +732,48 @@ App.InstallerController = App.WizardController.extend({
       var step = this.get('isStepDisabled').findProperty('step', i);
       step.set('value', true);
     }
-  }
-});
+  },
 
+
+  /**
+   * Compare jdk versions used for ambari and selected stack.
+   * Validation check will fire only for non-custom jdk configuration.
+   *
+   * @param {Function} successCallback
+   * @param {Function} failCallback
+   */
+  validateJDKVersion: function (successCallback, failCallback) {
+    var selectedStack = App.Stack.find().findProperty('isSelected', true),
+        currentJDKVersion = App.router.get('clusterController.ambariProperties')['java.version'],
+        // use min as max, or max as min version, in case when some of them missed
+        minJDKVersion = selectedStack.get('minJdkVersion') || selectedStack.get('maxJdkVersion'),
+        maxJDKVersion = selectedStack.get('maxJdkVersion') || selectedStack.get('minJdkVersion'),
+        t = Em.I18n.t,
+        fCallback = failCallback || function() {},
+        sCallback = successCallback || function() {};
+
+    // Skip jdk check if min and max required version not set in stack definition.
+    if (!minJDKVersion && !maxJDKVersion) {
+      sCallback();
+      return;
+    }
+
+    if (currentJDKVersion) {
+      if (stringUtils.compareVersions(currentJDKVersion, minJDKVersion) < 0 ||
+          stringUtils.compareVersions(maxJDKVersion, currentJDKVersion) < 0) {
+        // checks and process only minor part for now
+        var versionDistance = parseInt(maxJDKVersion.split('.')[1]) - parseInt(minJDKVersion.split('.')[1]);
+        var versionsList = [minJDKVersion];
+        for (var i = 1; i < (versionDistance + 1); i++) {
+          versionsList.push("" + minJDKVersion.split('.')[0] + '.' + (+minJDKVersion.split('.')[1] + i));
+        }
+        var versionsString = stringUtils.getFormattedStringFromArray(versionsList, t('or'));
+        var popupBody = t('popup.jdkValidation.body').format(selectedStack.get('stackName') + ' ' + selectedStack.get('stackVersion'), versionsString, currentJDKVersion);
+        App.showConfirmationPopup(sCallback, popupBody, fCallback, t('popup.jdkValidation.header'), t('common.proceedAnyway'), true);
+        return;
+      }
+    }
+    sCallback();
+  }
+
+});

@@ -41,19 +41,33 @@ module.exports = {
     return floatRegex.test(value);
   },
   /**
-   * validate directory with slash at the start
+   * validate directory with slash or drive at the start
    * @param value
    * @return {Boolean}
    */
   isValidDir: function(value){
     var floatRegex = /^\/[0-9a-z]*/;
-    var dirs = value.replace(/,/g,' ').trim().split(new RegExp("\\s+", "g"));
+    var winRegex = /^[a-z]:\\[0-9a-zA-Z]*/;
+    var winUrlRegex = /^file:\/\/\/[a-zA-Z]:\/[0-9a-zA-Z]*/;
+    var dirs = value.split(',');
+    if (dirs.some(function(i) { return i.startsWith(' '); })) {
+      return false;
+    }
     for(var i = 0; i < dirs.length; i++){
-      if(!floatRegex.test(dirs[i])){
+      if(!floatRegex.test(dirs[i]) && !winRegex.test(dirs[i]) && !winUrlRegex.test(dirs[i])){
         return false;
       }
     }
     return true;
+  },
+
+  /**
+   * defines if config value looks like link to other config
+   * @param value
+   * @returns {boolean}
+   */
+  isConfigValueLink: function(value) {
+    return /^\${.+}$/.test(value);
   },
 
   /**
@@ -63,9 +77,14 @@ module.exports = {
    */
   isValidDataNodeDir: function(value) {
     var dirRegex = /^(\[[0-9a-zA-Z]+\])?(\/[0-9a-z]*)/;
-    var dirs = value.replace(/,/g,' ').trim().split(new RegExp("\\s+", "g"));
+    var winRegex = /^(\[[0-9a-zA-Z]+\])?[a-zA-Z]:\\[0-9a-zA-Z]*/;
+    var winUrlRegex = /^(\[[0-9a-zA-Z]+\])?file:\/\/\/[a-zA-Z]:\/[0-9a-zA-Z]*/;
+    var dirs = value.split(',');
+    if (dirs.some(function (i) {return i.startsWith(' '); })) {
+      return false;
+    }
     for(var i = 0; i < dirs.length; i++){
-      if(!dirRegex.test(dirs[i])){
+      if(!dirRegex.test(dirs[i]) && !winRegex.test(dirs[i]) && !winUrlRegex.test(dirs[i])){
         return false;
       }
     }
@@ -104,7 +123,7 @@ module.exports = {
    */
   isHostname: function(value) {
     var regex = /(?=^.{3,254}$)(^([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\-]{0,61}[a-zA-Z0-9])(\.([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\-]{0,61}[a-zA-Z0-9]))*(\.[a-zA-Z]{1,62})$)/;
-    return regex.test(value);
+    return value === 'localhost' || regex.test(value);
   },
 
   hasSpaces: function(value) {
@@ -116,6 +135,19 @@ module.exports = {
     var regex = /(^\s+|\s+$)/;
     return regex.test(value);
   },
+
+  /**
+   * Check if string ends with spaces.
+   * For multiline content only last line will be checked.
+   *
+   * @method isNotTrimmedLeft
+   * @param {String} value
+   * @returns {Boolean} - <code>true</code> if ends with spaces
+   */
+  isNotTrimmedRight: function(value) {
+    return /\s+$/.test(("" + value).split(/\n/).slice(-1)[0]);
+  },
+
   /**
    * validate domain name with port
    * @param value
@@ -146,6 +178,26 @@ module.exports = {
     return configKeyRegex.test(value);
   },
 
+  /**
+   * validate configuration group name
+   * @param value
+   * @return {Boolean}
+   */
+  isValidConfigGroupName: function(value) {
+    var configKeyRegex = /^[\s0-9a-z_\-]+$/i;
+    return configKeyRegex.test(value);
+  },
+
+  /**
+   * validate alert group name
+   * @param value
+   * @return {Boolean}
+   */
+  isValidAlertGroupName: function(value) {
+    var configKeyRegex = /^[\s0-9a-z_\-]+$/i;
+    return configKeyRegex.test(value);
+  },
+
   empty:function (e) {
     switch (e) {
       case "":
@@ -165,24 +217,24 @@ module.exports = {
    * Try to prevent invalid regexp.
    * For example: /api/v1/clusters/c1/hosts?Hosts/host_name.matches(.*localhost.)
    *
-   * @params {String} value - string to validate
+   * @param {String} value - string to validate
    * @return {Boolean}
    * @method isValidMatchesRegexp
    */
   isValidMatchesRegexp: function(value) {
     var checkPair = function(chars) {
-      chars = chars.map(function(char) { return '\\' + char; });
+      chars = chars.map(function(c) { return '\\' + c; });
       var charsReg = new RegExp(chars.join('|'), 'g');
       if (charsReg.test(value)) {
         var pairContentReg = new RegExp(chars.join('.*'), 'g');
         if (!pairContentReg.test(value)) return false;
-        var pairCounts = chars.map(function(char) { return value.match(new RegExp(char, 'g')).length; });
+        var pairCounts = chars.map(function(c) { return value.match(new RegExp(c, 'g')).length; });
         if (pairCounts[0] != pairCounts[1] ) return false;
       }
       return true;
-    }
+    };
     if (/^[\?\|\*\!,]/.test(value)) return false;
-    return /^((\.\*?)?([\w\[\]\?\-_,\|\*\!\{\}]*)?)+(\.\*?)?$/g.test(value) && (checkPair(['[',']'])) && (checkPair(['{','}']));
+    return /^((\.\*?)?([\w\s\[\]\/\?\-_,\|\*\!\{\}]*)?)+(\.\*?)?$/g.test(value) && (checkPair(['[',']'])) && (checkPair(['{','}']));
   },
 
   /**
@@ -194,5 +246,31 @@ module.exports = {
       // true is there is no host with this component
       return hostComponents.filterProperty("componentName", item["component-name"]).filterProperty("hostName", item.host).length === 0;
     });
+  },
+
+  isValidRackId: function(path) {
+    // See app/message.js:hostPopup.setRackId.invalid
+    return /^\/[/.\w-]+$/.test(path);
+  },
+
+  /**
+   * Validate url
+   * @param value
+   * @return {Boolean}
+   */
+  isValidURL: function(value) {
+    var urlRegex = /^(https?|ftp):\/\/(((([a-z]|\d|-|\.|_|~|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])|(%[\da-f]{2})|[!\$&'\(\)\*\+,;=]|:)*@)?(((\d|[1-9]\d|1\d\d|2[0-4]\d|25[0-5])\.(\d|[1-9]\d|1\d\d|2[0-4]\d|25[0-5])\.(\d|[1-9]\d|1\d\d|2[0-4]\d|25[0-5])\.(\d|[1-9]\d|1\d\d|2[0-4]\d|25[0-5]))|((([a-z]|\d|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])|(([a-z]|\d|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])([a-z]|\d|-|\.|_|~|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])*([a-z]|\d|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])))\.)+(([a-z]|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])|(([a-z]|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])([a-z]|\d|-|\.|_|~|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])*([a-z]|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])))\.?)(:\d*)?)(\/((([a-z]|\d|-|\.|_|~|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])|(%[\da-f]{2})|[!\$&'\(\)\*\+,;=]|:|@)+(\/(([a-z]|\d|-|\.|_|~|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])|(%[\da-f]{2})|[!\$&'\(\)\*\+,;=]|:|@)*)*)?)?(\?((([a-z]|\d|-|\.|_|~|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])|(%[\da-f]{2})|[!\$&'\(\)\*\+,;=]|:|@)|[\uE000-\uF8FF]|\/|\?)*)?(\#((([a-z]|\d|-|\.|_|~|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])|(%[\da-f]{2})|[!\$&'\(\)\*\+,;=]|:|@)|\/|\?)*)?$/i;
+    return urlRegex.test(value);
+  },
+
+  /**
+   * Validate base URL
+   * @param {string} value
+   * @returns {boolean}
+   */
+  isValidBaseUrl: function (value) {
+    var remotePattern = /^(?:(?:https?|ftp):\/{2})(?:\S+(?::\S*)?@)?(?:(?:(?:[\w\-.]))*)(?::[0-9]+)?(?:\/\S*)?$/,
+      localPattern = /^file:\/{2,3}([a-zA-Z][:|]\/){0,1}[\w~!*'();@&=\/\\\-+$,?%#.\[\]]+$/;
+    return remotePattern.test(value) || localPattern.test(value);
   }
 };

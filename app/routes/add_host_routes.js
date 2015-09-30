@@ -21,15 +21,22 @@ var App = require('app');
 module.exports = App.WizardRoute.extend({
   route: '/host/add',
 
-  leaveWizard: function (router,context) {
+  leaveWizard: function (router, context) {
     var addHostController = router.get('addHostController');
     App.router.get('updateController').set('isWorking', true);
     addHostController.finish();
+    App.router.get('wizardWatcherController').resetUser();
     App.clusterStatus.setClusterStatus({
       clusterName: App.router.get('content.cluster.name'),
       clusterState: 'DEFAULT',
       localdb: App.db.data
-    }, {alwaysCallback: function() {context.hide();App.router.transitionTo('hosts.index');location.reload();}});
+    }, {
+      alwaysCallback: function () {
+        context.hide();
+        App.router.transitionTo('hosts.index');
+        location.reload();
+      }
+    });
   },
 
   enter: function (router) {
@@ -42,34 +49,34 @@ module.exports = App.WizardRoute.extend({
       App.router.get('updateController').set('isWorking', false);
       App.ModalPopup.show({
         classNames: ['full-width-modal'],
-        header:Em.I18n.t('hosts.add.header'),
-        bodyClass:  App.AddHostView.extend({
+        header: Em.I18n.t('hosts.add.header'),
+        bodyClass: App.AddHostView.extend({
           controllerBinding: 'App.router.addHostController'
         }),
-        primary:Em.I18n.t('form.cancel'),
+        primary: Em.I18n.t('form.cancel'),
         secondary: null,
         showFooter: false,
 
-        onPrimary:function () {
+        onPrimary: function () {
           this.hide();
           App.router.get('updateController').set('isWorking', true);
           router.transitionTo('hosts.index');
         },
-        onClose: function() {
+        onClose: function () {
           var popupContext = this;
           if (addHostController.get('currentStep') == '6') {
             App.ModalPopup.show({
               header: Em.I18n.t('hosts.add.exit.header'),
               body: Em.I18n.t('hosts.add.exit.body'),
               onPrimary: function () {
-                self.leaveWizard(router,popupContext);
+                self.leaveWizard(router, popupContext);
               }
             });
           } else {
-            self.leaveWizard(router,this);
+            self.leaveWizard(router, this);
           }
         },
-        didInsertElement: function(){
+        didInsertElement: function () {
           this.fitHeight();
         }
       });
@@ -91,6 +98,7 @@ module.exports = App.WizardRoute.extend({
         }
       }
 
+      App.router.get('wizardWatcherController').setUser(addHostController.get('name'));
       router.transitionTo('step' + addHostController.get('currentStep'));
     });
 
@@ -108,7 +116,7 @@ module.exports = App.WizardRoute.extend({
         var wizardStep2Controller = router.get('wizardStep2Controller');
         wizardStep2Controller.set('wizardController', controller);
         controller.connectOutlet('wizardStep2', controller.get('content'));
-      })
+      });
     },
 
     next: function (router) {
@@ -143,9 +151,9 @@ module.exports = App.WizardRoute.extend({
         var wizardStep3Controller = router.get('wizardStep3Controller');
         wizardStep3Controller.set('wizardController', controller);
         controller.connectOutlet('wizardStep3', controller.get('content'));
-      })
+      });
     },
-    back: function(router){
+    back: function (router) {
       router.transitionTo('step1');
     },
     exit: function (router) {
@@ -158,8 +166,10 @@ module.exports = App.WizardRoute.extend({
       addHostController.saveConfirmedHosts(wizardStep3Controller);
       addHostController.saveClients();
 
-      addHostController.setDBProperty('bootStatus', true);
-      addHostController.setDBProperty('slaveComponentHosts', undefined);
+      addHostController.setDBProperties({
+        bootStatus: true,
+        slaveComponentHosts: undefined
+      });
       wizardStep6Controller.set('isClientsSet', false);
       router.transitionTo('step3');
     },
@@ -194,13 +204,15 @@ module.exports = App.WizardRoute.extend({
       var addHostController = router.get('addHostController');
       var wizardStep6Controller = router.get('wizardStep6Controller');
 
-      wizardStep6Controller.callValidation(function() {
-        wizardStep6Controller.showValidationIssuesAcceptBox(function() {
+      wizardStep6Controller.callValidation(function () {
+        wizardStep6Controller.showValidationIssuesAcceptBox(function () {
           addHostController.saveSlaveComponentHosts(wizardStep6Controller);
-          if(App.supports.hostOverrides){
-            router.transitionTo('step4');
-          }else{
+          if (wizardStep6Controller.isAllCheckboxesEmpty()) {
             router.transitionTo('step5');
+            addHostController.set('content.configGroups', []);
+            addHostController.saveServiceConfigGroups();
+          } else {
+            router.transitionTo('step4');
           }
         });
       });
@@ -214,19 +226,19 @@ module.exports = App.WizardRoute.extend({
       var controller = router.get('addHostController');
       var addHostStep4Controller = router.get('addHostStep4Controller');
       controller.setCurrentStep('4');
-      addHostStep4Controller.loadConfigGroups();
-      addHostStep4Controller.set('isConfigGroupLoaded', false);
-      addHostStep4Controller.configGroupsLoading().done(function () {
-        controller.dataLoading().done(function () {
+      controller.dataLoading().done(function () {
+        addHostStep4Controller.loadConfigGroups();
+        addHostStep4Controller.set('isConfigGroupLoaded', false);
+        addHostStep4Controller.configGroupsLoading().done(function () {
           controller.loadAllPriorSteps();
           controller.loadServiceConfigGroups();
           addHostStep4Controller.set('wizardController', controller);
           controller.connectOutlet('addHostStep4', controller.get('content'));
-        })
-      })
+        });
+      });
     },
-    back: function(router){
-        router.transitionTo('step3');
+    back: function (router) {
+      router.transitionTo('step3');
     },
     next: function (router) {
       var addHostController = router.get('addHostController');
@@ -242,28 +254,28 @@ module.exports = App.WizardRoute.extend({
       var controller = router.get('addHostController');
       controller.setCurrentStep('5');
       controller.dataLoading().done(function () {
-        controller.loadAllPriorSteps();
-        controller.getServiceConfigGroups();
-        var wizardStep8Controller = router.get('wizardStep8Controller');
-        wizardStep8Controller.set('wizardController', controller);
-        controller.connectOutlet('wizardStep8', controller.get('content'));
-      })
+        router.get('mainController').isLoading.call(router.get('clusterController'), 'isServiceContentFullyLoaded').done(function () {
+          controller.loadAllPriorSteps();
+          controller.getServiceConfigGroups();
+          var wizardStep8Controller = router.get('wizardStep8Controller');
+          wizardStep8Controller.set('wizardController', controller);
+          controller.connectOutlet('wizardStep8', controller.get('content'));
+        });
+      });
     },
     back: function(router){
-      if(!router.get('wizardStep8Controller.isBackBtnDisabled')) {
-        if(App.supports.hostOverrides){
-          router.transitionTo('step4');
-        }else{
-          router.transitionTo('step3');
-        }
+      var addHostController = router.get('addHostController');
+
+      if (addHostController.isConfigGroupsEmpty() && !router.get('wizardStep8Controller.isBackBtnDisabled')) {
+        router.transitionTo('step3');
+      } else if (!router.get('wizardStep8Controller.isBackBtnDisabled')) {
+        router.transitionTo('step4');
       }
     },
     next: function (router) {
       var addHostController = router.get('addHostController');
       var wizardStep8Controller = router.get('wizardStep8Controller');
-      if(App.supports.hostOverrides){
-        addHostController.applyConfigGroup();
-      }
+      addHostController.applyConfigGroup();
       addHostController.installServices(false, function () {
         addHostController.setInfoForStep9();
         // We need to do recovery based on whether we are in Add Host or Installer wizard
@@ -288,10 +300,10 @@ module.exports = App.WizardRoute.extend({
           controller.setLowerStepsDisable(6);
         }
         controller.connectOutlet('wizardStep9', controller.get('content'));
-      })
+      });
     },
     back: Em.Router.transitionTo('step5'),
-    retry: function(router,context) {
+    retry: function (router, context) {
       var addHostController = router.get('addHostController');
       var wizardStep9Controller = router.get('wizardStep9Controller');
       wizardStep9Controller.set('wizardController', addHostController);
@@ -310,7 +322,7 @@ module.exports = App.WizardRoute.extend({
         }
       }
     },
-    unroutePath: function() {
+    unroutePath: function () {
       return false;
     },
     next: function (router) {
@@ -340,7 +352,7 @@ module.exports = App.WizardRoute.extend({
         }
         controller.connectOutlet('wizardStep10', controller.get('content'));
         router.get('updateController').set('isWorking', true);
-      })
+      });
     },
     back: Em.Router.transitionTo('step6'),
     complete: function (router, context) {
@@ -349,7 +361,7 @@ module.exports = App.WizardRoute.extend({
         'Hosts/host_status,Hosts/last_heartbeat_time,Hosts/os_arch,Hosts/os_type,Hosts/ip,host_components,' +
         'metrics/disk,metrics/load/load_one,metrics/cpu/cpu_system,metrics/cpu/cpu_user,metrics/memory/mem_total,metrics/memory/mem_free';
       router.get('clusterController').requestHosts(hostsUrl, function () {
-        console.log('Request for hosts, with immutable parameters')
+        console.log('Request for hosts, with immutable parameters');
       });
       router.get('updateController').updateAll();
       $(context.currentTarget).parents("#modal").find(".close").trigger('click');
@@ -359,21 +371,7 @@ module.exports = App.WizardRoute.extend({
   backToHostsList: function (router, event) {
     App.router.get('updateController').set('isWorking', true);
     router.transitionTo('hosts.index');
-  },
-
-  gotoStep1: Em.Router.transitionTo('step1'),
-
-  gotoStep2: Em.Router.transitionTo('step2'),
-
-  gotoStep3: Em.Router.transitionTo('step3'),
-
-  gotoStep4: Em.Router.transitionTo('step4'),
-
-  gotoStep5: Em.Router.transitionTo('step5'),
-
-  gotoStep6: Em.Router.transitionTo('step6'),
-
-  gotoStep7: Em.Router.transitionTo('step7')
+  }
 
 
 });

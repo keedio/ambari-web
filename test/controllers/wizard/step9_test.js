@@ -30,6 +30,7 @@ require('utils/ajax/ajax');
 var modelSetup = require('test/init_model_test');
 var c, obj;
 describe('App.InstallerStep9Controller', function () {
+
   beforeEach(function () {
     modelSetup.setupStackServiceComponent();
     c = App.WizardStep9Controller.create({
@@ -37,6 +38,9 @@ describe('App.InstallerStep9Controller', function () {
       saveClusterStatus: Em.K,
       saveInstalledHosts: Em.K,
       togglePreviousSteps: Em.K,
+      setFinishState: Em.K,
+      changeParseHostInfo: Em.K,
+      parseHostInfoPolling: Em.K,
       wizardController: Em.Object.create({
         requestsId: [],
         cluster: {oldRequestsId: []},
@@ -48,6 +52,9 @@ describe('App.InstallerStep9Controller', function () {
     obj = App.InstallerController.create();
     sinon.stub(App.ajax, 'send', function() {
       return {
+        then: function() { 
+          return true;
+        },
         retry: function() {
           return {
             then: Em.K,
@@ -58,6 +65,7 @@ describe('App.InstallerStep9Controller', function () {
       };
     });
   });
+
   afterEach(function () {
     modelSetup.cleanStackServiceComponent();
     App.ajax.send.restore();
@@ -194,6 +202,148 @@ describe('App.InstallerStep9Controller', function () {
     });
   });
 
+  describe('#setParseHostInfo', function () {
+    var tasks = Em.A([
+      Em.Object.create({
+        Tasks: Em.Object.create({
+          host_name: 'host1',
+          status: 'PENDING'
+        })
+      }),
+      Em.Object.create({
+        Tasks: Em.Object.create({
+          host_name: 'host1',
+          status: 'PENDING'
+        })
+      })
+    ]);
+    var content = Em.Object.create({
+      cluster: Em.Object.create({
+        requestId: '11',
+        status: 'PENDING'
+      })
+    });
+    beforeEach(function(){
+      c.set('content', content)
+    });
+    it('Should make parseHostInfo false"', function () {
+      var polledData = Em.Object.create({
+        tasks: tasks,
+        Requests: Em.Object.create({
+          id: '222'
+        })
+      });
+      c.setParseHostInfo(polledData);
+      expect(c.get('parseHostInfo')).to.be.false;
+    });
+    it('Should set polledData"', function () {
+      var polledData = Em.Object.create({
+        tasks: tasks,
+        Requests: Em.Object.create({
+          id: '11'
+        })
+      });
+      c.setParseHostInfo(polledData);
+      var expected = [
+        {
+          "Tasks": {
+            "status": "PENDING",
+            "host_name": "host1",
+            "request_id": "11"
+          }
+        },
+        {
+          "Tasks": {
+            "status": "PENDING",
+            "host_name": "host1",
+            "request_id": "11"
+          }
+        }
+      ];
+      var result = JSON.parse(JSON.stringify(c.get('polledData')));
+      expect(result).to.eql(expected);
+    });
+    it('Should set progress for hosts"', function () {
+      var polledData = Em.Object.create({
+        tasks: tasks,
+        Requests: Em.Object.create({
+          id: '11'
+        })
+      });
+      var hosts = Em.A([
+        Em.Object.create({
+          name: 'host1',
+          logTasks: [
+            {Tasks: {role: 'HDFS_CLIENT'}},
+            {Tasks: {role: 'DATANODE'}}
+          ],
+          status: 'old_status',
+          progress: '10',
+          isNoTasksForInstall: true,
+          e: {status: 'old_status', progress: '10'}
+        }),
+        Em.Object.create({
+          name: 'host2',
+          logTasks: [
+            {Tasks: {role: 'HDFS_CLIENT'}}
+          ],
+          status: 'old_status',
+          progress: '10',
+          e: {status: 'success', progress: '100'}
+        })
+      ]);
+      c.set('hosts', hosts);
+      c.setParseHostInfo(polledData);
+      var expected = [
+        {
+          "name": "host1",
+          "logTasks": [
+            {
+              "Tasks": {
+                "role": "HDFS_CLIENT",
+                "status": "PENDING"
+              }
+            },
+            {
+              "Tasks": {
+                "role": "DATANODE"
+              }
+            }
+          ],
+          "progress": "0",
+          "isNoTasksForInstall": false,
+          "e": {
+            "status": "old_status",
+            "progress": "10"
+          },
+          "status": "in_progress",
+          "message": ""
+        },
+        {
+          "name": "host2",
+          "logTasks": [
+            {
+              "Tasks": {
+                "role": "HDFS_CLIENT"
+              }
+            }
+          ],
+          "progress": "33",
+          "e": {
+            "status": "success",
+            "progress": "100"
+          },
+          "status": "pending",
+          "isNoTasksForInstall": true,
+          "message": "Install complete (Waiting to start)"
+        }
+      ];
+
+      var result = JSON.parse(JSON.stringify(c.get('hosts')));
+      expect(result).to.eql(expected);
+    });
+  });
+
   var hosts_for_load_and_render = {
     'host1': {
       message: 'message1',
@@ -259,6 +409,193 @@ describe('App.InstallerStep9Controller', function () {
       var loaded_hosts = c.get('hosts');
       expect(loaded_hosts.everyProperty('logTasks.length', 0)).to.equal(true);
     });
+  });
+
+  describe('#isServicesStarted', function () {
+    it('Should return false when server not started', function () {
+      var polledData = Em.A([
+        Em.Object.create({
+          Tasks: Em.Object.create({
+            status: 'PENDING'
+          })
+        }),
+        Em.Object.create({
+          Tasks: Em.Object.create({
+            status: 'PENDING'
+          })
+        })
+      ]);
+      expect(c.isServicesStarted(polledData)).to.be.false;
+    });
+    it('Should return true when server started', function () {
+      var polledData = Em.A([
+        Em.Object.create({
+          Tasks: Em.Object.create({
+            status: 'NONE'
+          })
+        }),
+        Em.Object.create({
+          Tasks: Em.Object.create({
+            status: 'NONE'
+          })
+        })
+      ]);
+      expect(c.isServicesStarted(polledData)).to.be.true;
+    });
+    it('Should return true when tasks completed', function () {
+      var polledData = Em.A([
+        Em.Object.create({
+          Tasks: Em.Object.create({
+            status: 'COMPLETED'
+          })
+        }),
+        Em.Object.create({
+          Tasks: Em.Object.create({
+            status: 'COMPLETED'
+          })
+        })
+      ]);
+      expect(c.isServicesStarted(polledData)).to.be.true;
+    });
+  });
+
+  describe('#setIsServicesInstalled', function () {
+    it('Should return 100% completed', function () {
+      var polledData = Em.A([
+        Em.Object.create({
+          Tasks: Em.Object.create({
+            status: 'NONE'
+          })
+        }),
+        Em.Object.create({
+          Tasks: Em.Object.create({
+            status: 'NONE'
+          })
+        })
+      ]);
+      c.setProperties({
+        status: 'failed',
+        isPolling: true,
+        hosts: Em.A([
+          Em.Object.create({
+            progress: 0
+          })
+        ])
+      });
+      c.setIsServicesInstalled(polledData);
+      expect(c.get('progress')).to.equal('100');
+      expect(c.get('isPolling')).to.be.false;
+    });
+    it('Should return 34% completed', function () {
+      var polledData = Em.A([
+        Em.Object.create({
+          Tasks: Em.Object.create({
+            status: 'NONE'
+          })
+        }),
+        Em.Object.create({
+          Tasks: Em.Object.create({
+            status: 'NONE'
+          })
+        })
+      ]);
+      c.setProperties({
+        status: '',
+        isPolling: true,
+        hosts: Em.A([
+          Em.Object.create({
+            progress: 0
+          })
+        ]),
+        content: Em.Object.create({
+          controllerName: 'installerController'
+        })
+      });
+      c.setIsServicesInstalled(polledData);
+      expect(c.get('progress')).to.equal('34');
+      expect(c.get('isPolling')).to.be.true;
+    });
+  });
+
+  describe('#launchStartServices', function () {
+    beforeEach(function() {
+      sinon.stub(App, 'get', function(k) {
+        if (k === 'components.slaves')
+          return ["TASKTRACKER", "DATANODE", 
+                  "JOURNALNODE", "ZKFC", 
+                  "APP_TIMELINE_SERVER", 
+                  "NODEMANAGER", 
+                  "GANGLIA_MONITOR", 
+                  "HBASE_REGIONSERVER", 
+                  "SUPERVISOR", 
+                  "FLUME_HANDLER"];
+        return true;
+      });
+    });
+    afterEach(function() {
+      App.get.restore();
+    });
+    var tests = [
+      {
+        expected: [],
+        message: 'should return query',
+        controllerName: 'addHostController',
+        hosts: Em.A([
+          Em.Object.create({
+            name: 'h1'
+          }),
+          Em.Object.create({
+            name: 'h2'
+          })
+        ])
+      },
+      {
+        expected: [],
+        text: 'should return server info',
+        controllerName: 'addServiceController',
+        services: Em.A([
+          Em.Object.create({
+            serviceName: 'OOZIE',
+            isSelected: true,
+            isInstalled: false
+          }),
+          Em.Object.create({
+            serviceName: 'h2',
+            isSelected: false,
+            isInstalled: true
+          })
+        ])
+      },
+      {
+        expected: [],
+        text: 'should return default data',
+        controllerName: 'addHostContro',
+        hosts: Em.A([
+          Em.Object.create({
+            name: 'h1'
+          }),
+          Em.Object.create({
+            name: 'h2'
+          })
+        ])
+      }
+    ];
+    tests.forEach(function(test) {
+      it(test.message, function () {
+        var content = Em.Object.create({
+          controllerName: test.controllerName,
+          services: test.services
+        });
+        var wizardController = Em.Object.create({
+          getDBProperty: function() {
+            return test.hosts
+          }
+        });
+        c.set('content', content);
+        c.set('wizardController', wizardController);
+        expect(c.launchStartServices(function(){})).to.be.true;
+      });
+    })
   });
 
   describe('#hostHasClientsOnly', function () {
@@ -568,57 +905,105 @@ describe('App.InstallerStep9Controller', function () {
       {
         cluster: {status: 'PENDING'},
         host: Em.Object.create({progress: 0}),
-        actions: [
-          {Tasks: {status: 'COMPLETED'}},
-          {Tasks: {status: 'COMPLETED'}},
-          {Tasks: {status: 'QUEUED'}},
-          {Tasks: {status: 'QUEUED'}},
-          {Tasks: {status: 'IN_PROGRESS'}}
-        ],
-        e: {ret: 17, host: '17'},
+        actions: {
+          'COMPLETED': 2,
+          'QUEUED': 2,
+          'IN_PROGRESS': 1
+        },
+        e: {progress: 17},
         m: 'All types of status available. cluster status PENDING'
       },
       {
         cluster: {status: 'PENDING'},
         host: Em.Object.create({progress: 0}),
-        actions: [],
-        e: {ret: 33, host: '33'},
+        actions: {},
+        e: {progress: 33},
         m: 'No tasks available. cluster status PENDING'
       },
       {
         cluster: {status: 'INSTALLED'},
         host: Em.Object.create({progress: 0}),
-        actions: [],
-        e: {ret: 100, host: '100'},
+        actions: {},
+        e: {progress: 100},
         m: 'No tasks available. cluster status INSTALLED'
       },
       {
         cluster: {status: 'INSTALLED'},
         host: Em.Object.create({progress: 0}),
-        actions: [
-          {Tasks: {status: 'COMPLETED'}},
-          {Tasks: {status: 'COMPLETED'}},
-          {Tasks: {status: 'QUEUED'}},
-          {Tasks: {status: 'QUEUED'}},
-          {Tasks: {status: 'IN_PROGRESS'}}
-        ],
-        e: {ret: 68, host: '68'},
+        actions: {
+          'COMPLETED': 2,
+          'QUEUED': 2,
+          'IN_PROGRESS': 1
+        },
+        e: {progress: 66},
         m: 'All types of status available. cluster status INSTALLED'
       },
       {
         cluster: {status: 'FAILED'},
         host: Em.Object.create({progress: 0}),
-        actions: [],
-        e: {ret: 100, host: '100'},
+        actions: {},
+        e: {progress: 100},
         m: 'Cluster status is not PENDING or INSTALLED'
+      },
+      {
+        cluster: {status: 'INSTALLED'},
+        host: Em.Object.create({progress: 0}),
+        actions: {
+          'COMPLETED': 150,
+          'QUEUED': 0,
+          'IN_PROGRESS': 1
+        },
+        e: {progress: 99},
+        m: '150 tasks on host'
+      },
+      {
+        cluster: {status: 'INSTALLED'},
+        host: Em.Object.create({progress: 0}),
+        actions: {
+          'COMPLETED': 498,
+          'QUEUED': 1,
+          'IN_PROGRESS': 1
+        },
+        e: {progress: 99},
+        m: '500 tasks on host'
+      },
+      {
+        cluster: {status: 'INSTALLED'},
+        host: Em.Object.create({progress: 0}),
+        actions: {
+          'COMPLETED': 150,
+          'QUEUED': 0,
+          'IN_PROGRESS': 0
+        },
+        e: {progress: 100},
+        m: '100 tasks, 100 completed'
+      },
+      {
+        cluster: {status: 'INSTALLED'},
+        host: Em.Object.create({progress: 0}),
+        actions: {
+          'COMPLETED': 1,
+          'QUEUED': 0,
+          'IN_PROGRESS': 0
+        },
+        e: {progress: 100},
+        m: '1 task, 1 completed'
       }
     ]);
     tests.forEach(function (test) {
       it(test.m, function () {
+        var actions = [];
+        for (var prop in test.actions) {
+          if (test.actions.hasOwnProperty(prop) && test.actions[prop]) {
+            for (var i = 0; i < test.actions[prop]; i++) {
+              actions.push({Tasks: {status: prop}});
+            }
+          }
+        }
         c.reopen({content: {cluster: {status: test.cluster.status}}});
-        var progress = c.progressPerHost(test.actions, test.host);
-        expect(progress).to.equal(test.e.ret);
-        expect(test.host.progress).to.equal(test.e.host);
+        var progress = c.progressPerHost(actions, test.host);
+        expect(progress).to.equal(test.e.progress);
+        expect(test.host.progress).to.equal(test.e.progress.toString());
       });
     });
   });
@@ -933,10 +1318,10 @@ describe('App.InstallerStep9Controller', function () {
 
   describe('#startPolling', function () {
     beforeEach(function () {
-      sinon.stub(c, 'getLogsByRequestErrorCallback', Em.K);
+      sinon.stub(c, 'reloadErrorCallback', Em.K);
     });
     afterEach(function () {
-      c.getLogsByRequestErrorCallback.restore();
+      c.reloadErrorCallback.restore();
     });
     it('should set isSubmitDisabled to true', function () {
       c.set('isSubmitDisabled', false);
@@ -1089,34 +1474,18 @@ describe('App.InstallerStep9Controller', function () {
     });
   });
 
-  describe('#getLogsByRequest', function () {
-    beforeEach(function () {
-      sinon.stub(c, 'togglePreviousSteps', Em.K);
-      sinon.stub(c, 'loadLogData', Em.K);
-    });
-    afterEach(function () {
-      c.togglePreviousSteps.restore();
-      c.loadLogData.restore();
-    });
-    it('should call App.ajax.send with provided data', function () {
-      var polling = 1;
-      var requestId = 2;
-      c.set('content', {cluster: {name: 3}});
-      c.set('numPolls', 4);
-      c.getLogsByRequest(polling, requestId);
-      expect(App.ajax.send.args[0][0].data).to.eql({polling: polling, requestId: requestId, cluster: 3, numPolls: 4});
-    });
-  });
-
   describe('#doPolling', function () {
+
     beforeEach(function () {
       sinon.stub(c, 'getLogsByRequest', Em.K);
       sinon.stub(c, 'togglePreviousSteps', Em.K);
     });
+
     afterEach(function () {
       c.getLogsByRequest.restore();
       c.togglePreviousSteps.restore();
     });
+
     it('should increment numPolls if testMode', function () {
       App.set('testMode', true);
       c.set('numPolls', 0);
@@ -1124,24 +1493,13 @@ describe('App.InstallerStep9Controller', function () {
       expect(c.get('numPolls')).to.equal(1);
       App.set('testMode', false);
     });
+
     it('should call getLogsByRequest', function () {
       c.set('content', {cluster: {requestId: 1}});
       c.doPolling();
       expect(c.getLogsByRequest.calledWith(true, 1)).to.equal(true);
     });
-  });
 
-  describe('#isAllComponentsInstalled', function () {
-    it('shouldn\'t call App.ajax.send', function () {
-      c.set('content', {controllerName: 'addServiceController'});
-      c.isAllComponentsInstalled();
-      expect(App.ajax.send.called).to.equal(false);
-    });
-    it('should call App.ajax.send', function () {
-      c.set('content', {cluster: {name: 'n'}, controllerName: 'installerController'});
-      c.isAllComponentsInstalled();
-      expect(App.ajax.send.args[0][0].data).to.eql({cluster: 'n'});
-    });
   });
 
   describe('#isAllComponentsInstalledErrorCallback', function () {

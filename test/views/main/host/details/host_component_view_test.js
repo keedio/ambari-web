@@ -36,6 +36,7 @@ describe('App.HostComponentView', function() {
       return Em.get(App.router, k);
     });
     hostComponentView = App.HostComponentView.create({
+      componentCounter: 1,
       startBlinking: function(){},
       doBlinking: function(){},
       getDesiredAdminState: function(){return $.ajax({});},
@@ -55,10 +56,26 @@ describe('App.HostComponentView', function() {
     var tests = Em.A([
       {
         parentView: {content: {healthClass: 'health-status-DEAD-YELLOW'}},
+        noActionAvailable: '',
+        isRestartComponentDisabled: true,
         e: 'disabled'
       },
       {
         parentView: {content: {healthClass: 'another-class'}},
+        noActionAvailable: '',
+        isRestartComponentDisabled: true,
+        e: ''
+      },
+      {
+        parentView: {content: {healthClass: 'another-class'}},
+        noActionAvailable: 'hidden',
+        isRestartComponentDisabled: true,
+        e: 'disabled'
+      },
+      {
+        parentView: {content: {healthClass: 'another-class'}},
+        noActionAvailable: 'hidden',
+        isRestartComponentDisabled: false,
         e: ''
       }
     ]);
@@ -68,7 +85,9 @@ describe('App.HostComponentView', function() {
         hostComponentView = App.HostComponentView.create({
           startBlinking: function(){},
           doBlinking: function(){},
-          parentView: test.parentView
+          parentView: test.parentView,
+          noActionAvailable: test.noActionAvailable,
+          isRestartComponentDisabled: test.isRestartComponentDisabled
         });
         expect(hostComponentView.get('disabled')).to.equal(test.e);
       });
@@ -223,18 +242,52 @@ describe('App.HostComponentView', function() {
 
   describe('#isDeleteComponentDisabled', function() {
 
+    beforeEach(function() {
+      sinon.stub(App.StackServiceComponent, 'find', function(component) {
+        var min = component == 'comp0' ? 0 : 1;
+        return Em.Object.create({minToInstall: min});
+      });
+    });
+    afterEach(function() {
+      App.StackServiceComponent.find.restore();
+    });
+
     var tests = ['INSTALLED', 'UNKNOWN', 'INSTALL_FAILED', 'UPGRADE_FAILED', 'INIT'];
     var testE = false;
     var defaultE = true;
 
     App.HostComponentStatus.getStatusesList().forEach(function(status) {
       it(status, function() {
+        App.store.load(App.StackServiceComponent, {
+          id: 1,
+          component_name: 'comp0'
+        });
+        hostComponentView.get('hostComponent').set('componentName', 'comp0');
         hostComponentView.get('hostComponent').set('workStatus', status);
         var e = tests.contains(status) ? testE : defaultE;
         expect(hostComponentView.get('isDeleteComponentDisabled')).to.equal(e);
       });
     });
 
+    it('delete is disabled because min cardinality 1', function() {
+      App.store.load(App.StackServiceComponent, {
+        id: 2,
+        component_name: 'comp1'
+      });
+      hostComponentView.get('hostComponent').set('componentName', 'comp1');
+      hostComponentView.get('hostComponent').set('workStatus', 'INSTALLED');
+      expect(hostComponentView.get('isDeleteComponentDisabled')).to.equal(true);
+    });
+
+    it('delete is enabled because min cardinality 0', function() {
+      App.store.load(App.StackServiceComponent, {
+        id: 2,
+        component_name: 'comp0'
+      });
+      hostComponentView.get('hostComponent').set('componentName', 'comp0');
+      hostComponentView.get('hostComponent').set('workStatus', 'INSTALLED');
+      expect(hostComponentView.get('isDeleteComponentDisabled')).to.equal(false);
+    });
   });
 
   describe('#componentTextStatus', function() {
@@ -417,4 +470,188 @@ describe('App.HostComponentView', function() {
     });
   });
 
+  describe('#masterCustomCommands', function() {
+    var content = [
+      {
+        componentName: 'MASTER_COMPONENT',
+        hostName: '01'
+      }
+    ];
+
+    beforeEach(function () {
+      sinon.stub(App.HostComponentActionMap, 'getMap', function () {
+        return {
+          REFRESHQUEUES: {
+            action: 'refreshYarnQueues',
+            customCommand: 'REFRESHQUEUES',
+            context : Em.I18n.t('services.service.actions.run.yarnRefreshQueues.context'),
+            label: Em.I18n.t('services.service.actions.run.yarnRefreshQueues.menu'),
+            cssClass: 'icon-refresh',
+            disabled: false
+          }
+        }
+      });
+    });
+
+
+    //two components, one running, active one is stopped
+    it('Should not get custom commands for master component if component not running', function() {
+      sinon.stub(App.StackServiceComponent, 'find', function() {
+        return Em.Object.create({
+          componentName: 'MASTER_COMPONENT',
+          isSlave: false,
+          isMaster: true,
+          isStart: false,
+          customCommands: ['DECOMMISSION', 'REFRESHQUEUES']
+        });
+      });
+
+      hostComponentView.set('componentCounter', 2);
+
+      sinon.stub(hostComponentView, 'runningComponentCounter', function () {
+        return 1;
+      });
+
+      hostComponentView.set('content', content);
+      expect(hostComponentView.get('customCommands')).to.have.length(0);
+    });
+
+    //two components, none running
+    it('Should get custom commands for master component when all components are stopped', function() {
+      sinon.stub(App.StackServiceComponent, 'find', function() {
+        return Em.Object.create({
+          componentName: 'MASTER_COMPONENT',
+          isSlave: false,
+          isMaster: true,
+          isStart: false,
+          customCommands: ['DECOMMISSION', 'REFRESHQUEUES']
+        });
+      });
+
+      hostComponentView.set('componentCounter', 2);
+
+      sinon.stub(hostComponentView, 'runningComponentCounter', function () {
+        return 0;
+      });
+
+      hostComponentView.set('content', content);
+      expect(hostComponentView.get('customCommands')).to.have.length(1);
+    });
+
+    //two components, two running, only commission and decommission custom commands
+    it('Should not show COMMISSION and DECOMMISSION on master', function() {
+      sinon.stub(App.StackServiceComponent, 'find', function() {
+        return Em.Object.create({
+          componentName: 'MASTER_COMPONENT',
+          isSlave: false,
+          isMaster: true,
+          isStart: false,
+          customCommands: ['DECOMMISSION', 'RECOMMISSION']
+        });
+      });
+
+      hostComponentView.set('componentCounter', 2);
+
+      sinon.stub(hostComponentView, 'runningComponentCounter', function () {
+        return 2;
+      });
+
+      hostComponentView.set('content', content);
+      expect(hostComponentView.get('customCommands')).to.have.length(0);
+    });
+
+    //one component, one running, cardinality 1
+    it('Should show custom command for cardinality 1', function() {
+      sinon.stub(App.StackServiceComponent, 'find', function() {
+        return Em.Object.create({
+          isSlave: false,
+          cardinality: '1',
+          isMaster: true,
+          isStart: true,
+          customCommands: ['DECOMMISSION', 'REFRESHQUEUES']
+        });
+      });
+
+      hostComponentView.set('componentCounter', 1);
+
+      sinon.stub(hostComponentView, 'runningComponentCounter', function () {
+        return 1;
+      });
+
+      hostComponentView.set('content', content);
+      expect(hostComponentView.get('customCommands')).to.have.length(1);
+    });
+
+    afterEach(function() {
+      App.HostComponentActionMap.getMap.restore();
+      App.StackServiceComponent.find.restore();
+      hostComponentView.runningComponentCounter.restore();
+    });
+  });
+
+  describe('#getCustomCommandLabel', function() {
+
+    beforeEach(function () {
+      sinon.stub(App.HostComponentActionMap, 'getMap', function () {
+        return {
+          MASTER_CUSTOM_COMMAND: {
+            action: 'executeCustomCommand',
+            cssClass: 'icon-play-circle',
+            isHidden: false,
+            disabled: false
+          },
+          REFRESHQUEUES: {
+            action: 'refreshYarnQueues',
+            customCommand: 'REFRESHQUEUES',
+            context : Em.I18n.t('services.service.actions.run.yarnRefreshQueues.context'),
+            label: Em.I18n.t('services.service.actions.run.yarnRefreshQueues.menu'),
+            cssClass: 'icon-refresh',
+            disabled: false
+          }
+        }
+      });
+    });
+    afterEach(function() {
+      App.HostComponentActionMap.getMap.restore();
+    });
+
+    var tests = Em.A([
+      {
+        msg: 'Non-slave component not present in `App.HostComponentActionMap.getMap()` should have a default valid label',
+        isSlave: false,
+        command: 'CUSTOM',
+        e: Em.I18n.t('services.service.actions.run.executeCustomCommand.menu').format('CUSTOM')
+      },
+      {
+        msg: 'Non-slave component present in `App.HostComponentActionMap.getMap()` with no label should have a default valid label',
+        isSlave: false,
+        command: 'MASTER_CUSTOM_COMMAND',
+        e: Em.I18n.t('services.service.actions.run.executeCustomCommand.menu').format('MASTER_CUSTOM_COMMAND')
+      },
+      {
+        msg: 'Non-slave component present in `App.HostComponentActionMap.getMap()` with label should have a custom valid label',
+        isSlave: false,
+        command: 'REFRESHQUEUES',
+        e: Em.I18n.t('services.service.actions.run.yarnRefreshQueues.menu')
+      },
+      {
+        msg: 'Slave component not present in `App.HostComponentActionMap.getMap()` should have a default valid label',
+        isSlave: true,
+        command: 'CUSTOM',
+        e: Em.I18n.t('services.service.actions.run.executeCustomCommand.menu').format('CUSTOM')
+      },
+      {
+        msg: 'Slave component present in `App.HostComponentActionMap.getMap()` should have a default valid label',
+        isSlave: true,
+        command: 'REFRESHQUEUES',
+        e: Em.I18n.t('services.service.actions.run.executeCustomCommand.menu').format('REFRESHQUEUES')
+      }
+    ]);
+
+    tests.forEach(function(test) {
+      it(test.msg, function() {
+        expect(hostComponentView.getCustomCommandLabel(test.command, test.isSlave)).to.equal(test.e);
+      })
+    });
+  });
 });

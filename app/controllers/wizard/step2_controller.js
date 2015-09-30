@@ -94,6 +94,14 @@ App.WizardStep2Controller = Em.Controller.extend({
   }.property('content.installOptions.sshUser'),
 
   /**
+   * "Shortcut" to <code>content.installOptions.agentUser</code>
+   * @type {string}
+   */
+  agentUser: function () {
+    return this.get('content.installOptions.agentUser');
+  }.property('content.installOptions.agentUser'),
+
+  /**
    * Installed type based on <code>manualInstall</code>
    * @type {string}
    */
@@ -113,35 +121,50 @@ App.WizardStep2Controller = Em.Controller.extend({
    */
   hostsError: null,
 
+  useSSH: function () {
+    return !App.get('isHadoopWindowsStack');
+  }.property('App.isHadoopWindowsStack'),
+
   /**
    * Error-message if <code>sshKey</code> is empty, null otherwise
    * @type {string|null}
    */
   sshKeyError: function () {
-    if (this.get('hasSubmitted') && this.get('manualInstall') === false && Em.isEmpty(this.get('sshKey').trim())) {
+    if (this.get('hasSubmitted') && this.get('manualInstall') === false && this.get('useSSH') && Em.isEmpty(this.get('sshKey').trim())) {
       return Em.I18n.t('installer.step2.sshKey.error.required');
     }
     return null;
-  }.property('sshKey', 'manualInstall', 'hasSubmitted'),
+  }.property('sshKey', 'useSSH', 'manualInstall', 'hasSubmitted'),
 
   /**
    * Error-message if <code>sshUser</code> is empty, null otherwise
    * @type {string|null}
    */
   sshUserError: function () {
-    if (this.get('manualInstall') === false && Em.isEmpty(this.get('sshUser').trim())) {
+    if (this.get('manualInstall') === false && this.get('useSSH') && Em.isEmpty(this.get('sshUser').trim())) {
       return Em.I18n.t('installer.step2.sshUser.required');
     }
     return null;
-  }.property('sshUser', 'hasSubmitted', 'manualInstall'),
+  }.property('sshUser', 'useSSH', 'hasSubmitted', 'manualInstall'),
+
+  /**
+   * Error-message if <code>agentUser</code> is empty, null otherwise
+   * @type {string|null}
+   */
+  agentUserError: function () {
+    if (App.get('supports.customizeAgentUserAccount') && this.get('manualInstall') === false && Em.isEmpty(this.get('agentUser').trim())) {
+      return Em.I18n.t('installer.step2.sshUser.required');
+    }
+    return null;
+  }.property('agentUser', 'hasSubmitted', 'manualInstall'),
 
   /**
    * is Submit button disabled
    * @type {bool}
    */
   isSubmitDisabled: function () {
-    return (this.get('hostsError') || this.get('sshKeyError') || this.get('sshUserError'));
-  }.property('hostsError', 'sshKeyError', 'sshUserError'),
+    return (this.get('hostsError') || this.get('sshKeyError') || this.get('sshUserError') || this.get('agentUserError'));
+  }.property('hostsError', 'sshKeyError', 'sshUserError', 'agentUserError'),
 
   installedHostNames: function () {
     var installedHostsName = [];
@@ -269,7 +292,7 @@ App.WizardStep2Controller = Em.Controller.extend({
       this.set('hostsError', Em.I18n.t('installer.step2.hostName.error.already_installed'));
     }
 
-    if (this.get('hostsError') || this.get('sshUserError') || this.get('sshKeyError')) {
+    if (this.get('hostsError') || this.get('sshUserError') || this.get('agentUserError') || this.get('sshKeyError')) {
       return false;
     }
 
@@ -322,7 +345,7 @@ App.WizardStep2Controller = Em.Controller.extend({
         hostNames.push(a);
       }
     });
-    this.set('hostNameArr', hostNames);
+    this.set('hostNameArr', hostNames.uniq());
   },
 
   /**
@@ -342,32 +365,9 @@ App.WizardStep2Controller = Em.Controller.extend({
       return false;
     }
 
-    if (App.get('skipBootstrap')) {
-      this.saveHosts();
-      App.router.send('next');
-      return true;
-    }
-    this.setupBootStrap();
+    this.saveHosts();
+    App.router.send('next');
     return true;
-  },
-
-  /**
-   * setup bootstrap data and completion callback for bootstrap call
-   * @method setupBootStrap
-   */
-  setupBootStrap: function () {
-    var self = this;
-    var bootStrapData = JSON.stringify({'verbose': true, 'sshKey': this.get('sshKey'), 'hosts': this.get('hostNameArr'), 'user': this.get('sshUser')});
-    App.router.get(this.get('content.controllerName')).launchBootstrap(bootStrapData, function (requestId) {
-      if (requestId == '0') {
-        var controller = App.router.get(App.clusterStatus.wizardControllerName);
-        controller.registerErrPopup(Em.I18n.t('common.information'), Em.I18n.t('installer.step2.evaluateStep.hostRegInProgress'));
-      } else if (requestId) {
-        self.set('content.installOptions.bootRequestId', requestId);
-        self.saveHosts();
-        App.router.send('next');
-      }
-    });
   },
 
   /**

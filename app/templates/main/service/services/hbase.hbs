@@ -17,43 +17,75 @@
 }}
 
 <!-- HBase Master Server -->
-  {{view view.dashboardMasterComponentView}}
+{{view view.dashboardMasterComponentView}}
 <!-- RegionServers -->
 <tr>
-  <td><a href="#" {{action filterHosts view.regionServerComponent}}>{{t dashboard.services.hbase.regionServers}}</a>
+  <td class="summary-label"><a
+          href="#" {{action filterHosts view.regionServerComponent}}>{{t dashboard.services.hbase.regionServers}}</a>
   </td>
   <td>
-    <span>
-      {{#view App.ComponentLiveTextView liveComponentsBinding="view.service.regionServersStarted" totalComponentsBinding="view.service.regionServersTotal"}}
-        {{view.liveComponents}}/{{view.totalComponents}}
-      {{/view}}
-    </span>
+    {{#if App.router.clusterController.isServiceContentFullyLoaded}}
+      <span>
+        {{#view App.ComponentLiveTextView liveComponentsBinding="view.service.regionServersStarted" totalComponentsBinding="view.service.regionServersTotal"}}
+          {{view.liveComponents}}/{{view.totalComponents}}
+        {{/view}}
+      </span>
       {{t services.service.summary.RegionServersLIVE}}
+    {{else}}
+      {{t common.loading.eclipses}}
+    {{/if}}
   </td>
 </tr>
+<!-- PhoenixServers -->
+{{#if view.showPhoenixInfo}}
+  <tr>
+    <td class="summary-label"><a
+            href="#" {{action filterHosts view.phoenixServerComponent}}>{{t dashboard.services.hbase.phoenixServers}}</a>
+    </td>
+    <td>
+      <span>
+        {{#view App.ComponentLiveTextView liveComponentsBinding="view.service.phoenixServersStarted" totalComponentsBinding="view.service.phoenixServersTotal"}}
+          {{#if App.router.clusterController.isServiceContentFullyLoaded}}
+            {{view.liveComponents}}/{{view.totalComponents}}
+          {{/if}}
+        {{/view}}
+      </span>
+      {{t services.service.summary.PhoenixServersLIVE}}
+    </td>
+  </tr>
+{{/if}}
 <!-- Regions in Transition -->
 <tr>
-  <td>{{t dashboard.services.hbase.regions.transition}}</td>
+  <td class="summary-label">{{t dashboard.services.hbase.regions.transition}}</td>
   <td>{{view.service.regionsInTransition}}</td>
 </tr>
-<!-- HBase Master Started Time -->
-<tr>
-  <td>{{t dashboard.services.hbase.masterStarted}}</td>
-  <td>{{view.masterStartedTime}}</td>
-</tr>
-<!-- HBase Master Activated Time -->
-<tr>
-  <td>{{t dashboard.services.hbase.masterActivated}}</td>
-  <td>{{view.masterStartedTime}}</td>
-</tr>
-<!-- Average Load -->
-<tr>
-  <td>{{t dashboard.services.hbase.averageLoad}}</td>
-  <td>{{view.averageLoad}}</td>
-</tr>
-<!-- Master Server Heap -->
-<tr>
-  <td>{{t dashboard.services.hbase.masterServerHeap}}</td>
-  <td>{{view.masterServerHeapSummary}}</td>
-</tr>
+
+<!-- Divider-- make the remaining summary info on 2nd table-->
+</tbody>
+</table>
+</div>
+<div class="span6">
+  <table class="summary-info table no-borders table-condensed">
+    <tbody>
+
+    <!-- HBase Master Started Time -->
+    <tr>
+      <td class="summary-label">{{t dashboard.services.hbase.masterStarted}}</td>
+      <td>{{view.masterStartedTime}}</td>
+    </tr>
+    <!-- HBase Master Activated Time -->
+    <tr>
+      <td class="summary-label">{{t dashboard.services.hbase.masterActivated}}</td>
+      <td>{{view.masterStartedTime}}</td>
+    </tr>
+    <!-- Average Load -->
+    <tr>
+      <td class="summary-label">{{t dashboard.services.hbase.averageLoad}}</td>
+      <td>{{view.averageLoad}}</td>
+    </tr>
+    <!-- Master Server Heap -->
+    <tr>
+      <td class="summary-label">{{t dashboard.services.hbase.masterServerHeap}}</td>
+      <td>{{view.masterServerHeapSummary}}</td>
+    </tr>
 

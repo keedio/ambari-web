@@ -26,6 +26,11 @@ App.AddHostController = App.WizardController.extend({
   totalSteps: 7,
 
   /**
+   * @type {string}
+   */
+  displayName: Em.I18n.t('hosts.add.header'),
+
+  /**
    * Used for hiding back button in wizard
    */
   hideBackButton: true,
@@ -68,6 +73,12 @@ App.AddHostController = App.WizardController.extend({
       wizardControllerName: this.get('name'),
       localdb: App.db.data
     });
+    var self = this;
+    Em.run.next(function(){
+      if (self.isConfigGroupsEmpty()) {
+        self.disableStep(4);
+      }
+    });   
   },
 
   /**
@@ -79,24 +90,24 @@ App.AddHostController = App.WizardController.extend({
   },
 
   /**
-   * return new object extended from installOptionsTemplate
-   * @return Object
-   */
-  getInstallOptions: function () {
-    return jQuery.extend({}, this.get('installOptionsTemplate'));
-  },
-
-  /**
    * Remove host from model. Used at <code>Confirm hosts</code> step
    * @param hosts Array of hosts, which we want to delete
    */
   removeHosts: function (hosts) {
     var dbHosts = this.getDBProperty('hosts');
     hosts.forEach(function (_hostInfo) {
-      var host = _hostInfo.hostName;
+      var host = _hostInfo.name;
       delete dbHosts[host];
     });
     this.setDBProperty('hosts', dbHosts);
+  },
+
+  disableStep: function(step) {
+    this.get('isStepDisabled').findProperty('step', step).set('value', true);
+  },
+
+  isConfigGroupsEmpty: function() {
+    return !this.get('content.configGroups') || !this.get('content.configGroups').length; 
   },
 
   /**
@@ -109,35 +120,36 @@ App.AddHostController = App.WizardController.extend({
         selectedServices: [],
         installedServices: []
       };
-      App.StackService.find().forEach(function(item){
-        var isInstalled = App.Service.find().someProperty('id', item.get('serviceName'));
+      App.StackService.find().forEach(function (item) {
+        var isInstalled = App.Service.find().someProperty('serviceName', item.get('serviceName'));
         item.set('isSelected', isInstalled);
         item.set('isInstalled', isInstalled);
         if (isInstalled) {
           services.selectedServices.push(item.get('serviceName'));
           services.installedServices.push(item.get('serviceName'));
         }
-      },this);
-      this.setDBProperty('services',services);
+      }, this);
+      this.setDBProperty('services', services);
     } else {
-      App.StackService.find().forEach(function(item) {
-        var isSelected =   services.selectedServices.contains(item.get('serviceName'));
+      App.StackService.find().forEach(function (item) {
+        var isSelected = services.selectedServices.contains(item.get('serviceName'));
         var isInstalled = services.installedServices.contains(item.get('serviceName'));
         item.set('isSelected', isSelected);
         item.set('isInstalled', isInstalled);
-      },this);
+      }, this);
     }
     this.set('content.services', App.StackService.find());
   },
 
-  /**
+ /**
    * Load slave component hosts data for using in required step controllers
    * TODO move to mixin
    */
   loadSlaveComponentHosts: function () {
-    var slaveComponentHosts = this.getDBProperty('slaveComponentHosts') || [];
+   var props = this.getDBProperties(['slaveComponentHosts', 'hosts']);
+    var slaveComponentHosts = props.slaveComponentHosts || [];
     if (slaveComponentHosts.length) {
-      var hosts = this.getDBProperty('hosts'),
+      var hosts = props.hosts || {},
           host_names = Em.keys(hosts);
       slaveComponentHosts.forEach(function (component) {
         component.hosts.forEach(function (host) {
@@ -160,7 +172,7 @@ App.AddHostController = App.WizardController.extend({
    */
   saveClients: function () {
     var serviceComponents = App.StackServiceComponent.find();
-    var services = this.get('content.services').filterProperty('isSelected');
+    var services = this.get('content.services').filterProperty('isInstallable').filterProperty('isSelected');
     var clients = this.getClientsToInstall(services, serviceComponents);
     this.setDBProperty('clientInfo', clients);
     this.set('content.clients', clients);
@@ -272,15 +284,20 @@ App.AddHostController = App.WizardController.extend({
             var configGroups = this.get('content.configGroups').filterProperty('ConfigGroup.tag', serviceName);
             var configGroupsNames = configGroups.mapProperty('ConfigGroup.group_name');
             var defaultGroupName = service.get('displayName') + ' Default';
+            var selectedService = selectedServices.findProperty('serviceId', serviceName);
             configGroupsNames.unshift(defaultGroupName);
-            selectedServices.push({
-              serviceId: serviceName,
-              displayName: service.get('displayName'),
-              hosts: slave.hosts.mapProperty('hostName'),
-              configGroupsNames: configGroupsNames,
-              configGroups: configGroups,
-              selectedConfigGroup: defaultGroupName
-            });
+            if (selectedService) {
+              Em.set(selectedService, 'hosts', Em.getWithDefault(selectedService, 'hosts', []).concat(slave.hosts.mapProperty('hostName')).uniq());
+            } else {
+              selectedServices.push({
+                serviceId: serviceName,
+                displayName: service.get('displayName'),
+                hosts: slave.hosts.mapProperty('hostName'),
+                configGroupsNames: configGroupsNames,
+                configGroups: configGroups,
+                selectedConfigGroup: defaultGroupName
+              });
+            }
           }
         }
       }, this);
@@ -380,7 +397,6 @@ App.AddHostController = App.WizardController.extend({
    * Clear all temporary data
    */
   finish: function () {
-    this.setCurrentStep('1');
     this.clearAllSteps();
     this.clearStorageData();
     App.router.get('updateController').updateAll();
@@ -392,13 +408,15 @@ App.AddHostController = App.WizardController.extend({
    * send request to server in order to install services
    * @param isRetry
    */
-  installServices: function (isRetry, callback) {
+  installServices: function (isRetry, callback, errorCallback) {
     callback = callback || Em.K;
     this.set('content.cluster.oldRequestsId', []);
+    this.set('content.cluster.status', 'PENDING');
     var clusterName = this.get('content.cluster.name');
     var hostNames = [];
-    for (var hostname in this.getDBProperty('hosts')) {
-      if(this.getDBProperty('hosts')[hostname].isInstalled == false){
+    var hosts = this.getDBProperty('hosts');
+    for (var hostname in hosts) {
+      if(!hosts[hostname].isInstalled) {
         hostNames.push(hostname);
       }
     }
@@ -415,7 +433,7 @@ App.AddHostController = App.WizardController.extend({
       },
       success: 'installServicesSuccessCallback',
       error: 'installServicesErrorCallback'
-    }).then(callback, callback);
+    }).then(callback, errorCallback || callback);
     return true;
   }
 });

@@ -25,50 +25,42 @@ describe('App.QuickViewLinks', function () {
 
   describe('#setProtocol', function() {
     var tests = [
-      { serviceName: "GANGLIA", ambariProperties: { 'ganglia.https': true }, m: "https for ganglia", result: "https" },
-      { serviceName: "GANGLIA", ambariProperties: { 'ganglia.https': false }, m: "http for ganglia 1", result: "http" },
+      { serviceName: "GANGLIA", ambariProperties: { 'ganglia.https': 'true' }, m: "https for ganglia", result: "https" },
+      { serviceName: "GANGLIA", ambariProperties: { 'ganglia.https': 'false' }, m: "http for ganglia 1", result: "http" },
       { serviceName: "GANGLIA", m: "http for ganglia 2", result: "http" },
-      { serviceName: "NAGIOS", ambariProperties: { 'nagios.https': true }, m: "https for nagios", result: "https" },
-      { serviceName: "NAGIOS", ambariProperties: { 'nagios.https': false }, m: "http for nagios", result: "http" },
       { serviceName: "YARN", configProperties: [
-        { type: 'yarn-site', properties: { 'yarn.http.policy': 'HTTPS_ONLY' }},
-        { type: 'core-site', properties: { 'hadoop.ssl.enabled': null }}
+        { type: 'yarn-site', properties: { 'yarn.http.policy': 'HTTPS_ONLY' }}
       ], m: "https for yarn", result: "https" },
       { serviceName: "YARN", configProperties: [
-        { type: 'yarn-site', properties: { 'yarn.http.policy': 'HTTP_ONLY' }},
-        { type: 'core-site', properties: { 'hadoop.ssl.enabled': null }}
+        { type: 'yarn-site', properties: { 'yarn.http.policy': 'HTTP_ONLY' }}
       ], m: "http for yarn", result: "http" },
       { serviceName: "YARN", configProperties: [
-        { type: 'yarn-site', properties: { 'yarn.http.policy': 'HTTP_ONLY' }},
-        { type: 'core-site', properties: { 'hadoop.ssl.enabled': true }}
+        { type: 'yarn-site', properties: { 'yarn.http.policy': 'HTTP_ONLY' }}
       ], m: "http for yarn (overrides hadoop.ssl.enabled)", result: "http" },
       { serviceName: "YARN", configProperties: [
-        { type: 'yarn-site', properties: { 'yarn.http.policy': 'HTTPS_ONLY' }},
-        { type: 'core-site', properties: { 'hadoop.ssl.enabled': false }}
+        { type: 'yarn-site', properties: { 'yarn.http.policy': 'HTTPS_ONLY' }}
       ], m: "https for yarn (overrides hadoop.ssl.enabled)", result: "https" },
-      { serviceName: "YARN", configProperties: [
-        { type: 'core-site', properties: { 'hadoop.ssl.enabled': true }}
-      ], m: "https for yarn by hadoop.ssl.enabled", result: "https" },
       { serviceName: "MAPREDUCE2", configProperties: [
-        { type: 'mapred-site', properties: { 'mapreduce.jobhistory.http.policy': 'HTTPS_ONLY' }},
-        { type: 'core-site', properties: { 'hadoop.ssl.enabled': null }}
+        { type: 'mapred-site', properties: { 'mapreduce.jobhistory.http.policy': 'HTTPS_ONLY' }}
       ], m: "https for mapreduce2", result: "https" },
       { serviceName: "MAPREDUCE2", configProperties: [
-        { type: 'mapred-site', properties: { 'mapreduce.jobhistory.http.policy': 'HTTP_ONLY' }},
-        { type: 'core-site', properties: { 'hadoop.ssl.enabled': null }}
+        { type: 'mapred-site', properties: { 'mapreduce.jobhistory.http.policy': 'HTTP_ONLY' }}
       ], m: "http for mapreduce2", result: "http" },
-      { serviceName: "MAPREDUCE2", configProperties: [
-        { type: 'core-site', properties: { 'hadoop.ssl.enabled': true }}
-      ], m: "https for mapreduce2 by hadoop.ssl.enabled", result: "https" },
       { serviceName: "ANYSERVICE", configProperties: [
-        { type: 'core-site', properties: { 'hadoop.ssl.enabled': true }}
-      ], m: "http for anyservice hadoop.ssl.enabled is true but doesn't support security", servicesSupportsHttps: [], result: "http" },
-      { serviceName: "ANYSERVICE", configProperties: [
-        { type: 'core-site', properties: { 'hadoop.ssl.enabled': false }}
-      ], m: "http for anyservice hadoop.ssl.enabled is false", servicesSupportsHttps: ["ANYSERVICE"], result: "http" },
-      { serviceName: "ANYSERVICE", configProperties: [
-        { type: 'core-site', properties: { 'hadoop.ssl.enabled': true }}
-      ], m: "https for anyservice", servicesSupportsHttps: ["ANYSERVICE"], result: "https" }
+        { type: 'hdfs-site', properties: { 'dfs.http.policy': 'HTTPS_ONLY' }}
+      ], m: "https for anyservice", servicesSupportsHttps: ["ANYSERVICE"], result: "https" },
+      { serviceName: "RANGER", configProperties: [
+        { type: 'ranger-site', properties: { 'http.enabled': 'true' }}
+      ], m: "http for ranger (HDP2.2)", result: "http" },
+      { serviceName: "RANGER", configProperties: [
+        { type: 'ranger-site', properties: { 'http.enabled': 'false' }}
+      ], m: "https for ranger (HDP2.2)", result: "https" },
+      { serviceName: "RANGER", configProperties: [
+        { type: 'ranger-admin-site', properties: { 'ranger.service.http.enabled': 'true', 'ranger.service.https.attrib.ssl.enabled': 'false'}}
+      ], m: "http for ranger (HDP2.3)", result: "http" },
+      { serviceName: "RANGER", configProperties: [
+        { type: 'ranger-admin-site', properties: { 'ranger.service.http.enabled': 'false', 'ranger.service.https.attrib.ssl.enabled': 'true'}}
+      ], m: "https for ranger (HDP2.3)", result: "https" }
     ];
 
     tests.forEach(function(t) {
@@ -106,12 +98,55 @@ describe('App.QuickViewLinks', function () {
         'default_http_port': '8088',
         'default_https_port': '8090',
         'regex': '\\w*:(\\d+)'
+      }),
+      Em.Object.create({
+        'service_id': 'YARN',
+        'protocol': 'https',
+        'https_config': 'https_config',
+        'config': 'https_config_custom',
+        'site': 'yarn-site',
+        'result': '9091',
+        'default_http_port': '8088',
+        'default_https_port': '8090',
+        'regex': '\\w*:(\\d+)',
+        'configProperties': [{
+          'type': 'yarn-site',
+          'properties': {
+            'https_config': 'h:9090',
+            'https_config_custom': 'h:9091'
+          }
+        }]
+      }),
+      Em.Object.create({
+        'service_id': 'RANGER',
+        'protocol': 'http',
+        'http_config': 'http_config',
+        'https_config': 'https_config',
+        'result': '6080',
+        'default_http_port': '6080',
+        'default_https_port': '6182',
+        'regex': '(\\d*)+'
+      }),
+      Em.Object.create({
+        'service_id': 'RANGER',
+        'protocol': 'https',
+        'http_config': 'http_config',
+        'https_config': 'https_config',
+        'result': '6182',
+        'default_http_port': '6080',
+        'default_https_port': '6182',
+        'regex': '(\\d*)+'
       })
     ];
 
+    after(function () {
+      quickViewLinks.set('configProperties', []);
+    });
+
     testData.forEach(function(item) {
       it(item.service_id + ' ' + item.protocol, function () {
-        expect(quickViewLinks.setPort(item, item.protocol, item.version)).to.equal(item.result);
+        quickViewLinks.set('configProperties', item.configProperties || []);
+        expect(quickViewLinks.setPort(item, item.protocol, item.config)).to.equal(item.result);
       })
     },this);
   });
@@ -126,38 +161,6 @@ describe('App.QuickViewLinks', function () {
           singleNodeInstall: true,
           hosts: ['host0'],
           title: 'single node install'
-        },
-        {
-          response: {
-            items: [
-              {
-                host_components: [
-                  {
-                    HostRoles: {
-                      component_name: 'JOBTRACKER'
-                    }
-                  }
-                ],
-                Hosts: {
-                  public_host_name: 'host1'
-                }
-              },
-              {
-                host_components: [
-                  {
-                    HostRoles: {
-                      component_name: 'HISTORYSERVER'
-                    }
-                  }
-                ],
-                Hosts: {
-                  public_host_name: 'host2'
-                }
-              }
-            ]
-          },
-          serviceName: 'MAPREDUCE',
-          hosts: ['host1', 'host2']
         },
         {
           response: {
@@ -213,7 +216,7 @@ describe('App.QuickViewLinks', function () {
               ]
             });
           },
-          title: 'service with master component, except HDFS, HBase, MapReduce, YARN and Storm'
+          title: 'service with master component, except HDFS, HBase, YARN and Storm'
         },
         {
           response: {
@@ -413,27 +416,6 @@ describe('App.QuickViewLinks', function () {
                   {
                     HostRoles: {
                       component_name: 'HBASE_MASTER'
-                    }
-                  }
-                ],
-                Hosts: {
-                  public_host_name: 'host13'
-                }
-              }
-            ]
-          },
-          serviceName: 'HBASE',
-          hosts: ['host13'],
-          title: 'HBASE, single master component'
-        },
-        {
-          response: {
-            items: [
-              {
-                host_components: [
-                  {
-                    HostRoles: {
-                      component_name: 'HBASE_MASTER'
                     },
                     metrics: {
                       hbase: {
@@ -445,8 +427,8 @@ describe('App.QuickViewLinks', function () {
                   }
                 ],
                 Hosts: {
-                  host_name: 'host14',
-                  public_host_name: 'host14'
+                  host_name: 'host13',
+                  public_host_name: 'host13'
                 }
               },
               {
@@ -465,8 +447,8 @@ describe('App.QuickViewLinks', function () {
                   }
                 ],
                 Hosts: {
-                  host_name: 'host15',
-                  public_host_name: 'host15'
+                  host_name: 'host14',
+                  public_host_name: 'host14'
                 }
               },
               {
@@ -478,16 +460,15 @@ describe('App.QuickViewLinks', function () {
                   }
                 ],
                 Hosts: {
-                  host_name: 'host16',
-                  public_host_name: 'host16'
+                  host_name: 'host15',
+                  public_host_name: 'host15'
                 }
               }
             ]
           },
           serviceName: 'HBASE',
-          hosts: ['host14', 'host15', 'host16'],
           multipleMasters: true,
-          title: 'HBASE, multiple master components'
+          hosts: ['host13', 'host14', 'host15']
         }
       ];
 
@@ -521,8 +502,7 @@ describe('App.QuickViewLinks', function () {
         }
         sinon.stub(App, 'get').withArgs('singleNodeInstall').returns(item.singleNodeInstall).
           withArgs('singleNodeAlias').returns('host0').
-          withArgs('isRMHaEnabled').returns(item.multipleMasters).
-          withArgs('supports.multipleHBaseMasters').returns(item.multipleMasters);
+          withArgs('isRMHaEnabled').returns(item.multipleMasters);
         if (item.multipleMasters) {
           expect(quickViewLinks.setHost(item.response, item.serviceName).mapProperty('publicHostName')).to.eql(item.hosts);
         } else {

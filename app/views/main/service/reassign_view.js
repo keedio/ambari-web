@@ -19,7 +19,7 @@
 
 var App = require('app');
 
-App.ReassignMasterView = Em.View.extend({
+App.ReassignMasterView = Em.View.extend(App.WizardMenuMixin, {
 
   templateName: require('templates/main/service/reassign'),
 
@@ -45,6 +45,10 @@ App.ReassignMasterView = Em.View.extend({
 
   isStep6Disabled: function () {
     return this.isStepDisabled(6);
+  }.property('controller.isStepDisabled.@each.value').cacheable(),
+
+  isStep7Disabled: function () {
+    return this.isStepDisabled(7);
   }.property('controller.isStepDisabled.@each.value').cacheable(),
 
   isStepDisabled: function (index) {
