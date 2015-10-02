@@ -153,6 +153,16 @@ ul.dropdown-menu a:hover {
   background-image: linear-gradient(to bottom, #717175, #434142);
   background-repeat: repeat-x;
 }
+.nav-tabs > li > a {
+  color: #55a08e;
+  font-family: Dsignes Bold;
+}
+.nav-tabs > li.active > a,
+.nav-tabs > li.active > a:hover,
+.nav-tabs > li.active > a:focus {
+  color: #666484;
+  font-family: Dsignes Bold;
+}
 .btn-primary {
   background: #352b5b;
   color: #ffffff;
@@ -209,6 +219,23 @@ ul.dropdown-menu a:hover {
 }
 .progress-bar-info {
   background-color: #666484;
+}
+.modal-header,
+.modal-footer {
+  color: #434142;
+  font-family: Dsignes Bold;
+}
+.dropdown-toggle,
+textarea,
+.dropdown,
+input[type="text"] {
+  font-family: Dsignes Light;
+  font-style: bold;
+  color: #434142;
+}
+.table thead {
+  color: #434142;
+  font-family: Dsignes Bold;
 }
 /* ***** MODIFY ***** */
 wbr {
@@ -609,6 +636,7 @@ h1 {
   margin-top: 0;
   margin-bottom: 20px;
   color: #666484;
+  font-family: Dsignes Bold;
 }
 .login label {
   color: #666484;
@@ -1985,13 +2013,15 @@ a:focus {
   /* ***** MODIFY ***** */
 
 }
+.host-component-popup-wrap .task-top-wrap {
+  font-family: Dsignes Bold;
+  color: #434142;
+}
 .host-component-popup-wrap .task-top-wrap .operation-name-top {
   width: 33%;
   padding-left: 20px;
   float: left;
   text-align: left;
-  font-family: Dsignes Bold;
-  color: #434142;
 }
 .host-component-popup-wrap #service-info .show-more {
   width: 98.8%;
@@ -4159,6 +4189,18 @@ table.graphs {
 .header {
   margin-bottom: 20px;
 }
+.admin-cluster {
+  /* ***** MODIFY ***** */
+
+}
+.admin-cluster .header {
+  color: #434142;
+  font-family: Dsignes Bold;
+}
+.admin-cluster .table thead {
+  color: #434142;
+  font-family: Dsignes Bold;
+}
 .admin-cluster a.inactive {
   cursor: default;
   color: #333333;
@@ -4167,9 +4209,23 @@ table.graphs {
 .btn-padding {
   margin-left: 20px;
 }
+/* ***** MODIFY ***** */
+.admin-misc .header {
+  color: #434142;
+  font-family: Dsignes Bold;
+}
 .admin-misc .span6 {
   margin-left: 0 !important;
 }
+.admin-misc .span6 .table thead {
+  color: #434142;
+  font-family: Dsignes Bold;
+}
+.muted {
+  color: #666484;
+  font-family: Dsignes Bold;
+}
+/* ***** MODIFY ***** */
 .admin-user-settings .checkbox {
   margin: 0px;
 }

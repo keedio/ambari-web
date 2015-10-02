@@ -155,6 +155,29 @@ ul.dropdown-menu {
     background-repeat: repeat-x;
   }
 }
+
+.nav-tabs > li > a {  
+  color: @color-7473C;    
+  font-family: Dsignes Bold;    
+}  
+.nav-tabs > li.active > a,
+.nav-tabs > li.active > a:hover,
+.nav-tabs > li.active > a:focus{
+  color: @color-5285C;
+  font-family: Dsignes Bold;    
+}
+
+.btn-primary {
+    background: @color-669C;
+    color: #ffffff;
+}
+.btn-primary:hover, .btn-primary:focus, .btn-primary:active, .btn-primary.active, .open > .dropdown-toggle.btn-primary {
+    background: @color-5285C;
+}
+.btn-primary:active, .btn-primary.active {
+    background: @color-669C;
+    box-shadow: none;
+}
 .btn-success {
     background: @color-563C;
     color: #ffffff;
@@ -166,18 +189,45 @@ ul.dropdown-menu {
     background: #599386;
     box-shadow: none;
 }
-.btn-primary {
+.btn-info {
     background: @color-5285C;
     color: #ffffff;
 }
-.btn-primary:hover, .btn-primary:focus, .btn-primary:active, .btn-primary.active, .open > .dropdown-toggle.btn-primary {
+.btn-info:hover, .btn-info:focus, .btn-info:active, .btn-info.active, .open > .dropdown-toggle.btn-info {
     background: @color-669C;
 }
-.btn-primary:active, .btn-primary.active {
-    background: #312A4E;
+.btn-info:active, .btn-info.active {
+    background: @color-5285C;
     box-shadow: none;
 }
+.progress-striped .progress-bar {
+  background-color: #F5F5F5 !important;                
+}
+.progress-bar-success {
+  background-color: @color-7473C;
+}
+.progress-bar-info {
+  background-color: @color-5285C;
+}
 
+.modal-header, .modal-footer {
+  color: @color-426C;
+  font-family: Dsignes Bold; 
+}
+
+.dropdown-toggle, textarea, 
+.dropdown, input[type="text"] {
+  font-family: Dsignes Light;
+  font-style: bold;
+  color: @color-426C;
+}
+
+.table {
+  thead {
+    color: @color-426C;
+    font-family: Dsignes Bold;  
+  }
+} 
 /* ***** MODIFY ***** */
 
 wbr {
@@ -634,6 +684,7 @@ h1 {
     margin-top: 0;
     margin-bottom: 20px;
     color: @color-5285C;
+    font-family: Dsignes Bold;
   }
   label {
     color: @color-5285C;
@@ -908,18 +959,21 @@ h1 {
       }
     }
 
+    /* ***** MODIFY ***** */
     #host-filter {
       margin-top: 1px;
       ul {
         margin: 3px;
         font-size: 12px;
         li.filter-status.active a {
+          font-family: Dsignes Bold;
           text-decoration: none;
           color: #FFFFFF;
         }
         li.filter-status.active,
         li.filter-status.active:hover {
-          background-color: #666666;
+          font-family: Dsignes Bold;
+          background-color: @color-424C;
           -webkit-box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.15), 0 1px 2px rgba(0, 0, 0, 0.05);
           -moz-box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.15), 0 1px 2px rgba(0, 0, 0, 0.05);
           box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.15), 0 1px 2px rgba(0, 0, 0, 0.05);
@@ -928,22 +982,24 @@ h1 {
           border-radius: 5px;
         }
         li.filter-status:hover {
-          background-color: #d8d8d8;
+          font-family: Dsignes Bold;
+          background-color: @color-424C;
           -webkit-border-radius: 5px;
           -moz-border-radius: 5px;
           border-radius: 5px;
         }
         li.divider {
-          color: #666666;
+          color: @color-426C;
           padding: 4px 2px;
         }
         li {
+          font-family: Dsignes Bold;
           list-style: none;
           display: block;
           float: left;
           padding: 4px 4px;
           a {
-            text-decoration: underline;
+            text-decoration: none;
           }
         }
         li.first {
@@ -951,6 +1007,8 @@ h1 {
         }
       }
     }
+    /* ***** MODIFY ***** */
+    
     .progress {
       margin-bottom: 0;
     }
@@ -977,7 +1035,7 @@ h1 {
     a.deselected {
     }
     i.icon-asterisks {
-      color: #00688B;
+      color: @color-669C;
     }
   }
   #step6 {
@@ -990,7 +1048,13 @@ h1 {
     .pre-scrollable {
       max-height: 440px;
       position: relative;
-      #component_assign_table {
+      #component_assign_table { 
+        /* ***** MODIFY ***** */
+        thead {
+          font-family: Dsignes Bold;
+          color: @color-426C;  
+        }
+        /* ***** MODIFY ***** */
         tbody td, th {
           white-space: nowrap;
         }
@@ -1016,8 +1080,16 @@ h1 {
     .pre-scrollable {
       max-height: 750px;
     }
+    
+    /* ***** MODIFY ***** */
     #overallProgress {
+      .span2 {
+        font-family: Dsignes Bold;
+        color: @color-426C;
+      }      
     }
+    /* ***** MODIFY ***** */
+
     .box-header {
       padding: 0px 4px 0px 10px;
       background: -webkit-gradient(linear, left top, left bottom, color-stop(0, #ffffff), color-stop(1, #e5e5e5));
@@ -1030,18 +1102,22 @@ h1 {
     table {
       margin-bottom: 0px;
     }
+    
+    /* ***** MODIFY ***** */
     #host-filter {
-      margin-top: 1px;
+      margin-top: 1px;      
       ul {
         margin: 3px;
-        font-size: 12px;
+        font-size: 12px;        
         li.filter-status.active a {
+          font-family: Dsignes Bold;
           text-decoration: none;
           color: #FFFFFF;
         }
         li.filter-status.active,
         li.filter-status.active:hover {
-          background-color: #666666;
+          font-family: Dsignes Bold;
+          background-color: @color-424C;
           -webkit-box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.15), 0 1px 2px rgba(0, 0, 0, 0.05);
           -moz-box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.15), 0 1px 2px rgba(0, 0, 0, 0.05);
           box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.15), 0 1px 2px rgba(0, 0, 0, 0.05);
@@ -1050,32 +1126,38 @@ h1 {
           border-radius: 5px;
         }
         li.filter-status:hover {
-          background-color: #d8d8d8;
+          font-family: Dsignes Bold;
+          background-color: @color-424C;
           -webkit-border-radius: 5px;
           -moz-border-radius: 5px;
           border-radius: 5px;
         }
         li.divider {
-          color: #666666;
+          color: @color-426C;
           padding: 4px 2px;
         }
         li {
+          font-family: Dsignes Bold;
           list-style: none;
           display: block;
           float: left;
           padding: 4px 4px;
           a {
-            text-decoration: underline;
+            text-decoration: none;
           }
         }
         li.first {
           font-weight: bold;
         }
       }
-    }
+    }    
 
     #deploy-status-by-host {
       margin-bottom: 0;
+      thead {
+        font-family: Dsignes Bold;
+        color: @color-426C;        
+      }
       th.host {
         width: 40%;
       }
@@ -1107,6 +1189,7 @@ h1 {
         width: 20% - 10px;
       }
     }
+    /* ***** MODIFY ***** */
   }
   #step14 {
     .item {
@@ -1270,6 +1353,19 @@ h1 {
 
 #serviceConfig {
   margin-top: 20px;
+  
+  .nav-tabs > li > a {  
+    color: @color-7473C;
+    font-family: Dsignes Bold;    
+  }   
+  .nav-tabs > li.active > a:hover{
+    color: #FFFFFF;
+  }
+  .nav-tabs > li.active > a,
+  .nav-tabs > li.active > a:focus{
+    color: @color-5285C;
+  }
+
   .alert{
     .icon-refresh{
       margin-left:10px;
@@ -1281,9 +1377,13 @@ h1 {
   .directories {
     min-width: 280px;
   }
+  /* ***** MODIFY ***** */
   .accordion-heading {
-    background-color: #f0f0f0;
+    background-color: @color-420C;
+    font-family: Dsignes Bold;
+    color: @color-426C;
   }
+  /* ***** MODIFY ***** */
   .accordion-group {
     margin-bottom: 20px;
     .control-label {
@@ -1352,9 +1452,19 @@ h1 {
     }
     .nav li {
       position: relative;
+      /* ***** MODIFY ***** */
       a {
         padding-right: 24px;
+        font-family: Dsignes Bold;
+        color: @color-5285C;
+        text-decoration: none;
       }
+      a:hover {
+        font-family: Dsignes Bold;
+        color: @color-669C;
+        text-decoration: none;
+      }      
+      /* ***** MODIFY ***** */
       .icon-remove {
         border: 1px solid white;
         position: absolute;
@@ -1362,11 +1472,13 @@ h1 {
         top: 10px;
         z-index: 2;
         cursor: default;
-        color: #555555;
+        color: @color-424C;
       }
+      /* ***** MODIFY ***** */
       .icon-remove:hover {
         border: 1px solid grey;
       }
+      /* ***** MODIFY ***** */
     }
   }
   .remove-group-error {
@@ -1550,7 +1662,7 @@ a:focus {
   /* ***** MODIFY ***** */
   .box-header {
     font-family: Dsignes Bold;
-    border-bottom: 1px solid #D4D4D4;
+    border-bottom: 1px solid @color-420C;
   }
   /* ***** MODIFY ***** */
   .box-header,
@@ -2157,13 +2269,13 @@ width:100%;
 .host-component-popup-wrap {
   /* ***** MODIFY ***** */
   .task-top-wrap {    
+    font-family: Dsignes Bold;
+    color: @color-426C;
     .operation-name-top {
       width: 33%;
       padding-left: 20px;
       float: left;
-      text-align: left;
-      font-family: Dsignes Bold;
-      color: @color-426C;
+      text-align: left;      
     }    
   }
   #service-info{    
@@ -4388,6 +4500,18 @@ table.graphs {
   margin-bottom: 20px;
 }
 .admin-cluster {
+  /* ***** MODIFY ***** */
+  .header {
+    color: @color-426C;
+    font-family: Dsignes Bold;  
+  }
+  .table {
+    thead {
+      color: @color-426C;
+      font-family: Dsignes Bold;  
+    }
+  } 
+  /* ***** MODIFY ***** */
   a.inactive {
     cursor: default;
     color: #333333;
@@ -4399,11 +4523,28 @@ table.graphs {
    margin-left: 20px
  }
 
+/* ***** MODIFY ***** */
 .admin-misc {
+  .header {
+    color: @color-426C;
+    font-family: Dsignes Bold;  
+  }
   .span6 {
     margin-left: 0 !important;
-  }
+    .table {
+      thead {
+        color: @color-426C;
+        font-family: Dsignes Bold;  
+      }
+    }
+  } 
 }
+
+.muted {
+  color: @color-5285C;
+  font-family: Dsignes Bold;  
+}
+/* ***** MODIFY ***** */
 
 .admin-user-settings {
   .checkbox {
@@ -4478,18 +4619,19 @@ table.graphs {
     color: #C09853;
   }
 
+  /* ***** MODIFY ***** */
   .host-assignments .mapping-box {
-    border: solid 1px #cccccc;
+    border: solid 1px @color-424C;
     padding: 8px;
     margin-bottom: 10px;
-    background-color: #fafafa;
-  }
+    background-color: @color-420C
+  } 
 
   .host-assignments .assignedService {
     padding: 2px 8px;
-    border: solid 1px #cccccc;
+    border: solid 1px @color-420C;
     margin: 2px;
-    background-color: #969696;
+    background-color: @color-422C;
     color: white;
     white-space: nowrap;
     font-size: 0.9em;
@@ -4497,9 +4639,9 @@ table.graphs {
   }
   .host-assignments .newService {
      padding: 2px 8px;
-     border: solid 1px #cccccc;
+     border: solid 1px @color-420C;
      margin: 2px;
-     background-color: @green;
+     background-color: @color-7473C;
      color: white;
      white-space: nowrap;
      font-size: 0.9em;
@@ -4507,9 +4649,10 @@ table.graphs {
    }
 
   .host-assignments .grey {
-    background-color: #808080;
-    border: solid 1px #000000;
+    background-color: @color-424C;
+    border: solid 1px @color-420C;
   }
+  /* ***** MODIFY ***** */
 
   .form-horizontal .controls {
     margin-left: 110px;
@@ -4533,13 +4676,18 @@ table.graphs {
     white-space: normal;
     width: 220px
   }
+
+  /* ***** MODIFY ***** */
   .hostString {
     margin-bottom: 5px;
     word-wrap: break-word;
+    color: @color-426C;
+    font-family: Dsignes Light;
+    font-weight: bold;    
   }
-
+  
   .badge {
-    background-color: @green;
+    background-color: @color-7473C;
     color: #ffffff;
     cursor: pointer;
     font-weight: bold;
@@ -4547,8 +4695,9 @@ table.graphs {
   }
 
   .badge:hover {
-    background-color: @green;
+    background-color: @color-563C;
   }
+  /* ***** MODIFY ***** */
 
   .alertFlag {
     font-size: 1.3em;
@@ -5937,14 +6086,28 @@ ul.inline li {
   margin-bottom: 10px;
 }
 
+/* ***** MODIFY ***** */
 #step8-content {
+  #step8-info {
+    .b {
+      color: @color-426C;
+      font-family: Dsignes Light;
+      font-weight: bold;
+    }
+  }
   ul {
     li {
       list-style: none;
+      .text-info {
+        color: @color-5285C;
+        font-family: Dsignes Light;
+        font-weight: bold;
+      }
     }
   }
   max-height: 440px;
 }
+/* ***** MODIFY ***** */
 
 .log_popup {
   .bar {
@@ -6143,9 +6306,11 @@ li.break {
   }
 }
 
+/* ***** MODIFY ***** */
 i.icon-asterisks {
-  color: #00688B;
+  color: @color-669C;
 }
+/* ***** MODIFY ***** */
 
 .rickshaw_legend {
   .action {
@@ -7004,9 +7169,14 @@ i.icon-asterisks {
   right: @space-m;
 }
 
+/* ***** MODIFY ***** */
 .pts {
   padding-top: @space-s;
+  color: @color-426C;
+  font-family: Dsignes Light;
+  font-weight: bold;
 }
+/* ***** MODIFY ***** */
 
 .mlc {
   margin-left: 0;
