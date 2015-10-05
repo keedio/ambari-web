@@ -5720,12 +5720,22 @@ li.break {
   background-color: #A5A5A5;
 }
 */
+/* ***** MODIFY ***** */
+.btn-success:active,
+.btn-success.active,
+.btn-success.disabled,
+.btn-success[disabled],
+.btn-info:active,
+.btn-info.active,
+.btn-info.disabled,
+.btn-info[disabled],
 .btn-primary:active,
 .btn-primary.active,
 .btn-primary.disabled,
 .btn-primary[disabled] {
-  background-color: #555555;
+  background-color: #717175;
 }
+/* ***** MODIFY ***** */
 .modal-body {
   max-height: none;
 }
