@@ -1,0 +1,224 @@
+{
+  "items": [
+    {
+      "serviceconfigversion": "1",
+      "createtime": "43800000000",
+      "author": "admin",
+      "group_id" : null,
+      "group_name" : null,
+      "service_config_version_note" : "Notes should be here",
+      "service_name" : "HDFS",
+      "configurations": [
+        {
+          "type": "core-site",
+          "tag": "1",
+          "version": "1",
+          "Config": {
+            "cluster_name": "c1"
+          },
+          "properties": {}
+        }
+      ]
+    },
+    {
+      "serviceconfigversion": "1",
+      "createtime": "43300000000",
+      "author": "admin",
+      "group_id" : null,
+      "group_name" : null,
+      "service_config_version_note" : "Notes should be here",
+      "service_name" : "YARN",
+      "configurations": [
+        {
+          "type": "core-site",
+          "tag": "1",
+          "version": "1",
+          "Config": {
+            "cluster_name": "c1"
+          },
+          "properties": {}
+        }
+      ]
+    },
+    {
+      "serviceconfigversion": "2",
+      "createtime": "43500000000",
+      "author": "admin",
+      "group_id" : null,
+      "group_name" : null,
+      "service_config_version_note" : "Notes should be here",
+      "service_name" : "HDFS",
+      "configurations": [
+        {
+          "type": "core-site",
+          "tag": "1",
+          "version": "1",
+          "Config": {
+            "cluster_name": "c1"
+          },
+          "properties": {}
+        }
+      ]
+    },
+    {
+      "serviceconfigversion": "2",
+      "createtime": "13800000000",
+      "author": "admin",
+      "group_id" : null,
+      "group_name" : null,
+      "service_config_version_note" : "Notes should be here",
+      "service_name" : "YARN",
+      "configurations": [
+        {
+          "type": "core-site",
+          "tag": "1",
+          "version": "1",
+          "Config": {
+            "cluster_name": "c1"
+          },
+          "properties": {}
+        }
+      ]
+    },
+    {
+      "serviceconfigversion": "3",
+      "createtime": "23800000000",
+      "author": "admin",
+      "group_id" : null,
+      "group_name" : null,
+      "service_config_version_note" : "Notes should be here",
+      "service_name" : "HDFS",
+      "configurations": [
+        {
+          "type": "core-site",
+          "tag": "1",
+          "version": "1",
+          "Config": {
+            "cluster_name": "c1"
+          },
+          "properties": {}
+        }
+      ]
+    },
+    {
+      "serviceconfigversion": "3",
+      "createtime": "47800000000",
+      "author": "admin",
+      "group_id" : null,
+      "group_name" : null,
+      "service_config_version_note" : "Notes should be here",
+      "service_name" : "YARN",
+      "configurations": [
+        {
+          "type": "core-site",
+          "tag": "1",
+          "version": "1",
+          "Config": {
+            "cluster_name": "c1"
+          },
+          "properties": {}
+        }
+      ]
+    },
+    {
+      "serviceconfigversion": "4",
+      "createtime": "43900000000",
+      "author": "admin",
+      "group_id" : null,
+      "group_name" : null,
+      "service_config_version_note" : "Notes should be here",
+      "service_name" : "HDFS",
+      "configurations": [
+        {
+          "type": "core-site",
+          "tag": "1",
+          "version": "1",
+          "Config": {
+            "cluster_name": "c1"
+          },
+          "properties": {}
+        }
+      ]
+    },
+    {
+      "serviceconfigversion": "4",
+      "createtime": "33800000000",
+      "author": "admin",
+      "group_id" : null,
+      "group_name" : null,
+      "service_config_version_note" : "Notes should be here",
+      "service_name" : "YARN",
+      "configurations": [
+        {
+          "type": "core-site",
+          "tag": "1",
+          "version": "1",
+          "Config": {
+            "cluster_name": "c1"
+          },
+          "properties": {}
+        }
+      ]
+    },
+    {
+      "serviceconfigversion": "5",
+      "createtime": "41800000000",
+      "author": "admin",
+      "group_id" : null,
+      "group_name" : null,
+      "service_config_version_note" : "Notes should be here",
+      "service_name" : "HDFS",
+      "configurations": [
+        {
+          "type": "core-site",
+          "tag": "1",
+          "version": "1",
+          "Config": {
+            "cluster_name": "c1"
+          },
+          "properties": {}
+        }
+      ]
+    },
+    {
+      "serviceconfigversion": "5",
+      "createtime": "46800000000",
+      "author": "admin",
+      "group_id" : null,
+      "group_name" : null,
+      "service_config_version_note" : "Notes should be here",
+      "service_name" : "YARN",
+      "configurations": [
+        {
+          "type": "core-site",
+          "tag": "1",
+          "version": "1",
+          "Config": {
+            "cluster_name": "c1"
+          },
+          "properties": {}
+        }
+      ]
+    },
+    {
+      "serviceconfigversion": "6",
+      "createtime": "44800000000",
+      "author": "admin",
+      "group_id" : null,
+      "group_name" : null,
+      "service_config_version_note" : "Notes should be here",
+      "service_name" : "YARN",
+      "configurations": [
+        {
+          "type": "core-site",
+          "tag": "1",
+          "version": "1",
+          "Config": {
+            "cluster_name": "c1"
+          },
+          "properties": {}
+        }
+      ]
+    }
+  ]
+}
