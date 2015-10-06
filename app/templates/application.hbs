@@ -22,9 +22,9 @@
       <div class="navbar-inner">
         <div class="container main-container">
           {{#if isExistingClusterDataLoaded}}
-            <a {{translateAttr href="topnav.logo.href"}} class="logo"><img src="/img/keedio/logo-white.png" alt="Keedio Ambari"
-                                                                           title="Keedio Ambari"></a>
-            <a class="brand" {{translateAttr href="topnav.logo.href"}} title="Keedio Ambari">{{t app.name}}</a>
+            <a {{translateAttr href="topnav.logo.href"}} class="logo"><img src="/img/keedio/logo-white.png" alt="Keedio Manager"
+                                                                           title="Keedio Manager"></a>
+            <a class="brand" {{translateAttr href="topnav.logo.href"}} title="Keedio Manager">{{t app.name}}</a>
             <a class="brand cluster-name" href="javascript:void(null);" {{bindAttr title="clusterName"}}>
               <span {{action "showPopup" target="App.router.backgroundOperationsController"}} >{{clusterDisplayName}} </span>
               {{#with App.router.backgroundOperationsController}}
@@ -36,8 +36,8 @@
               {{/with}}
             </a>
           {{else}}
-            <a class="logo"><img src="/img/keedio/logo-white.png" alt="Keedio Ambari" title="Keedio Ambari"></a>
-            <a class="brand" title="Keedio Ambari">{{t app.name}}</a>
+            <a class="logo"><img src="/img/keedio/logo-white.png" alt="Keedio Manager" title="Keedio Manager"></a>
+            <a class="brand" title="Keedio Manager">{{t app.name}}</a>
           {{/if}}
 
           {{#if App.router.loggedIn}}
