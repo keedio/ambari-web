@@ -3090,10 +3090,6 @@ table.graphs {
   font-family: Dsignes Bold;
 }
 #dashboard-widgets-container #widgets-options-menu {
-  position: relative;
-  top: -39px;
-  left: 62px;
-  width: 15px;
   /* ***** MODIFY ***** */
 
 }
@@ -3153,8 +3149,7 @@ table.graphs {
   display: block;
 }
 #dashboard-widgets-container .dashboard-widgets-box {
-  position: relative;
-  top: -20px;
+  margin-top: 4px;
 }
 #dashboard-widgets-container h4 {
   line-height: 30px;
